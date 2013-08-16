@@ -22,6 +22,7 @@
 unit DelphiDevShellToolsImpl;
 
 {$WARN SYMBOL_PLATFORM OFF}
+{$DEFINE ENABLELOG}
 
 interface
 
@@ -51,6 +52,10 @@ type
     procedure OpenWithDelphi(Info : TMethodInfo);
     procedure BuildWithDelphi(Info : TMethodInfo);
     procedure MSBuildWithDelphi(Info : TMethodInfo);
+    procedure OpenWithNotepad(Info : TMethodInfo);
+    procedure OpenCmdHere(Info : TMethodInfo);
+    procedure CopyPathClipboard(Info : TMethodInfo);
+    procedure CopyFileNameClipboard(Info : TMethodInfo);
   protected
     function IShellExtInit.Initialize = ShellExtInitialize;
     function ShellExtInitialize(pidlFolder: PItemIDList; lpdobj: IDataObject; hKeyProgID: HKEY): HResult; stdcall;
@@ -75,8 +80,9 @@ implementation
 
 uses
   uMisc,
-  Graphics,
-  Classes,
+  ClipBrd,
+  Vcl.Graphics,
+  System.Classes,
   uDelphiVersions,
   System.IOUtils,
   System.StrUtils,
@@ -89,10 +95,15 @@ uses
 var
   DelphiVersions : TObjectList<TDelphiVersionData>;
   MainIcon       : TBitmap;
+  NotepadIcon    : TBitmap;
+  CmdIcon        : TBitmap;
+  CopyIcon       : TBitmap;
 
 procedure log(const msg: string);
 begin
-   TFile.AppendAllText(IncludeTrailingPathDelimiter(GetTempDirectory)+'shelllog.txt', FormatDateTime('hh:nn:ss.zzz',Now)+' '+msg+sLineBreak);
+ {$IFDEF ENABLELOG}
+  TFile.AppendAllText(IncludeTrailingPathDelimiter(GetTempDirectory)+'shelllog.txt', FormatDateTime('hh:nn:ss.zzz',Now)+' '+msg+sLineBreak);
+ {$ENDIF}
 end;
 
 constructor TDelphiDevShellToolsContextMenu.Create;
@@ -117,6 +128,43 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('-pDelphi "%s"',[FFileName])) , nil , SW_SHOWNORMAL);
 end;
 
+procedure TDelphiDevShellToolsContextMenu.OpenWithNotepad(Info : TMethodInfo);
+begin
+  ShellExecute(Info.hwnd, 'open', 'C:\Windows\notepad.exe', PChar(FFileName) , nil , SW_SHOWNORMAL);
+end;
+
+procedure TDelphiDevShellToolsContextMenu.CopyPathClipboard(Info : TMethodInfo);
+var
+  FilePath: string;
+begin
+  FilePath:=ExtractFilePath(FFileName);
+  Clipboard.AsText := FilePath;
+end;
+
+procedure TDelphiDevShellToolsContextMenu.CopyFileNameClipboard(Info : TMethodInfo);
+begin
+  Clipboard.AsText := FFileName;
+end;
+
+procedure TDelphiDevShellToolsContextMenu.OpenCmdHere(Info : TMethodInfo);
+var
+  FilePath, BatchFileName, Params : string;
+  BatchFile : TStrings;
+begin
+  log('OpenCmdHere');
+  FilePath:=ExtractFilePath(FFileName);
+  BatchFile:=TStringList.Create;
+  try
+    BatchFile.Add(Format('cd "%s"',[FilePath]));
+    BatchFile.Add('cls');
+    BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
+    BatchFile.SaveToFile(BatchFileName);
+    Params:='/K "'+BatchFileName+'"';
+    ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+  finally
+    BatchFile.Free;
+  end;
+end;
 
 procedure TDelphiDevShellToolsContextMenu.BuildWithDelphi(Info : TMethodInfo);//incomplete
 var
@@ -222,10 +270,44 @@ begin
 
   if Result <> E_FAIL then
   begin
-
     LSubMenu := CreatePopupMenu;
     uIDNewItem := idCmdFirst;
     LIndex:=0;
+
+     InsertMenu(LSubMenu, LIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy file path to clipboard'));
+     SetMenuItemBitmaps(LSubMenu, LIndex, MF_BYPOSITION, CopyIcon.Handle, CopyIcon.Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=CopyPathClipboard;
+     FMethodsDict.Add(LIndex, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LIndex);
+
+     InsertMenu(LSubMenu, LIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy full filename (Path + FileName) to clipboard'));
+     SetMenuItemBitmaps(LSubMenu, LIndex, MF_BYPOSITION, CopyIcon.Handle, CopyIcon.Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=CopyFileNameClipboard;
+     FMethodsDict.Add(LIndex, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LIndex);
+
+     InsertMenu(LSubMenu, LIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open In Notepad'));
+     SetMenuItemBitmaps(LSubMenu, LIndex, MF_BYPOSITION, NotepadIcon.Handle, NotepadIcon.Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=OpenWithNotepad;
+     FMethodsDict.Add(LIndex, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LIndex);
+
+     InsertMenu(LSubMenu, LIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open cmd here'));
+     SetMenuItemBitmaps(LSubMenu, LIndex, MF_BYPOSITION, CmdIcon.Handle, CmdIcon.Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=OpenCmdHere;
+     FMethodsDict.Add(LIndex, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LIndex);
+
+     InsertMenu(LSubMenu, LIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil);
+     inc(LIndex);
 
      if  MatchText(ExtractFileExt(FFileName),['.pas','.dpr','.inc','.pp']) then
      for LDelphiVersionData in DelphiVersions do
@@ -265,7 +347,6 @@ begin
          if not Found then
            InsertMenu(LSubMenu, LIndex, MF_BYPOSITION, uIDNewItem, PWideChar('MSBuild With '+LDelphiVersionData.Name));
 
-
          SetMenuItemBitmaps(LSubMenu, LIndex, MF_BYPOSITION, LDelphiVersionData.Bitmap.Handle, LDelphiVersionData.Bitmap.Handle);
          LMethodInfo:=TMethodInfo.Create;
          LMethodInfo.Method:=MSBuildWithDelphi;
@@ -276,7 +357,6 @@ begin
          ContainsItems:=True;
        end;
      end;
-
 
       if ContainsItems then
       begin
@@ -373,9 +453,23 @@ initialization
   TDelphiDevShellObjectFactory.Create(ComServer, TDelphiDevShellToolsContextMenu, CLASS_DelphiDevShellToolsContextMenu, ciMultiInstance, tmApartment);
   DelphiVersions:=TObjectList<TDelphiVersionData>.Create;
   FillListDelphiVersions(DelphiVersions);
+
   MainIcon:=TBitmap.Create;
   MainIcon.LoadFromResourceName(HInstance,'logo');
   MakeBitmapMenuTransparent(MainIcon);
+
+  NotepadIcon:=TBitmap.Create;
+  NotepadIcon.LoadFromResourceName(HInstance,'notepad');
+  MakeBitmapMenuTransparent(NotepadIcon);
+
+  CmdIcon:=TBitmap.Create;
+  CmdIcon.LoadFromResourceName(HInstance,'cmd');
+  MakeBitmapMenuTransparent(CmdIcon);
+
+  CopyIcon:=TBitmap.Create;
+  CopyIcon.LoadFromResourceName(HInstance,'copy');
+  MakeBitmapMenuTransparent(CopyIcon);
+
 finalization
   MainIcon.Free;
   DelphiVersions.Free;

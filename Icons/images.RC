@@ -1,1 +1,4 @@
 logo BITMAP "logo.bmp"
+notepad BITMAP "notepad.bmp"
+cmd BITMAP "cmd.bmp"
+copy BITMAP "copy.bmp"
