@@ -34,10 +34,10 @@ TODO :
   settings app
 
 
-  open with delphi N...
+  open with delphi N...   DONE
   compile
   compile and run
-  msbuild
+  msbuild  DONE
   msbuild and run (use bat)
 
   build
@@ -54,31 +54,6 @@ TODO :
    copy full filename (Path + FileName) to clipboard
    open in notepad
    open cmd here
-
-
-
-}
-
-
-{
-
-
-
-    if a .dproj file exists -> read \project\PropertyGroup\ProjectVersion
-        empty -> Delphi 2007
-        12.0 -> Delphi 2009 or 2010
-        12.2 or 12.3 -> Delphi XE1 (according to Uwe Schuster)
-        13.4 -> Delphi XE2
-        14.3 -> XE3
-        14.6 -> XE4
-
-    if a .bdsproj file exists -> Delphi 2005 or 2006
-    if a .dof file exists -> read [FileVersion]\version
-        empty -> Delphi 5 (or possibly older)
-        6.0 -> Delphi 6
-        7.0 -> Delphi 7
-
-
 }
 
 
