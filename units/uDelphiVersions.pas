@@ -77,6 +77,19 @@ type
     Destructor  Destroy; override;
   end;
 
+type
+  TMSBuildDProj=class
+  private
+    FFrameworkType: string;
+    FProjectFile : string;
+    FPlatforms: TStrings;
+    procedure LoadInfo;
+  public
+    property FrameworkType : string read FFrameworkType write FFrameworkType;
+    property Platforms : TStrings read FPlatforms write FPlatforms;
+    constructor Create(const ProjectFile : string);
+    Destructor  Destroy; override;
+  end;
 
 const
   {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
@@ -166,6 +179,75 @@ uses
   ShellAPI,
   uRegistry,
   Registry;
+
+constructor TMSBuildDProj.Create(const ProjectFile : string);
+begin
+ inherited Create;
+ FProjectFile:=ProjectFile;
+ FPlatforms:=TStringList.Create;
+ LoadInfo;
+end;
+
+destructor TMSBuildDProj.Destroy;
+begin
+  FPlatforms.Free;
+  inherited;
+end;
+
+
+
+procedure TMSBuildDProj.LoadInfo;
+var
+  sVersion, ns, ProjectExt, ProjectPath : string;
+  XmlDoc: OleVariant;
+  Nodes, Node: OleVariant;
+  i, lNodes : Integer;
+  sdv : SetDelphiVersions;
+  LDelphiVersionData  : TDelphiVersionData;
+  LDelphiVersion      : TDelphiVersions;
+begin
+
+  sdv:=GetDelphiVersions(FProjectFile);
+  for LDelphiVersion in sdv do
+  if  LDelphiVersion<=TDelphiVersions.DelphiXE then
+  begin
+    FFrameworkType := 'VCL';
+    FPlatforms.Add('Win32');
+    Break;
+  end
+  else
+  begin
+    CoInitialize(nil);
+    try
+      XmlDoc := CreateOleObject('Msxml2.DOMDocument.6.0');
+      try
+        XmlDoc.Async := False;
+        XmlDoc.Load(FProjectFile);
+        XmlDoc.SetProperty('SelectionLanguage', 'XPath');
+         ns := Format('xmlns:a=%s',[QuotedStr('http://schemas.microsoft.com/developer/msbuild/2003')]);
+         XmlDoc.setProperty('SelectionNamespaces', ns);
+
+        if (XmlDoc.parseError.errorCode <> 0) then
+          raise Exception.CreateFmt('Error in Xml Data %s', [XmlDoc.parseError]);
+
+        Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:FrameworkType');
+        if not VarIsClear(Node) then
+          FFrameworkType := Node.Text;
+
+        Nodes := XmlDoc.selectNodes('//a:Project/a:ProjectExtensions/a:BorlandProject/a:Platforms/a:Platform');
+        lNodes:= Nodes.Length;
+        for i:= 0 to lNodes-1 do
+           FPlatforms.Add(Nodes.Item(i).getAttribute('value'));
+
+      finally
+        XmlDoc := Unassigned;
+      end;
+    finally
+      CoUninitialize;
+    end;
+  end;
+end;
+
 
 function GetDelphiVersions(const ProjectFile: string) : SetDelphiVersions;
 var

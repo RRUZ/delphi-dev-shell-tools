@@ -10,7 +10,7 @@ uses
   ExceptionLog7,
   ComServ,
   DelphiDevShellTools_TLB in 'DelphiDevShellTools_TLB.pas',
-  DelphiDevShellToolsImpl in 'DelphiDevShellToolsImpl.pas' {CloudUploadImpl: CoClass},
+  DelphiDevShellToolsImpl in 'DelphiDevShellToolsImpl.pas',
   uDelphiVersions in 'units\uDelphiVersions.pas',
   uMisc in 'units\uMisc.pas',
   uRegistry in 'units\uRegistry.pas',
@@ -29,6 +29,8 @@ exports
 {
 TODO :
   detect delphi version.     DONE
+
+  enumerate builds and plattform from msbuild file dproj
 
 
   settings app
