@@ -58,9 +58,10 @@ var
 begin
  try
     CoInitialize(nil);
-    try         {
-      sdv := GetDelphiVersions('C:\Users\RRUZ\Desktop\Test\ProjectXE4.dproj');
+    try
+      sdv := GetDelphiVersions('C:\Users\Public\Documents\RAD Studio\11.0\Samples\FireMonkey\CPUMonitor\CPUMonitor.dproj');
       Writeln(SetToString(TypeInfo(SetDelphiVersions), sdv));
+      {
       sdv := GetDelphiVersions('C:\Users\RRUZ\Desktop\Test\ProjectXE2.dproj');
       Writeln(SetToString(TypeInfo(SetDelphiVersions), sdv));
       sdv := GetDelphiVersions('C:\Users\RRUZ\Desktop\Test\Project2007.dproj');
@@ -72,7 +73,7 @@ begin
       '"C:\Program Files (x86)\Embarcadero\RAD Studio\11.0\bin\bds.exe"',
       '"C:\Users\Public\Documents\RAD Studio\11.0\Samples\iOSCodeSnippets\iOS Accelerometer\iOS_Accelerometer.dproj"',nil, SW_SHOWNORMAL);
       }
-      msb:=TMSBuildDProj.Create('C:\Users\RRUZ\Desktop\Test\Project2007.dproj');
+      msb:=TMSBuildDProj.Create('C:\Users\Public\Documents\RAD Studio\11.0\Samples\FireMonkey\CPUMonitor\CPUMonitor.dproj');
 
       {
       Win32

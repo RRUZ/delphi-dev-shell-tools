@@ -1,13 +1,6 @@
 library DelphiDevShellTools;
 
 uses
-  EMemLeaks,
-  EResLeaks,
-  EDialogWinAPIMSClassic,
-  EDialogWinAPIEurekaLogDetailed,
-  EDialogWinAPIStepsToReproduce,
-  EDebugExports,
-  ExceptionLog7,
   ComServ,
   DelphiDevShellTools_TLB in 'DelphiDevShellTools_TLB.pas',
   DelphiDevShellToolsImpl in 'DelphiDevShellToolsImpl.pas',
@@ -29,12 +22,10 @@ exports
 {
 TODO :
   detect delphi version.     DONE
+  enumerate builds and plattform from msbuild file dproj   DONE
 
-  enumerate builds and plattform from msbuild file dproj
-
-
+  Auto Update
   settings app
-
 
   open with delphi N...   DONE
   compile
@@ -49,13 +40,12 @@ TODO :
     ms build release x64
     ms build debug  x86
 
-
   common
    crc, sha1 calculation
-   copy path to clipboard
-   copy full filename (Path + FileName) to clipboard
-   open in notepad
-   open cmd here
+   copy path to clipboard   DONE
+   copy full filename (Path + FileName) to clipboard     DONE
+   open in notepad      DONE
+   open cmd here       DONE
 }
 
 
