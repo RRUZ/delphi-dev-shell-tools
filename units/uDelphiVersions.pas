@@ -56,7 +56,7 @@ type
     DelphiXE4
 );
 
-  SetDelphiVersions= set of TDelphiVersions;
+  SetDelphiVersions= TArray<TDelphiVersions>;
 
   TDelphiVersionData=Class
   private
@@ -198,12 +198,11 @@ end;
 
 procedure TMSBuildDProj.LoadInfo;
 var
-  sVersion, ns, ProjectExt, ProjectPath : string;
+  ns: string;
   XmlDoc: OleVariant;
   Nodes, Node: OleVariant;
   i, lNodes : Integer;
   sdv : SetDelphiVersions;
-  LDelphiVersionData  : TDelphiVersionData;
   LDelphiVersion      : TDelphiVersions;
 begin
 
@@ -255,9 +254,9 @@ var
   XmlDoc: OleVariant;
   Node: OleVariant;
 begin
+  SetLength(Result, 0);
   CoInitialize(nil);
   try
-    Result:=[];
     ProjectExt  :=ExtractFileExt(ProjectFile);
     ProjectPath :=ExtractFilePath(ProjectFile);
     if SameText(ProjectExt, '.dproj') then
@@ -278,23 +277,23 @@ begin
           begin
             sVersion := Node.Text;
             if sVersion='14.6' then
-             Exit([DelphiXE4])
+             Exit(TArray<TDelphiVersions>.Create(DelphiXE4))
             else
             if sVersion='14.3' then
-             Exit([DelphiXE3])
+             Exit(TArray<TDelphiVersions>.Create(DelphiXE3))
             else
             if sVersion='13.4' then
-             Exit([DelphiXE2])
+             Exit(TArray<TDelphiVersions>.Create(DelphiXE2))
             else
             if MatchText(sVersion,['12.2','12.3']) then
-             Exit([DelphiXE])
+             Exit(TArray<TDelphiVersions>.Create(DelphiXE))
             else
             if MatchText(sVersion,['12.0']) then
-             Exit([Delphi2009, Delphi2010]);
+             Exit(TArray<TDelphiVersions>.Create(Delphi2009, Delphi2010));
           end
           else
           begin
-            Exit([Delphi2007]);
+            Exit(TArray<TDelphiVersions>.Create(Delphi2007))
           end;
         finally
           XmlDoc := Unassigned;
@@ -302,9 +301,7 @@ begin
     end
     else
     if SameText(ProjectExt, '.bdsproj') then
-    begin
-      Exit([Delphi2005, Delphi2006]);
-    end;
+      Exit(TArray<TDelphiVersions>.Create(Delphi2005, Delphi2006))
   finally
     CoUninitialize;
   end;
