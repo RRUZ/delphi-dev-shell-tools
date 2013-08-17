@@ -60,6 +60,7 @@ type
     procedure OpenCmdHere(Info : TMethodInfo);
     procedure CopyPathClipboard(Info : TMethodInfo);
     procedure CopyFileNameClipboard(Info : TMethodInfo);
+    procedure OpenGUI(Info : TMethodInfo);
   protected
     function IShellExtInit.Initialize = ShellExtInitialize;
     function ShellExtInitialize(pidlFolder: PItemIDList; lpdobj: IDataObject; hKeyProgID: HKEY): HResult; stdcall;
@@ -256,6 +257,19 @@ begin
   end;
 end;
 
+function GetModuleName: string;
+var
+  szFileName: array[0..MAX_PATH] of Char;
+begin
+  FillChar(szFileName, SizeOf(szFileName), #0);
+  GetModuleFileName(hInstance, szFileName, MAX_PATH);
+  Result := szFileName;
+end;
+
+procedure TDelphiDevShellToolsContextMenu.OpenGUI(Info : TMethodInfo);
+begin
+  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(GetModuleName))+'GUIDelphiDevShell.exe'), PChar(FFileName) , nil , SW_SHOWNORMAL);
+end;
 
 function TDelphiDevShellToolsContextMenu.GetCommandString(idCmd: UINT_PTR; uFlags: UINT;
   pwReserved: PUINT; pszName: LPSTR; cchMax: UINT): HResult;
@@ -568,20 +582,10 @@ begin
      InsertMenu(LSubMenu, LMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('About'));
      SetMenuItemBitmaps(LSubMenu, LMenuIndex, MF_BYPOSITION, BitmapsDict.Items['logo'].Handle, BitmapsDict.Items['logo'].Handle);
      LMethodInfo:=TMethodInfo.Create;
-     LMethodInfo.Method:=OpenWithNotepad;
+     LMethodInfo.Method:=OpenGUI;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(LMenuIndex);
-
-     InsertMenu(LSubMenu, LMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Check for Updates'));
-     //SetMenuItemBitmaps(LSubMenu, LMenuIndex, MF_BYPOSITION, BitmapsDict.Items['notepad'].Handle, BitmapsDict.Items['notepad'].Handle);
-     LMethodInfo:=TMethodInfo.Create;
-     LMethodInfo.Method:=OpenWithNotepad;
-     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
-     Inc(uIDNewItem);
-     //Inc(LMenuIndex);
-
-
 
       ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
       LMenuItem.cbSize := SizeOf(TMenuItemInfo);
