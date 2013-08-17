@@ -19,6 +19,8 @@ exports
 {$R *.TLB}
 
 {$R *.RES}
+{$R VersionInfo.res}
+
 {
 TODO :
   detect delphi version.     DONE
@@ -32,6 +34,8 @@ TODO :
   compile and run
   msbuild  DONE
   msbuild and run (use bat)
+
+  Formatcode
 
   build
   opt
