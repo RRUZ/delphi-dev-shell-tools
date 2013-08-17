@@ -9,12 +9,17 @@ uses
   ActiveX,
   ComObj,
   Variants,
+  ShellApi,
+  Classes,
+  Windows,
   System.SysUtils,
   System.StrUtils,
   uDelphiVersions in 'units\uDelphiVersions.pas',
   uMisc in 'units\uMisc.pas',
   uSupportedIDEs in 'units\uSupportedIDEs.pas',
   uRegistry in 'units\uRegistry.pas';
+
+
 
 function SetToString(Info: PTypeInfo; const Value): String;
 var
@@ -44,19 +49,47 @@ begin
     end;
 end;
 
+
+
+
 var
  sdv : SetDelphiVersions;
-
+ msb : TMSBuildDProj;
 begin
  try
     CoInitialize(nil);
-    try
+    try         {
       sdv := GetDelphiVersions('C:\Users\RRUZ\Desktop\Test\ProjectXE4.dproj');
       Writeln(SetToString(TypeInfo(SetDelphiVersions), sdv));
       sdv := GetDelphiVersions('C:\Users\RRUZ\Desktop\Test\ProjectXE2.dproj');
       Writeln(SetToString(TypeInfo(SetDelphiVersions), sdv));
       sdv := GetDelphiVersions('C:\Users\RRUZ\Desktop\Test\Project2007.dproj');
       Writeln(SetToString(TypeInfo(SetDelphiVersions), sdv));
+      }
+      //msb:=TMSBuildDProj.Create('C:\Users\RRUZ\Desktop\Test\ProjectFMOSX.dproj');
+      {
+      ShellExecute(0,'open',
+      '"C:\Program Files (x86)\Embarcadero\RAD Studio\11.0\bin\bds.exe"',
+      '"C:\Users\Public\Documents\RAD Studio\11.0\Samples\iOSCodeSnippets\iOS Accelerometer\iOS_Accelerometer.dproj"',nil, SW_SHOWNORMAL);
+      }
+      msb:=TMSBuildDProj.Create('C:\Users\RRUZ\Desktop\Test\Project2007.dproj');
+
+      {
+      Win32
+      Win64
+      OSX
+      iOSDevice
+      iOSSimulator
+      }
+
+
+      try
+         Writeln(msb.FrameworkType);
+         Writeln(msb.Platforms.Text);
+
+      finally
+        msb.Free;
+      end;
     finally
       CoUninitialize;
     end;
