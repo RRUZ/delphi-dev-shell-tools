@@ -77,7 +77,7 @@ begin
   Frm:=TFrmUpdateChanges.Create(nil);
   try
     Frm.LabelMsg.Caption:=msg;
-    Frm.URLFeed:= 'http://code.google.com/feeds/p/wmi-delphi-code-creator/svnchanges/basic';
+    Frm.URLFeed:= 'http://code.google.com/feeds/p/delphi-dev-shell-tools/svnchanges/basic';
     Frm.ShowModal;
     Result:=Frm.FExecute;
   finally

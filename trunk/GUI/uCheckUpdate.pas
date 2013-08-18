@@ -109,7 +109,7 @@ uses
 function GetUpdaterInstance : TFrmCheckUpdate;
 begin
   Result:=TFrmCheckUpdate.Create(nil);
-  Result.RemoteVersionFile       :='http://dl.dropbox.com/u/12733424/Blog/Delphi%20Wmi%20Code%20Creator/Version.xml';
+  Result.RemoteVersionFile       :='http://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Version.xml';
   Result.ApplicationName         :='Delphi Dev. Shell Tools';
   Result.XPathVersionNumber      :='/versioninfo/@versionapp';
   Result.XPathUrlInstaller       :='/versioninfo/@url';

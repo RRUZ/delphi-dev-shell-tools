@@ -28,6 +28,7 @@ UsePreviousAppDir=false
 AppendDefaultDirName=true
 PrivilegesRequired=admin
 WindowVisible=false
+ArchitecturesInstallIn64BitMode=x64
 ;WizardSmallImageFile=compiler:WizModernSmallImage-IS.bmp
 ;WizardSmallImageFile=Extras\SmallImage-IS.bmp
 ;WizardImageFile=Extras\LeftBackground.bmp
