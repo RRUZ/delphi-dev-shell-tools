@@ -78,11 +78,11 @@
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
-        <VerInfo_Build>2</VerInfo_Build>
+        <VerInfo_Build>3</VerInfo_Build>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.2;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.3;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
@@ -101,16 +101,13 @@
         </DelphiCompile>
         <DCCReference Include="uAbout.pas">
             <Form>FrmAbout</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="uCheckUpdate.pas">
             <Form>FrmCheckUpdate</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="uWinInet.pas"/>
         <DCCReference Include="uUpdatesChanges.pas">
             <Form>FrmUpdateChanges</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Vcl.Styles.WebBrowser.pas"/>
         <DCCReference Include="uMisc.pas"/>
