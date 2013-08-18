@@ -5,10 +5,12 @@
 [Files]
 
 Source: Win64\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace regtypelib
-Source: Win32\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Languages: 
+Source: Win32\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace regtypelib
 Source: GUI\GUIDelphiDevShell.exe; DestDir: {app}
 [Run]
-Filename: regsvr32.exe; Parameters: """{app}\DelphiDevShellTools.dll"""; StatusMsg: Registering plugin
+Filename: regsvr32.exe; Parameters: "/s ""{app}\DelphiDevShellTools.dll"""; StatusMsg: Registering plugin
+[UninstallRun]
+Filename: regsvr32.exe; Parameters: "/s /u ""{app}\DelphiDevShellTools.dll"""; StatusMsg: UnRegistering plugin
 
 [Setup]
 UsePreviousLanguage=no
