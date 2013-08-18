@@ -29,13 +29,18 @@ TODO :
   Auto Update
   settings app
 
+  Add open RadStudio Command Prompt Here  %comspec%  /K "C:\Program Files (x86)\Embarcadero\RAD Studio\11.0\bin\rsvars.bat"
+  Add Format code
+
   open with delphi N...   DONE
   compile
   compile and run
   msbuild  DONE
   msbuild and run (use bat)
 
-  Formatcode
+  //EurekaLog
+  //http://www.eurekalog.com/help/eurekalog/index.php?profiles.php
+
 
   build
   opt
