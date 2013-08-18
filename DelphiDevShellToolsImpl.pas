@@ -22,7 +22,7 @@
 unit DelphiDevShellToolsImpl;
 
 {$WARN SYMBOL_PLATFORM OFF}
-{$DEFINE ENABLELOG}
+{.$DEFINE ENABLELOG}
 
 interface
 
@@ -257,14 +257,6 @@ begin
   end;
 end;
 
-function GetModuleName: string;
-var
-  szFileName: array[0..MAX_PATH] of Char;
-begin
-  FillChar(szFileName, SizeOf(szFileName), #0);
-  GetModuleFileName(hInstance, szFileName, MAX_PATH);
-  Result := szFileName;
-end;
 
 procedure TDelphiDevShellToolsContextMenu.OpenGUI(Info : TMethodInfo);
 begin
@@ -682,38 +674,66 @@ initialization
   BitmapsDict:=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
 
   BitmapsDict.Add('logo',TBitmap.Create);
+
+  if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+  BitmapsDict.Items['logo'].LoadFromResourceName(HInstance,'logo13')
+  else
   BitmapsDict.Items['logo'].LoadFromResourceName(HInstance,'logo');
   MakeBitmapMenuTransparent(BitmapsDict.Items['logo']);
 
   BitmapsDict.Add('notepad',TBitmap.Create);
+  if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+  BitmapsDict.Items['notepad'].LoadFromResourceName(HInstance,'notepad13')
+  else
   BitmapsDict.Items['notepad'].LoadFromResourceName(HInstance,'notepad');
   MakeBitmapMenuTransparent(BitmapsDict.Items['notepad']);
 
   BitmapsDict.Add('cmd',TBitmap.Create);
+  if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+  BitmapsDict.Items['cmd'].LoadFromResourceName(HInstance,'cmd13')
+  else
   BitmapsDict.Items['cmd'].LoadFromResourceName(HInstance,'cmd');
   MakeBitmapMenuTransparent(BitmapsDict.Items['cmd']);
 
   BitmapsDict.Add('copy',TBitmap.Create);
+  if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+  BitmapsDict.Items['copy'].LoadFromResourceName(HInstance,'copy13')
+  else
   BitmapsDict.Items['copy'].LoadFromResourceName(HInstance,'copy');
   MakeBitmapMenuTransparent(BitmapsDict.Items['copy']);
 
   BitmapsDict.Add('osx',TBitmap.Create);
+  if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+  BitmapsDict.Items['osx'].LoadFromResourceName(HInstance,'osx13')
+  else
   BitmapsDict.Items['osx'].LoadFromResourceName(HInstance,'osx');
   MakeBitmapMenuTransparent(BitmapsDict.Items['osx']);
 
   BitmapsDict.Add('ios',TBitmap.Create);
+  if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+  BitmapsDict.Items['ios'].LoadFromResourceName(HInstance,'ios13')
+  else
   BitmapsDict.Items['ios'].LoadFromResourceName(HInstance,'ios');
   MakeBitmapMenuTransparent(BitmapsDict.Items['ios']);
 
-  BitmapsDict.Add('win',TBitmap.Create);
+  BitmapsDict.Add('logo',TBitmap.Create);
+  if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+  BitmapsDict.Items['logo'].LoadFromResourceName(HInstance,'win13')
+  else
   BitmapsDict.Items['win'].LoadFromResourceName(HInstance,'win');
   MakeBitmapMenuTransparent(BitmapsDict.Items['win']);
 
   BitmapsDict.Add('delphi',TBitmap.Create);
+  if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+  BitmapsDict.Items['delphi'].LoadFromResourceName(HInstance,'delphi13')
+  else
   BitmapsDict.Items['delphi'].LoadFromResourceName(HInstance,'delphi');
   MakeBitmapMenuTransparent(BitmapsDict.Items['delphi']);
 
   BitmapsDict.Add('delphig',TBitmap.Create);
+  if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+  BitmapsDict.Items['delphig'].LoadFromResourceName(HInstance,'delphig13')
+  else
   BitmapsDict.Items['delphig'].LoadFromResourceName(HInstance,'delphig');
   MakeBitmapMenuTransparent(BitmapsDict.Items['delphig']);
 finalization
