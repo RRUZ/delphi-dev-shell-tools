@@ -38,8 +38,15 @@ TODO :
   Auto Update
   settings app
 
-  Add open RadStudio Command Prompt Here  %comspec%  /K "C:\Program Files (x86)\Embarcadero\RAD Studio\11.0\bin\rsvars.bat"
-  Add Format code
+  Add open RadStudio Command Prompt Here  %comspec%  /K "C:\Program Files (x86)\Embarcadero\RAD Studio\11.0\bin\rsvars.bat"  DONE
+  Add Format code (formatter)  done
+  Add support for touch.exe  done
+
+  Add support for convert.exe (convert forms)
+  Add support for tdump.exe, tdump64.exe
+  deploy in OSX , IOS, Android
+  view and open vcl and firemonkey styles
+
 
   open with delphi N...   DONE
   compile
@@ -49,8 +56,6 @@ TODO :
 
   //EurekaLog
   //http://www.eurekalog.com/help/eurekalog/index.php?profiles.php
-
-
 
 
   build
