@@ -66,6 +66,7 @@ type
     FIcon: TIcon;
     FIDEType: TSupportedIDEs;
     FBitmap: TBitmap;
+    FBitmap13: TBitmap;
   public
     property Version : TDelphiVersions read FVersion;
     property Path    : string read FPath write FPath;
@@ -73,7 +74,9 @@ type
     property Icon    : TIcon read FIcon write FIcon;
     property IDEType : TSupportedIDEs read FIDEType write FIDEType;
     property Bitmap  : TBitmap read FBitmap write FBitmap;
+    property Bitmap13: TBitmap read FBitmap13 write FBitmap13;
     constructor Create;
+
     Destructor  Destroy; override;
   end;
 
@@ -174,6 +177,7 @@ uses
   ActiveX,
   System.StrUtils,
   ImgList,
+  GraphUtil,
   CommCtrl,
   Typinfo,
   ShellAPI,
@@ -407,6 +411,9 @@ begin
       VersionData.FBitmap.Height := VersionData.FIcon.Height;
       VersionData.FBitmap.Canvas.Draw(0, 0, VersionData.FIcon);
 
+      VersionData.FBitmap13:=TBitmap.Create;
+      ScaleImage( VersionData.FBitmap, VersionData.FBitmap13, 0.81);
+
       ColorLeftCorner := VersionData.FBitmap.Canvas.Pixels[0, 0];
       ReplaceColor(VersionData.FBitmap, ColorLeftCorner, ColorBackMenu);
       AList.Add(VersionData);
@@ -423,6 +430,7 @@ constructor TDelphiVersionData.Create;
 begin
    inherited;
    FBitmap:=nil;
+   FBitmap13:=nil;
    FIcon:=nil;
 end;
 
@@ -433,6 +441,9 @@ begin
 
   if FIcon<>nil then
     FIcon.Free;
+
+  if FBitmap13<>nil then
+    FBitmap13.Free;
 
   inherited;
 end;

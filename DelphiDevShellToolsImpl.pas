@@ -87,6 +87,7 @@ uses
   uMisc,
   ClipBrd,
   Vcl.Graphics,
+  Vcl.GraphUtil,
   System.Classes,
   uDelphiVersions,
   System.IOUtils,
@@ -373,7 +374,10 @@ begin
        sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name;
        InsertMenu(LSubMenu, LMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
        log(Format('%s %d',[sSubMenuCaption, LMenuIndex]));
-       SetMenuItemBitmaps(LSubMenu, LMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
+       if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+        SetMenuItemBitmaps(LSubMenu, LMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap13.Handle, LCurrentDelphiVersionData.Bitmap13.Handle)
+       else
+        SetMenuItemBitmaps(LSubMenu, LMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
        LMethodInfo:=TMethodInfo.Create;
        LMethodInfo.Method:=OpenWithDelphi;
        LMethodInfo.Value1:=LCurrentDelphiVersionData;
@@ -405,6 +409,9 @@ begin
          log(Format('%s %d',[sSubMenuCaption, LMenuIndex]));
        end;
 
+       if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+        SetMenuItemBitmaps(LSubMenu, LMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap13.Handle, LCurrentDelphiVersionData.Bitmap13.Handle)
+       else
        SetMenuItemBitmaps(LSubMenu, LMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
        LMethodInfo:=TMethodInfo.Create;
        LMethodInfo.Method:=OpenRADStudio;
@@ -455,6 +462,9 @@ begin
              sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' (Use default settings)';
              InsertMenu(LSubMenu, LMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
              log(Format('%s %d',[sSubMenuCaption, LMenuIndex]));
+             if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+              SetMenuItemBitmaps(LSubMenu, LMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap13.Handle, LCurrentDelphiVersionData.Bitmap13.Handle)
+             else
              SetMenuItemBitmaps(LSubMenu, LMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
              LMethodInfo:=TMethodInfo.Create;
              LMethodInfo.Method:=MSBuildWithDelphi_Default;
@@ -665,6 +675,7 @@ begin
 
 end;
 
+
 initialization
   log('initialization');
   TDelphiDevShellObjectFactory.Create(ComServer, TDelphiDevShellToolsContextMenu, CLASS_DelphiDevShellToolsContextMenu, ciMultiInstance, tmApartment);
@@ -674,7 +685,6 @@ initialization
   BitmapsDict:=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
 
   BitmapsDict.Add('logo',TBitmap.Create);
-
   if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
   BitmapsDict.Items['logo'].LoadFromResourceName(HInstance,'logo13')
   else
@@ -716,9 +726,9 @@ initialization
   BitmapsDict.Items['ios'].LoadFromResourceName(HInstance,'ios');
   MakeBitmapMenuTransparent(BitmapsDict.Items['ios']);
 
-  BitmapsDict.Add('logo',TBitmap.Create);
+  BitmapsDict.Add('win',TBitmap.Create);
   if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
-  BitmapsDict.Items['logo'].LoadFromResourceName(HInstance,'win13')
+  BitmapsDict.Items['win'].LoadFromResourceName(HInstance,'win13')
   else
   BitmapsDict.Items['win'].LoadFromResourceName(HInstance,'win');
   MakeBitmapMenuTransparent(BitmapsDict.Items['win']);
