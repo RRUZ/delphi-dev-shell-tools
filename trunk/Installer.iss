@@ -2,11 +2,22 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 #define MyAppName 'Delphi Dev. Shell Tools'
 #define MyAppVersion GetFileVersion('Win64\Debug\DelphiDevShellTools.dll')
-[Files]
+[Types]
+Name: Debug; Description: Install Shell Extension with debug info
+Name: Release; Description: Install Shell Extension
 
-Source: Win64\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace regtypelib
-Source: Win32\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace regtypelib
-Source: GUI\GUIDelphiDevShell.exe; DestDir: {app}
+[Components]
+Name: program; Description: GUI for Shell Extension; Types: Debug Release; Flags: fixed
+Name: Debug; Description: Shell Extension with Debug info; Types: Debug; Flags: exclusive
+Name: Release; Description: Shell Extension; Types: Release; Flags: exclusive
+
+
+[Files]
+Source: Win64\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Debug
+Source: Win32\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Debug
+Source: Win64\Release\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Release
+Source: Win32\Release\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Release
+Source: GUI\GUIDelphiDevShell.exe; DestDir: {app}; Components: program
 [Run]
 Filename: regsvr32.exe; Parameters: "/s ""{app}\DelphiDevShellTools.dll"""; StatusMsg: Registering plugin
 [UninstallRun]
