@@ -41,6 +41,7 @@ function  GetSpecialFolder(const CSIDL: integer) : string;
 function  IsUACEnabled: Boolean;
 procedure RunAsAdmin(const FileName, Params: string; hWnd: HWND = 0);
 function  CurrentUserIsAdmin: Boolean;
+function  GetModuleName: string;
 
 
 implementation
@@ -69,6 +70,17 @@ Const
  DOMAIN_ALIAS_RID_POWER_USERS= $00000223;
 
 function CheckTokenMembership(TokenHandle: THandle; SidToCheck: PSID; var IsMember: BOOL): BOOL; stdcall; external advapi32;
+
+
+function GetModuleName: string;
+var
+  lpFilename: array[0..MAX_PATH] of Char;
+begin
+  ZeroMemory(@lpFilename, SizeOf(lpFilename));
+  GetModuleFileName(hInstance, lpFilename, MAX_PATH);
+  Result := lpFilename;
+end;
+
 
 function IsUACEnabled: Boolean;
 var

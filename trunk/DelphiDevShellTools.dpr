@@ -1,6 +1,15 @@
 library DelphiDevShellTools;
 
 uses
+  {$IFDEF EL}
+  EMemLeaks,
+  EResLeaks,
+  EDialogWinAPIMSClassic,
+  EDialogWinAPIEurekaLogDetailed,
+  EDialogWinAPIStepsToReproduce,
+  EDebugExports,
+  ExceptionLog7,
+  {$ENDIF}
   ComServ,
   DelphiDevShellTools_TLB in 'DelphiDevShellTools_TLB.pas',
   DelphiDevShellToolsImpl in 'DelphiDevShellToolsImpl.pas',
@@ -40,6 +49,8 @@ TODO :
 
   //EurekaLog
   //http://www.eurekalog.com/help/eurekalog/index.php?profiles.php
+
+
 
 
   build
