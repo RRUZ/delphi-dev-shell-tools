@@ -310,14 +310,12 @@ var
   LMenuInfo    : TMenuItemInfo;
   Buffer       : array [0..79] of char;}
 begin
-
-  //ContainsItems:=False;
   FMenuItemIndex := indexMenu;
 
-  if (uFlags = CMF_NORMAL) or ((uFlags and CMF_EXPLORE) = CMF_EXPLORE) then
-    LMenuCaption := 'Delphi Dev Shell Tools'
+  if (uFlags and CMF_DEFAULTONLY)<> 0 then
+    Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0))
   else
-    Exit(E_FAIL);
+    LMenuCaption := 'Delphi Dev Shell Tools';
 
   if FMethodsDict=nil then
     FMethodsDict:=TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues]);
@@ -325,7 +323,7 @@ begin
   FileExt:=ExtractFileExt(FFileName);
 
   if not MatchText(FileExt,['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj']) then
-   Exit(E_FAIL);
+   Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0));
 
 
     LSubMenu := CreatePopupMenu;
@@ -601,7 +599,7 @@ begin
       SetMenuItemBitmaps(Menu, indexMenu, MF_BYPOSITION, BitmapsDict.Items['logo'].Handle, BitmapsDict.Items['logo'].Handle);
 
       log('uIDNewItem-idCmdFirst '+IntToStr(uIDNewItem-idCmdFirst));
-      Result := MakeResult(SEVERITY_SUCCESS, 0, uIDNewItem-idCmdFirst);
+      Result := MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, uIDNewItem-idCmdFirst);
 
 end;
 
@@ -618,10 +616,10 @@ begin
     Exit;
 
   formatetcIn.cfFormat := CF_HDROP;
-  formatetcIn.ptd := nil;
   formatetcIn.dwAspect := DVASPECT_CONTENT;
-  formatetcIn.lindex := -1;
   formatetcIn.tymed := TYMED_HGLOBAL;
+  formatetcIn.ptd := nil;
+  formatetcIn.lindex := -1;
 
   if lpdobj.GetData(formatetcIn, medium) <> S_OK then
     Exit;
@@ -642,8 +640,6 @@ begin
 end;
 
 { TDelphiDevShellObjectFactory }
-
-
 function TDelphiDevShellObjectFactory.GetProgID: string;
 begin
   Exit(EmptyStr);
