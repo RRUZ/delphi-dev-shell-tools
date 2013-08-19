@@ -409,6 +409,7 @@ begin
      try
        if (ExeNameTxt<>'') and (not SameText('notepad.exe', ExtractFileName(ExeNameTxt))) then
        begin
+           log(ExtractFileName(ExeNameTxt));
            InsertMenu(hMenu, MenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open In '+FriendlyAppNameTxt));
            if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
             SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['txt13'].Handle, BitmapsDict.Items['txt13'].Handle)
