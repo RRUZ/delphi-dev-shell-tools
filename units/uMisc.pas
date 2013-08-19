@@ -116,14 +116,14 @@ begin
 
   OleCheck( AssocQueryString(ASSOCF_NOTRUNCATE, ASSOCSTR(ASSOCSTR_EXECUTABLE), LPCWSTR(ExtractFileExt(FileName)), 'open', pszOut, @pcchOut));
   if pcchOut>0 then
-   SetString(ExeName, PChar(@pszOut[0]), pcchOut);
+   SetString(ExeName, PChar(@pszOut[0]), pcchOut-1);
 
   pcchOut := Sizeof(pszOut);
   ZeroMemory(@pszOut, SizeOf(pszOut));
 
   OleCheck( AssocQueryString(ASSOCF_NOTRUNCATE, ASSOCSTR(ASSOCSTR_FRIENDLYAPPNAME), LPCWSTR(ExtractFileExt(FileName)), 'open', pszOut, @pcchOut));
   if pcchOut>0 then
-   SetString(FriendlyAppName, PChar(@pszOut[0]), pcchOut);
+   SetString(FriendlyAppName, PChar(@pszOut[0]), pcchOut-1);
 end;
 
 

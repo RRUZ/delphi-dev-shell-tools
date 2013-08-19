@@ -3,7 +3,7 @@
 #define MyAppName 'Delphi Dev. Shell Tools'
 #define MyAppVersion GetFileVersion('Win64\Debug\DelphiDevShellTools.dll')
 [Types]
-Name: Debug; Description: Install Shell Extension with debug info
+Name: Debug; Description: Install Shell Extension with debug info (EurekaLog)
 Name: Release; Description: Install Shell Extension
 
 [Components]
