@@ -31,6 +31,8 @@ uses
 
 procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
 procedure ExtractIconFile(Icon: TIcon; const Filename: string;IconType : Cardinal);
+procedure ExtractBitmapFile(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
+
 function  GetFileVersion(const FileName: string): string;
 function  IsAppRunning(const FileName: string): boolean;
 function  GetLocalAppDataFolder: string;
@@ -42,6 +44,7 @@ function  IsUACEnabled: Boolean;
 procedure RunAsAdmin(const FileName, Params: string; hWnd: HWND = 0);
 function  CurrentUserIsAdmin: Boolean;
 function  GetModuleName: string;
+procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName : string);
 
 
 implementation
@@ -57,6 +60,7 @@ uses
   ShellAPI,
   Classes,
   Dialogs,
+  ShLwApi,
   System.UITypes,
   Registry,
   SysUtils;
@@ -69,7 +73,58 @@ Const
  DOMAIN_ALIAS_RID_GUESTS     = $00000222;
  DOMAIN_ALIAS_RID_POWER_USERS= $00000223;
 
+
+
+type
+  TAssocStr = (
+  ASSOCSTR_COMMAND = 1,
+  ASSOCSTR_EXECUTABLE,
+  ASSOCSTR_FRIENDLYDOCNAME,
+  ASSOCSTR_FRIENDLYAPPNAME,
+  ASSOCSTR_NOOPEN,
+  ASSOCSTR_SHELLNEWVALUE,
+  ASSOCSTR_DDECOMMAND,
+  ASSOCSTR_DDEIFEXEC,
+  ASSOCSTR_DDEAPPLICATION,
+  ASSOCSTR_DDETOPIC );
+
+const
+  AssocStrDisplaystrings : array [ASSOCSTR_COMMAND..ASSOCSTR_DDETOPIC]
+  of string = (
+  'ASSOCSTR_COMMAND',
+  'ASSOCSTR_EXECUTABLE',
+  'ASSOCSTR_FRIENDLYDOCNAME',
+  'ASSOCSTR_FRIENDLYAPPNAME',
+  'ASSOCSTR_NOOPEN',
+  'ASSOCSTR_SHELLNEWVALUE',
+  'ASSOCSTR_DDECOMMAND',
+  'ASSOCSTR_DDEIFEXEC',
+  'ASSOCSTR_DDEAPPLICATION',
+  'ASSOCSTR_DDETOPIC' );
+
 function CheckTokenMembership(TokenHandle: THandle; SidToCheck: PSID; var IsMember: BOOL): BOOL; stdcall; external advapi32;
+
+procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName : string);
+var
+ pszOut: array [0..1024] of Char;
+ pcchOut: DWord;
+begin
+  ExeName:='';
+  FriendlyAppName:='';
+  pcchOut := Sizeof(pszOut);
+  ZeroMemory(@pszOut, SizeOf(pszOut));
+
+  OleCheck( AssocQueryString(ASSOCF_NOTRUNCATE, ASSOCSTR(ASSOCSTR_EXECUTABLE), LPCWSTR(ExtractFileExt(FileName)), 'open', pszOut, @pcchOut));
+  if pcchOut>0 then
+   SetString(ExeName, PChar(@pszOut[0]), pcchOut);
+
+  pcchOut := Sizeof(pszOut);
+  ZeroMemory(@pszOut, SizeOf(pszOut));
+
+  OleCheck( AssocQueryString(ASSOCF_NOTRUNCATE, ASSOCSTR(ASSOCSTR_FRIENDLYAPPNAME), LPCWSTR(ExtractFileExt(FileName)), 'open', pszOut, @pcchOut));
+  if pcchOut>0 then
+   SetString(FriendlyAppName, PChar(@pszOut[0]), pcchOut);
+end;
 
 
 function GetModuleName: string;
@@ -260,6 +315,23 @@ begin
     if FileInfo.hIcon <> 0 then
       Icon.Handle:=FileInfo.hIcon;
   end;
+end;
+
+procedure ExtractBitmapFile(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
+var
+ Icon: TIcon;
+begin
+  Icon:=TIcon.Create;
+  try
+    ExtractIconFile(Icon, Filename, SHGFI_SMALLICON);
+    Bmp.PixelFormat:=pf24bit;
+    Bmp.Width := Icon.Width;
+    Bmp.Height := Icon.Height;
+    Bmp.Canvas.Draw(0, 0, Icon);
+  finally
+    Icon.Free;
+  end;
+
 end;
 
 procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
