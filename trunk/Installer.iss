@@ -8,7 +8,7 @@ Name: Release; Description: Install Shell Extension
 
 [Components]
 Name: program; Description: GUI for Shell Extension; Types: Debug Release; Flags: fixed
-Name: Debug; Description: Shell Extension with Debug info; Types: Debug; Flags: exclusive
+Name: Debug; Description: Shell Extension with Debug info (EurekaLog); Types: Debug; Flags: exclusive
 Name: Release; Description: Shell Extension; Types: Release; Flags: exclusive
 
 

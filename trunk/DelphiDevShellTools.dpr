@@ -35,7 +35,7 @@ TODO :
   detect delphi version.     DONE
   enumerate builds and plattform from msbuild file dproj   DONE
 
-  Auto Update
+  Auto Update  done
   settings app
 
   Add open RadStudio Command Prompt Here  %comspec%  /K "C:\Program Files (x86)\Embarcadero\RAD Studio\11.0\bin\rsvars.bat"  DONE
@@ -46,6 +46,8 @@ TODO :
   Add support for tdump.exe, tdump64.exe
   deploy in OSX , IOS, Android
   view and open vcl and firemonkey styles
+
+  add tasks for packages (.dpk)  done
 
 
   open with delphi N...   DONE
