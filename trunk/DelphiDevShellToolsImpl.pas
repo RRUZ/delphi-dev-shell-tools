@@ -44,6 +44,7 @@ type
    Value1 : TValue;
    Value2 : TValue;
    Value3 : TValue;
+   Value4 : TValue;
    Method : procedure(Info : TMethodInfo) of object;
   end;
 
@@ -68,6 +69,7 @@ type
     procedure OpenRADCmd(Info : TMethodInfo);
     procedure FormatSourceRAD(Info : TMethodInfo);
     procedure TouchRAD(Info : TMethodInfo);
+    procedure Compile_BRCC32(Info : TMethodInfo);
 
     procedure AddCommonTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenRADCmdTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
@@ -75,6 +77,10 @@ type
     procedure AddTouchRADTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddMSBuildRAD_SpecificTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddMSBuildRAD_AllTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+
+    procedure AddCompileRC(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+
+    procedure AddMenuSeparator(hMenu : HMENU; var MenuIndex : Integer);
   protected
     function IShellExtInit.Initialize = ShellExtInitialize;
     function ShellExtInitialize(pidlFolder: PItemIDList; lpdobj: IDataObject; hKeyProgID: HKEY): HResult; stdcall;
@@ -148,10 +154,16 @@ end;
 procedure TDelphiDevShellToolsContextMenu.OpenRADStudio(Info : TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
+  LFileName       : string;
 begin
   LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
-  log('OpenRADStudio '+LDelphiVersion.Path+' '+Format(' "%s"',[FFileName]));
-  ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('"%s"',[FFileName])) , nil , SW_SHOWNORMAL);
+  if Info.Value2.AsString<>'' then
+   LFileName:=Info.Value2.AsString
+  else
+   LFileName:=FFileName;
+
+  log('OpenRADStudio '+LDelphiVersion.Path+' '+Format(' "%s"',[LFileName]));
+  ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('"%s"',[LFileName])) , nil , SW_SHOWNORMAL);
 end;
 
 procedure TDelphiDevShellToolsContextMenu.OpenWithNotepad(Info : TMethodInfo);
@@ -252,17 +264,49 @@ end;
 procedure TDelphiDevShellToolsContextMenu.MSBuildWithDelphi_Default(Info : TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
-  RsvarsPath, CompilerPath, Params, BatchFileName : string;
+  LFileName, RsvarsPath, CompilerPath, Params, BatchFileName : string;
   BatchFile : TStrings;
 begin
   log('MSBuildWithDelphi_Default');
   LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
+
+  if Info.Value2.AsString<>'' then
+   LFileName:=Info.Value2.AsString
+  else
+   LFileName:=FFileName;
+
   RsvarsPath  :=ExtractFilePath(LDelphiVersion.Path)+'rsvars.bat';
   CompilerPath:=ExtractFilePath(LDelphiVersion.Path)+'DCC32.exe';
   BatchFile:=TStringList.Create;
   try
     BatchFile.Add(Format('call "%s"',[RsvarsPath]));
-    BatchFile.Add(Format('msbuild.exe "%s"', [FFileName]));
+    BatchFile.Add(Format('msbuild.exe "%s"', [LFileName]));
+    BatchFile.Add('Pause');
+    BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
+    BatchFile.SaveToFile(BatchFileName);
+    Params:='/C "'+BatchFileName+'"';
+    ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+  finally
+    BatchFile.Free;
+  end;
+end;
+
+procedure TDelphiDevShellToolsContextMenu.Compile_BRCC32(Info : TMethodInfo);
+var
+  LDelphiVersion  : TDelphiVersionData;
+  RsvarsPath, CompilerPath, Params, BatchFileName : string;
+  BatchFile : TStrings;
+begin
+  log('Compile_BRCC32');
+  LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
+
+  RsvarsPath  :=ExtractFilePath(LDelphiVersion.Path)+'rsvars.bat';
+  CompilerPath:=ExtractFilePath(LDelphiVersion.Path)+'BRCC32.exe';
+  BatchFile:=TStringList.Create;
+  try
+    if LDelphiVersion.Version>=Delphi2007 then
+    BatchFile.Add(Format('call "%s"',[RsvarsPath]));
+    BatchFile.Add(Format('"%s" "%s"', [CompilerPath, FFileName]));
     BatchFile.Add('Pause');
     BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
     BatchFile.SaveToFile(BatchFileName);
@@ -274,23 +318,25 @@ begin
 end;
 
 
+
 procedure TDelphiDevShellToolsContextMenu.MSBuildWithDelphi(Info : TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
-  RsvarsPath, CompilerPath, Params, BatchFileName, sPlatform, sConfig : string;
+  LFileName, RsvarsPath, CompilerPath, Params, BatchFileName, sPlatform, sConfig : string;
   BatchFile : TStrings;
 begin
   log('MSBuildWithDelphi');
   LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
   sPlatform:=Info.Value2.AsString;
   sConfig:=Info.Value3.AsString;
+  LFileName:=Info.Value4.AsString;
 
   RsvarsPath  :=ExtractFilePath(LDelphiVersion.Path)+'rsvars.bat';
   CompilerPath:=ExtractFilePath(LDelphiVersion.Path)+'DCC32.exe';
   BatchFile:=TStringList.Create;
   try
     BatchFile.Add(Format('call "%s"',[RsvarsPath]));
-    BatchFile.Add(Format('msbuild.exe "%s" /target:build /p:Platform=%s /p:config=%s', [FFileName, sPlatform, sConfig]));
+    BatchFile.Add(Format('msbuild.exe "%s" /target:build /p:Platform=%s /p:config=%s', [LFileName, sPlatform, sConfig]));
     BatchFile.Add('Pause');
     BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
     BatchFile.SaveToFile(BatchFileName);
@@ -435,11 +481,11 @@ begin
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(MenuIndex);
-
+             {
      InsertMenu(hMenu, MenuIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil);
      inc(MenuIndex);
      Inc(uIDNewItem);
-
+             }
 end;
 
 procedure TDelphiDevShellToolsContextMenu.AddOpenRADCmdTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
@@ -627,7 +673,7 @@ var
   Found : Boolean;
   LCurrentDelphiVersionData  : TDelphiVersionData;
   LCurrentDelphiVersion      : TDelphiVersions;
-  sPlatform, sSubMenuCaption : string;
+  LFileName, sPlatform, sSubMenuCaption : string;
   LMethodInfo : TMethodInfo;
   LMSBuildDProj : TMSBuildDProj;
 begin
@@ -637,7 +683,16 @@ begin
      begin
        if Length(DProjectVersion)>0 then
        begin
-         LMSBuildDProj:=TMSBuildDProj.Create(FFileName);
+        LFileName:=FFileName;
+
+        if SameText(FFileExt, '.dpr') then
+        begin
+         LFileName:=ChangeFileExt(FFileName,'.dproj');
+         if not TFile.Exists(LFileName) then
+           LFileName:=FFileName;
+        end;
+
+         LMSBuildDProj:=TMSBuildDProj.Create(LFileName);
          try
 
              for LCurrentDelphiVersion in DProjectVersion do
@@ -674,6 +729,8 @@ begin
                  LMethodInfo.Value1:=LCurrentDelphiVersionData;
                  LMethodInfo.Value2:=sPlatform;
                  LMethodInfo.Value3:='release';
+                 LMethodInfo.Value4:=LFileName;
+
                  FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
                  Inc(uIDNewItem);
                  Inc(MenuIndex);
@@ -696,6 +753,7 @@ begin
                  LMethodInfo.Value1:=LCurrentDelphiVersionData;
                  LMethodInfo.Value2:=sPlatform;
                  LMethodInfo.Value3:='debug';
+                 LMethodInfo.Value4:=LFileName;
                  FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
                  Inc(uIDNewItem);
                  Inc(MenuIndex);
@@ -719,7 +777,7 @@ var
   LCurrentDelphiVersionData  : TDelphiVersionData;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  sSubMenuCaption : string;
+  sSubMenuCaption, sValue : string;
   LMethodInfo : TMethodInfo;
 begin
   if not MatchText(FFileExt, SupportedExts) then exit;
@@ -764,20 +822,110 @@ begin
         LMethodInfo:=TMethodInfo.Create;
         LMethodInfo.Method:=MSBuildWithDelphi_Default;
         LMethodInfo.Value1:=LCurrentDelphiVersionData;
+        LMethodInfo.Value2:=EmptyStr;
+
+        if SameText(FFileExt, '.dpr') then
+        begin
+         sValue:=ChangeFileExt(FFileName,'.dproj');
+         if TFile.Exists(sValue) then
+           LMethodInfo.Value2:=sValue;
+        end;
+
         FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
         Inc(uIDNewItem);
         Inc(LSubMenuIndex);
        end;
     end;
+end;
 
+procedure TDelphiDevShellToolsContextMenu.AddCompileRC(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+var
+  Found : Boolean;
+  LSubMenuIndex : Integer;
+  LCurrentDelphiVersionData  : TDelphiVersionData;
+  LSubMenu: Winapi.Windows.HMENU;
+  LMenuItem: TMenuItemInfo;
+  sSubMenuCaption : string;
+  LMethodInfo : TMethodInfo;
+begin
+  if not MatchText(FFileExt, SupportedExts) then exit;
 
+    Found:=False;
+    for LCurrentDelphiVersionData in InstalledDelphiVersions do
+    if LCurrentDelphiVersionData.Version>=Delphi7 then
+    begin
+      Found:=True;
+      Break;
+    end;
+
+    if Found then
+    begin
+      LSubMenuIndex :=0;
+      LSubMenu   := CreatePopupMenu;
+      sSubMenuCaption:='Compile Resource file';
+
+      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+      LMenuItem.fType := MFT_STRING;
+      LMenuItem.wID := FMenuItemIndex;
+      LMenuItem.hSubMenu := LSubMenu;
+      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+      LMenuItem.cch := Length(sSubMenuCaption);
+      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['brcc32'].Handle, BitmapsDict.Items['brcc32'].Handle);
+
+      Inc(uIDNewItem);
+      Inc(MenuIndex);
+
+      for LCurrentDelphiVersionData in InstalledDelphiVersions do
+       if LCurrentDelphiVersionData.Version>=Delphi7 then
+       begin
+        InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('BRCC32 with '+LCurrentDelphiVersionData.Name));
+        if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
+         SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap13.Handle, LCurrentDelphiVersionData.Bitmap13.Handle)
+        else
+         SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
+
+        LMethodInfo:=TMethodInfo.Create;
+        LMethodInfo.Method:=Compile_BRCC32;
+        LMethodInfo.Value1:=LCurrentDelphiVersionData;
+        FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+        Inc(uIDNewItem);
+        Inc(LSubMenuIndex);
+       end;
+    end;
+end;
+
+procedure TDelphiDevShellToolsContextMenu.AddMenuSeparator(hMenu : HMENU; var MenuIndex : Integer);
+var
+  LMenuInfo    : TMenuItemInfo;
+  Buffer       : array [0..79] of char;
+begin
+    LMenuInfo.cbSize := sizeof(LMenuInfo);
+    LMenuInfo.fMask  := MIIM_TYPE;
+    LMenuInfo.dwTypeData := Buffer;
+    LMenuInfo.cch := SizeOf(Buffer);
+    if GetMenuItemInfo(hMenu, MenuIndex-1, True, LMenuInfo) then
+    begin
+      log('GetMenuItemInfo ok '+IntToStr(LMenuInfo.fType));
+      if (LMenuInfo.fType and MFT_SEPARATOR) = MFT_SEPARATOR then
+      else
+      begin
+        log('adding separator');
+        InsertMenu(hMenu, MenuIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil);
+        inc(MenuIndex);
+      end;
+    end
+    else
+      log(SysErrorMessage(GetLastError));
 end;
 
 function TDelphiDevShellToolsContextMenu.QueryContextMenu(Menu: HMENU;
   indexMenu, idCmdFirst, idCmdLast, uFlags: UINT): HResult;
 var
   LMenuItem: TMenuItemInfo;
-  sSubMenuCaption, LMenuCaption : String;
+  sValue, sSubMenuCaption, LMenuCaption : String;
   hSubMenu : HMENU;
   uIDNewItem: UINT;
   LCurrentDelphiVersionData  : TDelphiVersionData;
@@ -785,10 +933,6 @@ var
   hSubMenuIndex  : Integer;
   {ContainsItems,} Found : Boolean;
   LMethodInfo : TMethodInfo;
-                {
-  uId_menuitem : Cardinal;
-  LMenuInfo    : TMenuItemInfo;
-  Buffer       : array [0..79] of char;}
 begin
   FMenuItemIndex := indexMenu;
 
@@ -801,11 +945,20 @@ begin
     FMethodsDict:=TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues]);
 
 
-  if not MatchText(FFileExt,['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj']) then
+  if not MatchText(FFileExt,['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.frx']) then
    Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0));
 
-   if  MatchText(FFileExt ,['.dproj', '.bdsproj']) then
+   if  MatchText(FFileExt ,['.dproj', '.bdsproj','.dpr']) then
+   begin
+     if SameText(FFileExt, '.dpr') then
+     begin
+      sValue:=ChangeFileExt(FFileName,'.dproj');
+      if TFile.Exists(sValue) then
+         DProjectVersion:=GetDelphiVersions(sValue);
+     end
+     else
      DProjectVersion:=GetDelphiVersions(FFileName)
+   end
    else
      SetLength(DProjectVersion, 0);
 
@@ -813,13 +966,18 @@ begin
     hSubMenu   := CreatePopupMenu;
     uIDNewItem := idCmdFirst;
     hSubMenuIndex := 0;
-    AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj']);
+    AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.frx']);
+    AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddOpenRADCmdTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj']);
+    AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddFormatCodeRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp']);
+    AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddTouchRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj']);
+    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddCompileRC(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.rc']);
+    AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
-
-     if  MatchText(FFileExt, ['.pas','.dpr','.inc','.pp','.dpk'])  then
+     if  MatchText(FFileExt, ['.pas','.inc','.pp','.dpk'])  then
      for LCurrentDelphiVersionData in InstalledDelphiVersions do
      begin
        sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name;
@@ -838,7 +996,7 @@ begin
        //ContainsItems:=True;
      end
      else
-     if  MatchText(FFileExt, ['.dproj', '.bdsproj']) then
+     if  MatchText(FFileExt, ['.dproj', '.bdsproj','.dpr']) then
      for LCurrentDelphiVersionData in InstalledDelphiVersions do
      begin
 
@@ -867,17 +1025,24 @@ begin
        LMethodInfo:=TMethodInfo.Create;
        LMethodInfo.Method:=OpenRADStudio;
        LMethodInfo.Value1:=LCurrentDelphiVersionData;
+       LMethodInfo.Value2:=EmptyStr;
+
+       if SameText(FFileExt, '.dpr') then
+       begin
+        sValue:=ChangeFileExt(FFileName,'.dproj');
+        if TFile.Exists(sValue) then
+          LMethodInfo.Value2:=sValue;
+       end;
+
        FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
        Inc(uIDNewItem);
        Inc(hSubMenuIndex);
        //ContainsItems:=True;
      end;
 
+     AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
-     InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil);
-     inc(hSubMenuIndex);
-
-     if  MatchText(ExtractFileExt(FFileName),['.dproj']) then
+     if  MatchText(ExtractFileExt(FFileName),['.dproj','.dpr']) then
      begin
 
        if Length(DProjectVersion)>0 then
@@ -922,13 +1087,21 @@ begin
              LMethodInfo:=TMethodInfo.Create;
              LMethodInfo.Method:=MSBuildWithDelphi_Default;
              LMethodInfo.Value1:=LCurrentDelphiVersionData;
+             if SameText(FFileExt, '.dpr') then
+             begin
+              sValue:=ChangeFileExt(FFileName,'.dproj');
+              if TFile.Exists(sValue) then
+                LMethodInfo.Value2:=sValue;
+             end;
+
              FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
              Inc(uIDNewItem);
              Inc(hSubMenuIndex);
              //ContainsItems:=True;
-
+                 {
              InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil);
              inc(hSubMenuIndex);
+             }
              Break;
            end;
 
@@ -936,31 +1109,11 @@ begin
        end;
      end;
 
-     AddMSBuildRAD_SpecificTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj']);
-     AddMSBuildRAD_AllTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj']);
-
-
-    //uId_menuitem := GetMenuItemID(LSubMenu, LMenuIndex);
-                            {
-    LMenuInfo.cbSize := sizeof(LMenuInfo);
-    LMenuInfo.fMask  := MIIM_TYPE;
-    LMenuInfo.dwTypeData := Buffer;
-    LMenuInfo.cch := SizeOf(Buffer);
-    if GetMenuItemInfo(Menu, LMenuIndex, True, LMenuInfo) then
-    begin
-      log('GetMenuItemInfo ok '+IntToStr(LMenuInfo.fType));
-      if (LMenuInfo.fType and MFT_SEPARATOR) = MFT_SEPARATOR then
-      else
-      begin
-        log('adding separator');
-        InsertMenu(LSubMenu, LMenuIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil);
-        inc(LMenuIndex);
-      end;
-    end
-    else
-      log(SysErrorMessage(GetLastError));
-                                  }
-
+     AddMenuSeparator(hSubMenu, hSubMenuIndex);
+     AddMSBuildRAD_SpecificTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
+     AddMenuSeparator(hSubMenu, hSubMenuIndex);
+     AddMSBuildRAD_AllTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj','.dpr']);
+     AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
      InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('About'));
      SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['logo'].Handle, BitmapsDict.Items['logo'].Handle);
@@ -1086,6 +1239,7 @@ initialization
   RegisterBitmap('format', 'format13');
   RegisterBitmap('touch', 'touch13');
   RegisterBitmap('msbuild', 'msbuild13');
+  RegisterBitmap('brcc32', 'brcc3213');
 
      try
 

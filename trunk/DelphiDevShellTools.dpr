@@ -37,7 +37,7 @@ TODO :
 
   Auto Update  done
   settings app
-
+  Map dpr to dproj >=Delphi2007    done
   Add open RadStudio Command Prompt Here  %comspec%  /K "C:\Program Files (x86)\Embarcadero\RAD Studio\11.0\bin\rsvars.bat"  DONE
   Add Format code (formatter)  done
   Add support for touch.exe  done
@@ -46,6 +46,7 @@ TODO :
   Add support for tdump.exe, tdump64.exe
   deploy in OSX , IOS, Android
   view and open vcl and firemonkey styles
+  Add options to register external tools
 
   add tasks for packages (.dpk)  done
 
