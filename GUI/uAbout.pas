@@ -39,6 +39,7 @@ type
     Button3: TButton;
     Image2: TImage;
     btnCheckUpdates: TButton;
+    Image1: TImage;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
