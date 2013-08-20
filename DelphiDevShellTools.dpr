@@ -10,7 +10,7 @@ uses
   EDebugExports,
   ExceptionLog7,
   {$ENDIF}
-  ComServ,
+  System.Win.ComServ,
   DelphiDevShellTools_TLB in 'DelphiDevShellTools_TLB.pas',
   DelphiDevShellToolsImpl in 'DelphiDevShellToolsImpl.pas',
   uDelphiVersions in 'units\uDelphiVersions.pas',
