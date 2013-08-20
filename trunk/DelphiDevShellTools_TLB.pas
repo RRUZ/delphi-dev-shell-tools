@@ -53,7 +53,7 @@ unit DelphiDevShellTools_TLB;
 
 interface
 
-uses Winapi.Windows, System.Classes, System.Variants, System.Win.StdVCL, Vcl.Graphics, Vcl.OleServer, Winapi.ActiveX;
+uses Winapi.Windows, System.Classes, {System.Variants, {System.Win.StdVCL,Vcl.Graphics, Vcl.OleServer,}  Winapi.ActiveX;
 
 
 // *********************************************************************//

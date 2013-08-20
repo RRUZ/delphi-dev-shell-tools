@@ -26,4 +26,8 @@ msbuild BITMAP "msbuild.bmp"
 msbuild13 BITMAP "msbuild13.bmp"
 brcc32 BITMAP "brcc32.bmp"
 brcc3213 BITMAP "brcc3213.bmp"
+firemonkey BITMAP "firemonkey.bmp"
+firemonkey13 BITMAP "firemonkey13.bmp"
+vcl BITMAP "vcl.bmp"
+vcl13 BITMAP "vcl13.bmp"
 
