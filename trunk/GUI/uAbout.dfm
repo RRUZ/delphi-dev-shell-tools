@@ -364,7 +364,6 @@ object FrmAbout: TFrmAbout
     Color = clWhite
     ParentBackground = False
     TabOrder = 0
-    ExplicitTop = 265
     object Button1: TButton
       Left = 360
       Top = 16

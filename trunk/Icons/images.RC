@@ -30,4 +30,8 @@ firemonkey BITMAP "firemonkey.bmp"
 firemonkey13 BITMAP "firemonkey13.bmp"
 vcl BITMAP "vcl.bmp"
 vcl13 BITMAP "vcl13.bmp"
+lazarusmenu BITMAP "lazarusmenu.bmp"
+lazarusmenu13 BITMAP "lazarusmenu13.bmp"
+lazbuild BITMAP "lazbuild.bmp"
+lazbuild13 BITMAP "lazbuild13.bmp"
 
