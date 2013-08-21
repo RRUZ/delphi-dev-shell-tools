@@ -72,6 +72,8 @@ type
     procedure Compile_BRCC32(Info : TMethodInfo);
     procedure OpenVclStyle(Info : TMethodInfo);
     procedure OpenFMXStyle(Info : TMethodInfo);
+    procedure OpenWithLazarus(Info : TMethodInfo);
+    procedure BuildWithLazBuild(Info : TMethodInfo);
 
     procedure AddCommonTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenRADCmdTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
@@ -83,6 +85,8 @@ type
     procedure AddCompileRC(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenVclStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenFmxStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+
+    procedure AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddMenuSeparator(hMenu : HMENU; var MenuIndex : Integer);
   protected
     function IShellExtInit.Initialize = ShellExtInitialize;
@@ -108,6 +112,7 @@ implementation
 
 uses
   uMisc,
+  uLazarusVersions,
   ClipBrd,
   Vcl.Graphics,
   Vcl.GraphUtil,
@@ -124,6 +129,7 @@ var
   InstalledDelphiVersions : TObjectList<TDelphiVersionData>;
   BitmapsDict    : TObjectDictionary<string, TBitmap>;
   ExeNameTxt, FriendlyAppNameTxt : string;
+  LazarusInstalled : Boolean;
 
 procedure log(const msg: string);
 begin
@@ -192,8 +198,6 @@ begin
   else
    LVclStyleEditor:=IncludeTrailingPathDelimiter(ExtractFilePath(LDelphiVersion.Path))+'VCLStyleViewer.exe';
 
-
-
   log('OpenVclStyle '+LVclStyleEditor+' '+Format(' "%s"',[FFileName]));
   ShellExecute(Info.hwnd, 'open', PChar(LVclStyleEditor), PChar(Format('"%s"',[FFileName])) , nil , SW_SHOWNORMAL);
  except
@@ -219,6 +223,46 @@ begin
  end;
 
 end;
+
+procedure TDelphiDevShellToolsContextMenu.OpenWithLazarus(Info : TMethodInfo);
+var
+  LazarusIDE      : string;
+begin
+ try
+  LazarusIDE:=Info.Value1.AsString;
+  log('OpenWithLazarus '+LazarusIDE+' '+Format(' "%s"',[FFileName]));
+  ShellExecute(Info.hwnd, 'open', PChar(LazarusIDE), PChar(Format('"%s"',[FFileName])) , nil , SW_SHOWNORMAL);
+ except
+   on  E : Exception do
+   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+ end;
+
+end;
+
+procedure TDelphiDevShellToolsContextMenu.BuildWithLazBuild(Info : TMethodInfo);
+var
+  LazBuild, BatchFileName, Params : string;
+  BatchFile : TStrings;
+begin
+  try
+    LazBuild:=IncludeTrailingPathDelimiter(Info.Value1.AsString)+'lazbuild.exe';
+    log('BuildWithLazBuild '+LazBuild+' '+Format(' "%s"',[FFileName]));
+    BatchFile:=TStringList.Create;
+    try
+      BatchFile.Add(Format('"%s" "%s"',[LazBuild, FFileName]));
+      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
+      BatchFile.SaveToFile(BatchFileName);
+      Params:='/K "'+BatchFileName+'"';
+      ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+    finally
+      BatchFile.Free;
+    end;
+  except
+   on  E : Exception do
+   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
+
 
 procedure TDelphiDevShellToolsContextMenu.OpenWithNotepad(Info : TMethodInfo);
 begin
@@ -1172,6 +1216,62 @@ begin
   end;
 end;
 
+procedure TDelphiDevShellToolsContextMenu.AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+var
+  LSubMenuIndex : Integer;
+  LSubMenu: Winapi.Windows.HMENU;
+  LMenuItem: TMenuItemInfo;
+  sSubMenuCaption : string;
+  LMethodInfo : TMethodInfo;
+begin
+  try
+    if not MatchText(FFileExt, SupportedExts) then exit;
+
+      LSubMenuIndex :=0;
+      LSubMenu   := CreatePopupMenu;
+      sSubMenuCaption:='Lazarus';
+
+      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+      LMenuItem.fType := MFT_STRING;
+      LMenuItem.wID := FMenuItemIndex;
+      LMenuItem.hSubMenu := LSubMenu;
+      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+      LMenuItem.cch := Length(sSubMenuCaption);
+      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazarusmenu'].Handle, BitmapsDict.Items['lazarusmenu'].Handle);
+      Inc(uIDNewItem);
+      Inc(MenuIndex);
+
+      InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open with Lazarus IDE'));
+      SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazarus'].Handle, BitmapsDict.Items['lazarus'].Handle);
+      LMethodInfo:=TMethodInfo.Create;
+      LMethodInfo.Method:=OpenWithLazarus;
+      LMethodInfo.Value1:=GetLazarusIDEFileName;
+      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+      Inc(uIDNewItem);
+      Inc(LSubMenuIndex);
+
+      if MatchText(FFileExt, ['.lpi', '.lpk']) then
+      begin
+        InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Build with lazbuild'));
+        SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazbuild'].Handle, BitmapsDict.Items['lazbuild'].Handle);
+        LMethodInfo:=TMethodInfo.Create;
+        LMethodInfo.Method:=BuildWithLazBuild;
+        LMethodInfo.Value1:=GetLazarusIDEFolder;
+        FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+        Inc(uIDNewItem);
+        Inc(LSubMenuIndex);
+      end;
+
+
+
+  except
+    on  E : Exception do
+    log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
 
 procedure TDelphiDevShellToolsContextMenu.AddMenuSeparator(hMenu : HMENU; var MenuIndex : Integer);
 var
@@ -1221,7 +1321,7 @@ begin
     FMethodsDict:=TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues]);
 
 
-  if not MatchText(FFileExt,['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style']) then
+  if not MatchText(FFileExt,['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style','.lpi','.lpr','.lpk']) then
    Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0));
 
    if  MatchText(FFileExt ,['.dproj', '.bdsproj','.dpr']) then
@@ -1242,7 +1342,7 @@ begin
     hSubMenu   := CreatePopupMenu;
     uIDNewItem := idCmdFirst;
     hSubMenuIndex := 0;
-    AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style']);
+    AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.lpi','.lpr','.lpk']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddOpenRADCmdTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
@@ -1256,6 +1356,12 @@ begin
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddOpenFmxStyleTask(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.style']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
+
+    if LazarusInstalled then
+    begin
+      AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.lpi','.pp','.inc','.pas','.lpk']);
+      AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    end;
 
      if  MatchText(FFileExt, ['.pas','.inc','.pp','.dpk'])  then
      for LCurrentDelphiVersionData in InstalledDelphiVersions do
@@ -1520,10 +1626,11 @@ initialization
   RegisterBitmap('msbuild', 'msbuild13');
   RegisterBitmap('brcc32', 'brcc3213');
   RegisterBitmap('firemonkey', 'firemonkey13');
-  RegisterBitmap('vcl', 'vcl');
+  RegisterBitmap('vcl', 'vcl13');
+  RegisterBitmap('lazarusmenu', 'lazarusmenu13');
+  RegisterBitmap('lazbuild', 'lazbuild13');
 
    try
-
      BitmapsDict.Add('txt',TBitmap.Create);
      BitmapsDict.Add('txt13',TBitmap.Create);
      GetAssocAppByExt('foo.txt', ExeNameTxt, FriendlyAppNameTxt);
@@ -1537,6 +1644,23 @@ initialization
      on  E : Exception do
      log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
    end;
+
+   LazarusInstalled:=IsLazarusInstalled and TFile.Exists(GetLazarusIDEFileName);
+
+   if LazarusInstalled then
+   begin
+     try
+       BitmapsDict.Add('lazarus',TBitmap.Create);
+       BitmapsDict.Add('lazarus13',TBitmap.Create);
+       ExtractBitmapFile(BitmapsDict.Items['lazarus'], GetLazarusIDEFileName, SHGFI_SMALLICON);
+       MakeBitmapMenuTransparent(BitmapsDict.Items['lazarus']);
+       ScaleImage( BitmapsDict.Items['lazarus'], BitmapsDict.Items['lazarus13'], 0.81);
+     except
+       on  E : Exception do
+       log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+     end;
+   end;
+
 
 finalization
   BitmapsDict.Free;

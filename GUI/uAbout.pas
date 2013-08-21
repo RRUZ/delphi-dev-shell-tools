@@ -49,8 +49,10 @@ type
     procedure Image3Click(Sender: TObject);
   private
     { Private declarations }
-  public
-    { Public declarations }
+
+    protected
+  procedure CreateParams(var Params: TCreateParams); override;
+
   end;
 
 var
@@ -91,6 +93,15 @@ end;
 procedure TFrmAbout.Button3Click(Sender: TObject);
 begin
    ShellExecute(Handle, 'open', PChar('http://theroadtodelphi.wordpress.com/contributions/'), nil, nil, SW_SHOW);
+end;
+
+procedure TFrmAbout.CreateParams(var Params: TCreateParams);
+const
+  CS_DROPSHADOW = $00020000;
+begin
+  inherited CreateParams(Params);
+  with Params do
+    WindowClass.Style := WindowClass.Style or CS_DROPSHADOW;
 end;
 
 procedure TFrmAbout.FormClose(Sender: TObject; var Action: TCloseAction);

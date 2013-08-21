@@ -9,14 +9,15 @@ uses
   EDialogWinAPIStepsToReproduce,
   EDebugExports,
   ExceptionLog7,
-  {$ENDIF}
+  {$ENDIF }
   System.Win.ComServ,
   DelphiDevShellTools_TLB in 'DelphiDevShellTools_TLB.pas',
   DelphiDevShellToolsImpl in 'DelphiDevShellToolsImpl.pas',
   uDelphiVersions in 'units\uDelphiVersions.pas',
   uMisc in 'units\uMisc.pas',
   uRegistry in 'units\uRegistry.pas',
-  uSupportedIDEs in 'units\uSupportedIDEs.pas';
+  uSupportedIDEs in 'units\uSupportedIDEs.pas',
+  uLazarusVersions in 'units\uLazarusVersions.pas';
 
 exports
   DllGetClassObject,

@@ -162,6 +162,7 @@
         <DCCReference Include="units\uMisc.pas"/>
         <DCCReference Include="units\uRegistry.pas"/>
         <DCCReference Include="units\uSupportedIDEs.pas"/>
+        <DCCReference Include="units\uLazarusVersions.pas"/>
         <RidlCompile Include="DelphiDevShellTools.ridl"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
