@@ -1139,13 +1139,15 @@ begin
   try
     if not MatchText(FFileExt, SupportedExts) then exit;
 
+    log('AddMSBuildRAD_AllTasks');
     Found:=False;
     for LCurrentDelphiVersionData in InstalledDelphiVersions do
-    if (LCurrentDelphiVersionData.Version>=Delphi2007) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion) then
+    if (LCurrentDelphiVersionData.Version>=Delphi2007) and (  ((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or SameText('.groupproj', FFileExt)) then
     begin
       Found:=True;
       Break;
     end;
+    log('AddMSBuildRAD_AllTasks found '+BoolToStr(Found, True));
 
     if Found then
     begin
@@ -1168,7 +1170,7 @@ begin
       Inc(MenuIndex);
 
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
-       if (LCurrentDelphiVersionData.Version>=Delphi2007) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion) then
+       if (LCurrentDelphiVersionData.Version>=Delphi2007) and (((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or SameText('.groupproj', FFileExt)) then
        begin
         InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('MSBuild with '+LCurrentDelphiVersionData.Name));
         SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
@@ -1480,7 +1482,7 @@ begin
        Inc(LSubMenuIndex);
      end
      else
-     if  MatchText(FFileExt, ['.dproj', '.bdsproj','.dpr']) then
+     //if  MatchText(FFileExt, ['.dproj', '.bdsproj','.dpr']) then
      for LCurrentDelphiVersionData in InstalledDelphiVersions do
      begin
 
