@@ -59,8 +59,8 @@ begin
  try
     CoInitialize(nil);
     try
-      sdv := GetDelphiVersions('C:\Users\Public\Documents\RAD Studio\11.0\Samples\FireMonkey\CPUMonitor\CPUMonitor.dproj');
-      Writeln(SetToString(TypeInfo(SetDelphiVersions), sdv));
+      //sdv := GetDelphiVersions('C:\Users\Public\Documents\RAD Studio\11.0\Samples\FireMonkey\CPUMonitor\CPUMonitor.dproj');
+      //Writeln(SetToString(TypeInfo(SetDelphiVersions), sdv));
       {
       sdv := GetDelphiVersions('C:\Users\RRUZ\Desktop\Test\ProjectXE2.dproj');
       Writeln(SetToString(TypeInfo(SetDelphiVersions), sdv));
@@ -73,24 +73,32 @@ begin
       '"C:\Program Files (x86)\Embarcadero\RAD Studio\11.0\bin\bds.exe"',
       '"C:\Users\Public\Documents\RAD Studio\11.0\Samples\iOSCodeSnippets\iOS Accelerometer\iOS_Accelerometer.dproj"',nil, SW_SHOWNORMAL);
       }
-      msb:=TMSBuildDProj.Create('C:\Users\Public\Documents\RAD Studio\11.0\Samples\FireMonkey\CPUMonitor\CPUMonitor.dproj');
-
-      {
-      Win32
-      Win64
-      OSX
-      iOSDevice
-      iOSSimulator
-      }
-
-
+      msb:=TMSBuildDProj.Create('C:\Dephi\google-code\dev-shell-tools\Win64\Debug\SynEdit_R2010.dproj');
       try
-         Writeln(msb.FrameworkType);
+         Writeln(msb.ValidData);
+         Writeln('FrameworkType '+msb.FrameworkType); //VCL
+         Writeln('AppType       '+msb.AppType);   //Library, Package, Application
+         Writeln('GUID          '+msb.GUID);
+         Writeln('Def. Conf.    '+msb.DefaultConfiguration); //Debug
+         Writeln('Def. Platform '+msb.DefaultPlatForm); //Win32, OSX
          Writeln(msb.Platforms.Text);
-
       finally
         msb.Free;
       end;
+     Writeln;
+           {
+      msb:=TMSBuildDProj.Create('C:\Dephi\google-code\SynEdit\SynEdit\Packages\SynEdit_DXE4.dproj');
+      try
+         Writeln('FrameworkType '+msb.FrameworkType);
+         Writeln('AppType       '+msb.AppType);
+         Writeln('GUID          '+msb.GUID);
+         Writeln('Def. Conf.    '+msb.DefaultConfiguration);
+         Writeln('Def. Platform '+msb.DefaultPlatForm);
+         Writeln(msb.Platforms.Text);
+      finally
+        msb.Free;
+      end;
+         }
     finally
       CoUninitialize;
     end;

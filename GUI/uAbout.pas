@@ -40,6 +40,7 @@ type
     Image2: TImage;
     btnCheckUpdates: TButton;
     Image1: TImage;
+    LabelWindowsVersion: TLabel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -112,10 +113,10 @@ end;
 procedure TFrmAbout.FormCreate(Sender: TObject);
 begin
   if FileExists(IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)))+'DelphiDevShellTools.dll') then
+  LabelVersion.Caption    := Format('Version %s', [
+  uMisc.GetFileVersion(ExtractFilePath(ParamStr(0))+'DelphiDevShellTools.dll')]);
 
-
-  LabelVersion.Caption    := Format('Version %s - %s', [
-  uMisc.GetFileVersion(ExtractFilePath(ParamStr(0))+'DelphiDevShellTools.dll'), TOSVersion.ToString]);
+  LabelWindowsVersion.Caption    := Format('%s', [TOSVersion.ToString]);
   MemoCopyRights.Lines.Add('Author Rodrigo Ruz rodrigo.ruz.v@gmail.com - © 2013 all rights reserved.');
   MemoCopyRights.Lines.Add('http://code.google.com/p/delphi-dev-shell-tools/');
   MemoCopyRights.Lines.Add('');
