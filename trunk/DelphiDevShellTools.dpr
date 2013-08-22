@@ -33,9 +33,14 @@ exports
 
 {
 TODO :
+    rect.right = ::GetSystemMetrics(SM_CXMENUCHECK);
+    rect.bottom = ::GetSystemMetrics(SM_CYMENUCHECK);
+
+
   detect delphi version.     DONE
   enumerate builds and plattform from msbuild file dproj   DONE
-
+  Add extra info to default msbuild conf (platform, type (dll, app), framweork) use owner draw?
+  
   Auto Update  done
   settings app
   Map dpr to dproj >=Delphi2007    done
@@ -46,7 +51,7 @@ TODO :
   Add support for convert.exe (convert forms)
   Add support for tdump.exe, tdump64.exe
   deploy in OSX , IOS, Android
-  view and open vcl and firemonkey styles
+  view and open vcl and firemonkey styles done
   Add options to register external tools
 
   add tasks for packages (.dpk)  done
@@ -60,7 +65,6 @@ TODO :
 
   //EurekaLog
   //http://www.eurekalog.com/help/eurekalog/index.php?profiles.php
-
 
   build
   opt

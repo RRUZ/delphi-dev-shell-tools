@@ -66,7 +66,7 @@ type
     FIcon: TIcon;
     FIDEType: TSupportedIDEs;
     FBitmap: TBitmap;
-    FBitmap13: TBitmap;
+    //FBitmap13: TBitmap;
   public
     property Version : TDelphiVersions read FVersion;
     property Path    : string read FPath write FPath;
@@ -74,7 +74,7 @@ type
     property Icon    : TIcon read FIcon write FIcon;
     property IDEType : TSupportedIDEs read FIDEType write FIDEType;
     property Bitmap  : TBitmap read FBitmap write FBitmap;
-    property Bitmap13: TBitmap read FBitmap13 write FBitmap13;
+    //property Bitmap13: TBitmap read FBitmap13 write FBitmap13;
     constructor Create;
 
     Destructor  Destroy; override;
@@ -86,10 +86,22 @@ type
     FFrameworkType: string;
     FProjectFile : string;
     FPlatforms: TStrings;
+    FGUID: string;
+    FAppType : string;
+    FDelphiVersion : TDelphiVersions;
+    FDefaultConfiguration : string;
+    FDefaultPlatForm : string;
+    FValidData : Boolean;
     procedure LoadInfo;
   public
-    property FrameworkType : string read FFrameworkType write FFrameworkType;
+    property FrameworkType : string read FFrameworkType;
     property Platforms : TStrings read FPlatforms write FPlatforms;
+    property GUID : string read FGUID;
+    property AppType : string read FAppType;
+    property DelphiVersion : TDelphiVersions read FDelphiVersion;
+    property DefaultConfiguration : string read  FDefaultConfiguration; //Release, Debug
+    property DefaultPlatForm : string read  FDefaultPlatForm; //Win32, OSX
+    property ValidData : Boolean read FValidData;
     constructor Create(const ProjectFile : string);
     Destructor  Destroy; override;
   end;
@@ -188,8 +200,10 @@ constructor TMSBuildDProj.Create(const ProjectFile : string);
 begin
  inherited Create;
  FProjectFile:=ProjectFile;
- FPlatforms:=TStringList.Create;
- LoadInfo;
+ FPlatforms  :=TStringList.Create;
+ FValidData  := False;
+ if FileExists(ProjectFile) then
+   LoadInfo;
 end;
 
 destructor TMSBuildDProj.Destroy;
@@ -214,32 +228,108 @@ begin
   for LDelphiVersion in sdv do
   if  LDelphiVersion<=TDelphiVersions.DelphiXE then
   begin
+    FDelphiVersion:=LDelphiVersion;
     FFrameworkType := 'VCL';
     FPlatforms.Add('Win32');
-    Break;
-  end
-  else
-  begin
+
     CoInitialize(nil);
     try
       XmlDoc := CreateOleObject('Msxml2.DOMDocument.6.0');
       try
         XmlDoc.Async := False;
         XmlDoc.Load(FProjectFile);
+
+        if (XmlDoc.parseError.errorCode <> 0) then
+        begin
+          FValidData:=False;
+          Exit;
+        end
+        else
+          FValidData:=True;
+
         XmlDoc.SetProperty('SelectionLanguage', 'XPath');
          ns := Format('xmlns:a=%s',[QuotedStr('http://schemas.microsoft.com/developer/msbuild/2003')]);
          XmlDoc.setProperty('SelectionNamespaces', ns);
 
+        FDefaultPlatForm:='Win32';
+
+
+        if LDelphiVersion=Delphi2007 then
+        begin
+          Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:Configuration');
+          if not VarIsClear(Node) then
+            FDefaultConfiguration := Node.Text;
+        end
+        else
+        begin
+          Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:Config');
+          if not VarIsClear(Node) then
+            FDefaultConfiguration := Node.Text;
+        end;
+
+        Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:ProjectGuid');
+        if not VarIsClear(Node) then
+          FGUID := Node.Text;
+
+        Node := XmlDoc.selectSingleNode('/a:Project/a:ProjectExtensions/a:Borland.ProjectType');
+        if not VarIsClear(Node) then
+          FAppType := Node.Text;
+
+      finally
+        XmlDoc := Unassigned;
+      end;
+    finally
+      CoUninitialize;
+    end;
+
+    break;
+  end
+  else
+  begin
+    FDelphiVersion:=LDelphiVersion;
+    CoInitialize(nil);
+    try
+      XmlDoc := CreateOleObject('Msxml2.DOMDocument.6.0');
+      try
+        XmlDoc.Async := False;
+        XmlDoc.Load(FProjectFile);
+
         if (XmlDoc.parseError.errorCode <> 0) then
-          raise Exception.CreateFmt('Error in Xml Data %s', [XmlDoc.parseError]);
+        begin
+          FValidData:=False;
+          Exit;
+        end
+        else
+          FValidData:=True;
+
+        XmlDoc.SetProperty('SelectionLanguage', 'XPath');
+         ns := Format('xmlns:a=%s',[QuotedStr('http://schemas.microsoft.com/developer/msbuild/2003')]);
+         XmlDoc.setProperty('SelectionNamespaces', ns);
+
+        Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:Config');
+        if not VarIsClear(Node) then
+          FDefaultConfiguration := Node.Text;
 
         Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:FrameworkType');
         if not VarIsClear(Node) then
           FFrameworkType := Node.Text;
 
+        Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:ProjectGuid');
+        if not VarIsClear(Node) then
+          FGUID := Node.Text;
+
+        Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:AppType');
+        if not VarIsClear(Node) then
+          FAppType := Node.Text;
+
+        Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:Platform');
+        if not VarIsClear(Node) then
+          FDefaultPlatForm := Node.Text;
+
         Nodes := XmlDoc.selectNodes('//a:Project/a:ProjectExtensions/a:BorlandProject/a:Platforms/a:Platform');
         lNodes:= Nodes.Length;
         for i:= 0 to lNodes-1 do
+         if SameText(Nodes.Item(i).Text,'True') then
            FPlatforms.Add(Nodes.Item(i).getAttribute('value'));
 
       finally
@@ -248,6 +338,7 @@ begin
     finally
       CoUninitialize;
     end;
+    Break;
   end;
 end;
 
@@ -374,11 +465,14 @@ end;
 
 procedure FillListDelphiVersions(AList:TList<TDelphiVersionData>);
 Var
+  Factor : Double;
   VersionData : TDelphiVersionData;
   DelphiComp  : TDelphiVersions;
   FileName    : string;
   Found       : boolean;
   ColorLeftCorner, ColorBackMenu: TColor;
+  TempBitmap  : TBitmap;
+  CX : Integer;
 begin
   for DelphiComp := Low(TDelphiVersions) to High(TDelphiVersions) do
   begin
@@ -403,16 +497,39 @@ begin
       VersionData.FName   :=DelphiVersionsNames[DelphiComp];
       VersionData.FIDEType:=TSupportedIDEs.DelphiIDE;
       VersionData.Icon    :=TIcon.Create;
-      ExtractIconFile(VersionData.FIcon, Filename, SHGFI_SMALLICON);
 
+
+
+      ExtractIconFile(VersionData.FIcon, Filename, SHGFI_SMALLICON);
+      {
       VersionData.FBitmap := Graphics.TBitmap.Create;
       VersionData.FBitmap.PixelFormat:=pf24bit;
       VersionData.FBitmap.Width := VersionData.FIcon.Width;
       VersionData.FBitmap.Height := VersionData.FIcon.Height;
       VersionData.FBitmap.Canvas.Draw(0, 0, VersionData.FIcon);
-
       VersionData.FBitmap13:=TBitmap.Create;
       ScaleImage( VersionData.FBitmap, VersionData.FBitmap13, 0.81);
+                                            }
+
+      CX:=GetSystemMetrics(SM_CXMENUCHECK);
+      if CX>=16 then
+      begin
+        VersionData.FBitmap := Graphics.TBitmap.Create;
+        ExtractBitmapFile(VersionData.FBitmap, Filename, SHGFI_SMALLICON);
+      end
+      else
+      begin
+        TempBitmap:=TBitmap.Create;
+        try
+          VersionData.FBitmap := Graphics.TBitmap.Create;
+          ExtractBitmapFile(TempBitmap, Filename, SHGFI_SMALLICON);
+          Factor:= CX/16;
+          ScaleImage(TempBitmap, VersionData.FBitmap, Factor);
+        finally
+          TempBitmap.Free;
+        end;
+
+      end;
 
       ColorLeftCorner := VersionData.FBitmap.Canvas.Pixels[0, 0];
       ReplaceColor(VersionData.FBitmap, ColorLeftCorner, ColorBackMenu);
@@ -430,7 +547,7 @@ constructor TDelphiVersionData.Create;
 begin
    inherited;
    FBitmap:=nil;
-   FBitmap13:=nil;
+   //FBitmap13:=nil;
    FIcon:=nil;
 end;
 
@@ -441,10 +558,10 @@ begin
 
   if FIcon<>nil then
     FIcon.Free;
-
+  {
   if FBitmap13<>nil then
     FBitmap13.Free;
-
+  }
   inherited;
 end;
 

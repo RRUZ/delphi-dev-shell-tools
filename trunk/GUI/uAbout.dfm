@@ -28,7 +28,7 @@ object FrmAbout: TFrmAbout
   end
   object LabelVersion: TLabel
     Left = 68
-    Top = 27
+    Top = 22
     Width = 35
     Height = 13
     Caption = 'Version'
@@ -353,6 +353,13 @@ object FrmAbout: TFrmAbout
       4AF482250037C510B34C59A5D5F25D1E467D915973EA56CFFA9F006839860CEB
       AF8D0B308D4C0AB58F0ED30A03285C12084002E346C4FFF3EB9DEAD379574236
       EFF93E37F776F6FF0FAC1048645B02501F0000000049454E44AE426082}
+  end
+  object LabelWindowsVersion: TLabel
+    Left = 68
+    Top = 38
+    Width = 81
+    Height = 13
+    Caption = 'Windows Version'
   end
   object Panel1: TPanel
     Left = 0

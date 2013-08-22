@@ -48,7 +48,7 @@ ArchitecturesInstallIn64BitMode=x64
 AppContact=theroadtodelphi@gmail.com
 DisableProgramGroupPage=false
 AppID=DelphiDevShellTools
-;SetupIconFile=Images\Icon.ico
+SetupIconFile=Icons\Logo.ico
 DefaultGroupName=Delphi Dev Shell Tools
 ;MinVersion=
 [Languages]
