@@ -36,6 +36,10 @@ TODO :
     rect.right = ::GetSystemMetrics(SM_CXMENUCHECK);
     rect.bottom = ::GetSystemMetrics(SM_CYMENUCHECK);
 
+  Add paclient.exe options
+    deploy
+    test profile connection
+
 
   detect delphi version.     DONE
   enumerate builds and plattform from msbuild file dproj   DONE

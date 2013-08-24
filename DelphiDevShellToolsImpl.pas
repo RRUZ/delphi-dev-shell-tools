@@ -84,12 +84,12 @@ type
     procedure AddMSBuildRAD_SpecificTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddMSBuildRAD_AllTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenWithDelphi(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 
-    procedure AddCompileRC(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddCompileRCTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenVclStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenFmxStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 
-    procedure AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddMenuSeparator(hMenu : HMENU; var MenuIndex : Integer);
   protected
     function IShellExtInit.Initialize = ShellExtInitialize;
@@ -141,6 +141,7 @@ var
   BitmapsDict    : TObjectDictionary<string, TBitmap>;
   ExeNameTxt, FriendlyAppNameTxt : string;
   LazarusInstalled : Boolean;
+  Settings         : TSettings;
 
 procedure log(const msg: string);
 begin
@@ -188,8 +189,8 @@ begin
   else
    LFileName:=FFileName;
 
-  log('OpenRADStudio '+LDelphiVersion.Path+' '+Format(' "%s"',[LFileName]));
-  ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('"%s"',[LFileName])) , nil , SW_SHOWNORMAL);
+  log('OpenRADStudio '+LDelphiVersion.Path+' '+Format(' "%s" "%s"',[LFileName, Info.Value3.AsString]));
+  ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('"%s" "%s"',[LFileName, Info.Value3.AsString])) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
    log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -562,7 +563,7 @@ end;
 procedure TDelphiDevShellToolsContextMenu.OpenGUI(Info : TMethodInfo);
 begin
  try
-  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(GetModuleName))+'GUIDelphiDevShell.exe'), PChar(FFileName) , nil , SW_SHOWNORMAL);
+  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
    log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -761,46 +762,76 @@ end;
 procedure TDelphiDevShellToolsContextMenu.AddCommonTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 var
   LMethodInfo : TMethodInfo;
+  LSubMenuIndex : Integer;
+  LSubMenu: Winapi.Windows.HMENU;
+  LMenuItem: TMenuItemInfo;
+  sSubMenuCaption : string;
 begin
   try
    if not MatchText(FFileExt, SupportedExts) then exit;
 
-     InsertMenu(hMenu, MenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy file path to clipboard'));
-     SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+      if Settings.SubMenuCommonTasks then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='Common Tasks';
+
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['common'].Handle, BitmapsDict.Items['common'].Handle);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+         LSubMenuIndex:=MenuIndex;
+         LSubMenu:=hMenu;
+      end;
+
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy file path to clipboard'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyPathClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(MenuIndex);
+     Inc(LSubMenuIndex);
 
-     InsertMenu(hMenu, MenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy full filename (Path + FileName) to clipboard'));
-     SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy full filename (Path + FileName) to clipboard'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyFileNameClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(MenuIndex);
+     Inc(LSubMenuIndex);
 
-     InsertMenu(hMenu, MenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open In Notepad'));
-     SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['notepad'].Handle, BitmapsDict.Items['notepad'].Handle);
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open In Notepad'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['notepad'].Handle, BitmapsDict.Items['notepad'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenWithNotepad;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(MenuIndex);
+     Inc(LSubMenuIndex);
 
      try
        if (ExeNameTxt<>'') and (not SameText('notepad.exe', ExtractFileName(ExeNameTxt))) then
        begin
            log(ExtractFileName(ExeNameTxt));
-           InsertMenu(hMenu, MenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open In '+FriendlyAppNameTxt));
-           SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['txt'].Handle, BitmapsDict.Items['txt'].Handle);
+           InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open In '+FriendlyAppNameTxt));
+           SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['txt'].Handle, BitmapsDict.Items['txt'].Handle);
            LMethodInfo:=TMethodInfo.Create;
            LMethodInfo.Method:=OpenWithApp;
            LMethodInfo.Value1:=ExeNameTxt;
            FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
            Inc(uIDNewItem);
-           Inc(MenuIndex);
+           Inc(LSubMenuIndex);
        end;
 
      except
@@ -808,13 +839,17 @@ begin
        log('GetAssocAppByExt '+E.Message);
      end;
 
-     InsertMenu(hMenu, MenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open cmd here'));
-     SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['cmd'].Handle, BitmapsDict.Items['cmd'].Handle);
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open cmd here'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['cmd'].Handle, BitmapsDict.Items['cmd'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenCmdHere;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(MenuIndex);
+     Inc(LSubMenuIndex);
+
+      if not Settings.SubMenuCommonTasks then
+       MenuIndex:=LSubMenuIndex;
+
   except
     on  E : Exception do
      log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -825,16 +860,16 @@ procedure TDelphiDevShellToolsContextMenu.AddOpenRADCmdTasks(hMenu : HMENU; var 
 var
   Found : Boolean;
   LSubMenuIndex : Integer;
-  LCurrentDelphiVersionData  : TDelphiVersionData;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
+  LCurrentDelphiVersionData  : TDelphiVersionData;
   sSubMenuCaption : string;
   LMethodInfo : TMethodInfo;
 begin
   try
   if not MatchText(FFileExt, SupportedExts) then exit;
 
-    //Open RadStudio Command Prompt Here
+    //Open RAD Studio Command Prompt Here
     Found:=false;
     for LCurrentDelphiVersionData in InstalledDelphiVersions do
      if LCurrentDelphiVersionData.Version>=Delphi2007 then
@@ -845,22 +880,30 @@ begin
 
     if Found then
     begin
-      LSubMenuIndex :=0;
-      LSubMenu   := CreatePopupMenu;
-      sSubMenuCaption:='Open RAD Studio Command Prompt Here';
+      if Settings.SubMenuOpenCmdRAD then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='Open RAD Studio Command Prompt Here';
 
-      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
-      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
-      LMenuItem.fType := MFT_STRING;
-      LMenuItem.wID := FMenuItemIndex;
-      LMenuItem.hSubMenu := LSubMenu;
-      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
-      LMenuItem.cch := Length(sSubMenuCaption);
-      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['radcmd'].Handle, BitmapsDict.Items['radcmd'].Handle);
-      Inc(uIDNewItem);
-      Inc(MenuIndex);
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['radcmd'].Handle, BitmapsDict.Items['radcmd'].Handle);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+        LSubMenuIndex := MenuIndex;
+        LSubMenu      := hMenu;
+      end;
 
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
        if LCurrentDelphiVersionData.Version>=Delphi2007 then
@@ -874,6 +917,9 @@ begin
         Inc(uIDNewItem);
         Inc(LSubMenuIndex);
        end;
+
+      if not Settings.SubMenuOpenCmdRAD then
+       MenuIndex:=LSubMenuIndex;
     end;
  except
    on  E : Exception do
@@ -906,23 +952,31 @@ begin
 
     if Found then
     begin
-      LSubMenuIndex :=0;
-      LSubMenu   := CreatePopupMenu;
-      sSubMenuCaption:='Format Sorce Code';
+      if Settings.SubMenuFormat then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='Format Sorce Code';
 
-      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
-      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
-      LMenuItem.fType := MFT_STRING;
-      LMenuItem.wID := FMenuItemIndex;
-      LMenuItem.hSubMenu := LSubMenu;
-      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
-      LMenuItem.cch := Length(sSubMenuCaption);
-      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['format'].Handle, BitmapsDict.Items['format'].Handle);
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['format'].Handle, BitmapsDict.Items['format'].Handle);
 
-      Inc(uIDNewItem);
-      Inc(MenuIndex);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+        LSubMenu:=hMenu;
+        LSubMenuIndex:=MenuIndex;
+      end;
 
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
        if LCurrentDelphiVersionData.Version>=Delphi2010 then
@@ -936,6 +990,9 @@ begin
         Inc(uIDNewItem);
         Inc(LSubMenuIndex);
        end;
+
+      if not Settings.SubMenuFormat then
+        MenuIndex:=LSubMenuIndex;
     end;
  except
    on  E : Exception do
@@ -968,23 +1025,31 @@ begin
 
     if Found then
     begin
-      LSubMenuIndex :=0;
-      LSubMenu   := CreatePopupMenu;
-      sSubMenuCaption:='Run Touch';
+      if Settings.SubMenuRunTouch then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='Run Touch';
 
-      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
-      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
-      LMenuItem.fType := MFT_STRING;
-      LMenuItem.wID := FMenuItemIndex;
-      LMenuItem.hSubMenu := LSubMenu;
-      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
-      LMenuItem.cch := Length(sSubMenuCaption);
-      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['touch'].Handle, BitmapsDict.Items['touch'].Handle);
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['touch'].Handle, BitmapsDict.Items['touch'].Handle);
 
-      Inc(uIDNewItem);
-      Inc(MenuIndex);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+        LSubMenu:=hMenu;
+        LSubMenuIndex:=MenuIndex;
+      end;
 
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
        if LCurrentDelphiVersionData.Version>=Delphi2007 then
@@ -998,6 +1063,9 @@ begin
         Inc(uIDNewItem);
         Inc(LSubMenuIndex);
        end;
+
+       if not Settings.SubMenuRunTouch then
+         MenuIndex:=LSubMenuIndex;
     end;
  except
    on  E : Exception do
@@ -1036,6 +1104,9 @@ begin
 
      if Found and (InstalledDelphiVersions.Count>0) and (Length(DProjectVersion)>0) then
        begin
+
+        if Settings.SubMenuMSBuild then
+        begin
           LSubMenuIndex :=0;
           LSubMenu   := CreatePopupMenu;
           sSubMenuCaption:='Run MSBuild '+DelphiVersionsNames[DProjectVersion[0]];
@@ -1053,6 +1124,12 @@ begin
 
           Inc(uIDNewItem);
           Inc(MenuIndex);
+        end
+        else
+        begin
+          LSubMenu:=hMenu;
+          LSubMenuIndex:=MenuIndex;
+        end;
 
           LFileName:=FFileName;
 
@@ -1118,7 +1195,11 @@ begin
              FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
              Inc(uIDNewItem);
              Inc(LSubMenuIndex);
-          end;
+         end;
+
+        if not Settings.SubMenuMSBuild then
+          MenuIndex:=LSubMenuIndex;
+
        end;
   except
    on  E : Exception do
@@ -1151,23 +1232,31 @@ begin
 
     if Found then
     begin
-      LSubMenuIndex :=0;
-      LSubMenu   := CreatePopupMenu;
-      sSubMenuCaption:='Run MSBUILD with another Delphi version';
+      if Settings.SubMenuMSBuildAnother then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='Run MSBUILD with another Delphi version';
 
-      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
-      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
-      LMenuItem.fType := MFT_STRING;
-      LMenuItem.wID := FMenuItemIndex;
-      LMenuItem.hSubMenu := LSubMenu;
-      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
-      LMenuItem.cch := Length(sSubMenuCaption);
-      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['msbuild'].Handle, BitmapsDict.Items['msbuild'].Handle);
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['msbuild'].Handle, BitmapsDict.Items['msbuild'].Handle);
 
-      Inc(uIDNewItem);
-      Inc(MenuIndex);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+        LSubMenuIndex:=MenuIndex;
+        LSubMenu:=hMenu;
+      end;
 
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
        if (LCurrentDelphiVersionData.Version>=Delphi2007) and (((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or SameText('.groupproj', FFileExt)) then
@@ -1190,6 +1279,10 @@ begin
         Inc(uIDNewItem);
         Inc(LSubMenuIndex);
        end;
+
+      if not Settings.SubMenuMSBuildAnother then
+        MenuIndex:=LSubMenuIndex;
+
     end;
   except
    on  E : Exception do
@@ -1197,7 +1290,7 @@ begin
   end;
 end;
 
-procedure TDelphiDevShellToolsContextMenu.AddCompileRC(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+procedure TDelphiDevShellToolsContextMenu.AddCompileRCTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 var
   Found : Boolean;
   LSubMenuIndex : Integer;
@@ -1220,23 +1313,31 @@ begin
 
     if Found then
     begin
-      LSubMenuIndex :=0;
-      LSubMenu   := CreatePopupMenu;
-      sSubMenuCaption:='Compile Resource file';
+      if Settings.SubMenuCompileRC then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='Compile Resource file';
 
-      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
-      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
-      LMenuItem.fType := MFT_STRING;
-      LMenuItem.wID := FMenuItemIndex;
-      LMenuItem.hSubMenu := LSubMenu;
-      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
-      LMenuItem.cch := Length(sSubMenuCaption);
-      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['brcc32'].Handle, BitmapsDict.Items['brcc32'].Handle);
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['brcc32'].Handle, BitmapsDict.Items['brcc32'].Handle);
 
-      Inc(uIDNewItem);
-      Inc(MenuIndex);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+        LSubMenu:=hMenu;
+        LSubMenuIndex:=MenuIndex;
+      end;
 
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
        if LCurrentDelphiVersionData.Version>=Delphi7 then
@@ -1250,6 +1351,9 @@ begin
         Inc(uIDNewItem);
         Inc(LSubMenuIndex);
        end;
+
+      if not Settings.SubMenuCompileRC then
+        MenuIndex:=LSubMenuIndex;
     end;
   except
     on  E : Exception do
@@ -1280,23 +1384,31 @@ begin
 
     if Found then
     begin
-      LSubMenuIndex :=0;
-      LSubMenu   := CreatePopupMenu;
-      sSubMenuCaption:='View Vcl Style File';
+      if Settings.SubMenuOpenVclStyle then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='View Vcl Style File';
 
-      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
-      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
-      LMenuItem.fType := MFT_STRING;
-      LMenuItem.wID := FMenuItemIndex;
-      LMenuItem.hSubMenu := LSubMenu;
-      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
-      LMenuItem.cch := Length(sSubMenuCaption);
-      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['vcl'].Handle, BitmapsDict.Items['vcl'].Handle);
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['vcl'].Handle, BitmapsDict.Items['vcl'].Handle);
 
-      Inc(uIDNewItem);
-      Inc(MenuIndex);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+        LSubMenu:=hMenu;
+        LSubMenuIndex:=MenuIndex;
+      end;
 
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
        if LCurrentDelphiVersionData.Version>=DelphiXE2 then
@@ -1310,6 +1422,9 @@ begin
         Inc(uIDNewItem);
         Inc(LSubMenuIndex);
        end;
+
+      if not Settings.SubMenuOpenVclStyle then
+       MenuIndex:=LSubMenuIndex;
     end;
   except
     on  E : Exception do
@@ -1340,23 +1455,31 @@ begin
 
     if Found then
     begin
-      LSubMenuIndex :=0;
-      LSubMenu   := CreatePopupMenu;
-      sSubMenuCaption:='View Firemonkey Style File';
+      if Settings.SubMenuOpenFMXStyle then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='View Firemonkey Style File';
 
-      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
-      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
-      LMenuItem.fType := MFT_STRING;
-      LMenuItem.wID := FMenuItemIndex;
-      LMenuItem.hSubMenu := LSubMenu;
-      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
-      LMenuItem.cch := Length(sSubMenuCaption);
-      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['firemonkey'].Handle, BitmapsDict.Items['firemonkey'].Handle);
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['firemonkey'].Handle, BitmapsDict.Items['firemonkey'].Handle);
 
-      Inc(uIDNewItem);
-      Inc(MenuIndex);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+        LSubMenu:=hMenu;
+        LSubMenuIndex:=MenuIndex;
+      end;
 
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
        if LCurrentDelphiVersionData.Version>=DelphiXE3 then
@@ -1371,6 +1494,9 @@ begin
         Inc(uIDNewItem);
         Inc(LSubMenuIndex);
        end;
+
+       if not Settings.SubMenuOpenFMXStyle then
+         MenuIndex:=LSubMenuIndex;
     end;
   except
     on  E : Exception do
@@ -1389,22 +1515,31 @@ begin
   try
     if not MatchText(FFileExt, SupportedExts) then exit;
 
-      LSubMenuIndex :=0;
-      LSubMenu   := CreatePopupMenu;
-      sSubMenuCaption:='Lazarus';
 
-      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
-      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
-      LMenuItem.fType := MFT_STRING;
-      LMenuItem.wID := FMenuItemIndex;
-      LMenuItem.hSubMenu := LSubMenu;
-      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
-      LMenuItem.cch := Length(sSubMenuCaption);
-      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazarusmenu'].Handle, BitmapsDict.Items['lazarusmenu'].Handle);
-      Inc(uIDNewItem);
-      Inc(MenuIndex);
+      if Settings.SubMenuLazarus then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='Lazarus';
+
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazarusmenu'].Handle, BitmapsDict.Items['lazarusmenu'].Handle);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+         LSubMenuIndex:=MenuIndex;
+         LSubMenu:=hMenu;
+      end;
 
       InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open with Lazarus IDE'));
       SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazarus'].Handle, BitmapsDict.Items['lazarus'].Handle);
@@ -1415,6 +1550,7 @@ begin
       Inc(uIDNewItem);
       Inc(LSubMenuIndex);
 
+
       if MatchText(FFileExt, ['.lpi', '.lpk']) then
       begin
         InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Build with lazbuild'));
@@ -1424,10 +1560,12 @@ begin
         LMethodInfo.Value1:=GetLazarusIDEFolder;
         FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
         Inc(uIDNewItem);
-        //Inc(LSubMenuIndex); uncomment if more options are added ¡¡¡¡
+        Inc(LSubMenuIndex);
       end;
 
 
+      if not Settings.SubMenuLazarus then
+       MenuIndex:=LSubMenuIndex;
 
   except
     on  E : Exception do
@@ -1449,6 +1587,8 @@ begin
   try
      if not MatchText(FFileExt, SupportedExts) then exit;
 
+     if Settings.SubMenuOpenDelphi then
+     begin
       LSubMenuIndex :=0;
       LSubMenu   := CreatePopupMenu;
       sSubMenuCaption:='Open with Delphi';
@@ -1465,6 +1605,12 @@ begin
       SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['delphi'].Handle, BitmapsDict.Items['delphi'].Handle);
       Inc(uIDNewItem);
       Inc(MenuIndex);
+     end
+     else
+     begin
+      LSubMenuIndex:=MenuIndex;
+      LSubMenu:=hMenu;
+     end;
 
 
      if  MatchText(FFileExt, ['.pas','.inc','.pp','.dpk'])  then
@@ -1477,6 +1623,8 @@ begin
        LMethodInfo:=TMethodInfo.Create;
        LMethodInfo.Method:=OpenWithDelphi;
        LMethodInfo.Value1:=LCurrentDelphiVersionData;
+       LMethodInfo.Value2:=EmptyStr;
+       LMethodInfo.Value3:='-pDelphi';
        FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
        Inc(uIDNewItem);
        Inc(LSubMenuIndex);
@@ -1484,6 +1632,7 @@ begin
      else
      //if  MatchText(FFileExt, ['.dproj', '.bdsproj','.dpr']) then
      for LCurrentDelphiVersionData in InstalledDelphiVersions do
+     if LCurrentDelphiVersionData.Version>=Delphi2007 then
      begin
 
        Found:=False;
@@ -1509,6 +1658,7 @@ begin
        LMethodInfo.Method:=OpenRADStudio;
        LMethodInfo.Value1:=LCurrentDelphiVersionData;
        LMethodInfo.Value2:=EmptyStr;
+       LMethodInfo.Value3:='-pDelphi';
 
        if SameText(FFileExt, '.dpr') then
        begin
@@ -1521,6 +1671,9 @@ begin
        Inc(uIDNewItem);
        Inc(LSubMenuIndex);
      end;
+
+     if not Settings.SubMenuOpenDelphi then
+      MenuIndex:=LSubMenuIndex;
   except
     on  E : Exception do
     log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -1564,7 +1717,8 @@ var
   Found : Boolean;
   LMethodInfo : TMethodInfo;
 begin
-  FMenuItemIndex := indexMenu;
+ ReadSettings(Settings);
+ FMenuItemIndex := indexMenu;
 
   if (uFlags and CMF_DEFAULTONLY)<> 0 then
     Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0))
@@ -1597,7 +1751,7 @@ begin
     uIDNewItem := idCmdFirst;
     hSubMenuIndex := 0;
 
-     if MatchText(FFileExt,['.dproj','.dpr']) and (FMSBuildDProj<>nil) and (FMSBuildDProj.ValidData) then
+     if Settings.ShowInfoDProj and  MatchText(FFileExt,['.dproj','.dpr']) and (FMSBuildDProj<>nil) and (FMSBuildDProj.ValidData) then
      begin
        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
@@ -1620,7 +1774,7 @@ begin
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddFormatCodeRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
-    AddCompileRC(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.rc']);
+    AddCompileRCTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.rc']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddOpenVclStyleTask(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.vsf']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
@@ -1699,7 +1853,7 @@ begin
     AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj','.dpr','.pas','.inc','.pp','.dpk']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
-    if LazarusInstalled then
+    if Settings.ActivateLazarus and LazarusInstalled then
     begin
       AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.lpi','.pp','.inc','.pas','.lpk']);
       AddMenuSeparator(hSubMenu, hSubMenuIndex);
@@ -1708,10 +1862,21 @@ begin
     AddTouchRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
+
+    InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Settings'));
+    SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['settings'].Handle, BitmapsDict.Items['settings'].Handle);
+    LMethodInfo:=TMethodInfo.Create;
+    LMethodInfo.Method:=OpenGUI;
+    LMethodInfo.Value1:='-settings';
+    FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+    Inc(uIDNewItem);
+    Inc(hSubMenuIndex);
+
     InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('About'));
     SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['logo'].Handle, BitmapsDict.Items['logo'].Handle);
     LMethodInfo:=TMethodInfo.Create;
     LMethodInfo.Method:=OpenGUI;
+    LMethodInfo.Value1:='-about';
     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
     Inc(uIDNewItem);
     Inc(hSubMenuIndex);
@@ -1865,6 +2030,7 @@ end;
 initialization
   log('initialization');
   TDelphiDevShellObjectFactory.Create(ComServer, TDelphiDevShellToolsContextMenu, CLASS_DelphiDevShellToolsContextMenu, ciMultiInstance, tmApartment);
+  Settings:=TSettings.Create;
   InstalledDelphiVersions:=TObjectList<TDelphiVersionData>.Create;
   FillListDelphiVersions(InstalledDelphiVersions);
 
@@ -1897,6 +2063,8 @@ initialization
   RegisterBitmap('platforms');
   RegisterBitmap('buildconf', 'buildconf2');
   RegisterBitmap('platforms', 'platforms2');
+  RegisterBitmap('settings');
+  RegisterBitmap('common');
 
    try
      BitmapsDict.Add('txt',TBitmap.Create);
@@ -1931,6 +2099,7 @@ initialization
 
 
 finalization
+  Settings.Free;
   BitmapsDict.Free;
   InstalledDelphiVersions.Free;
   log('finalization');

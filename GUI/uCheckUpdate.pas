@@ -100,7 +100,7 @@ uses
   System.UITypes,
   ShellAPI,
   uUpdatesChanges,
-  uMisc,
+  uMiscGUI,
   ComObj;
 
 

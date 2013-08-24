@@ -26,25 +26,60 @@ interface
 uses
  Windows,
  Graphics,
+ Rtti,
  ImgList;
 
+type
+  TSettings =class
+  private
+    FSubMenuOpenCmdRAD: Boolean;
+    FShowInfoDProj: Boolean;
+    FSubMenuLazarus: Boolean;
+    FActivateLazarus : Boolean;
+    FSubMenuCommonTasks: Boolean;
+    FSubMenuMSBuild: Boolean;
+    FSubMenuMSBuildAnother: Boolean;
+    FSubMenuRunTouch: Boolean;
+    FSubMenuOpenDelphi: Boolean;
+    FSubMenuFormat: Boolean;
+    FSubMenuOpenVclStyle: Boolean;
+    FSubMenuOpenFMXStyle: Boolean;
+    FSubMenuCompileRC: Boolean;
+  public
+    property SubMenuOpenCmdRAD : Boolean read FSubMenuOpenCmdRAD write FSubMenuOpenCmdRAD;
+    property SubMenuLazarus : Boolean read FSubMenuLazarus write FSubMenuLazarus;
+    property SubMenuCommonTasks : Boolean read FSubMenuCommonTasks write FSubMenuCommonTasks;
+    property ShowInfoDProj : Boolean read FShowInfoDProj write FShowInfoDProj;
+    property ActivateLazarus : Boolean read FActivateLazarus write FActivateLazarus;
+    property SubMenuMSBuild : Boolean read FSubMenuMSBuild write FSubMenuMSBuild;
+    property SubMenuMSBuildAnother : Boolean read FSubMenuMSBuildAnother write FSubMenuMSBuildAnother;
+    property SubMenuRunTouch : Boolean read FSubMenuRunTouch write FSubMenuRunTouch;
+    property SubMenuOpenDelphi : Boolean read FSubMenuOpenDelphi write FSubMenuOpenDelphi;
+    property SubMenuFormat : Boolean read FSubMenuFormat write FSubMenuFormat;
+    property SubMenuCompileRC : Boolean read FSubMenuCompileRC  write FSubMenuCompileRC;
+    property SubMenuOpenFMXStyle : Boolean read FSubMenuOpenFMXStyle write FSubMenuOpenFMXStyle;
+    property SubMenuOpenVclStyle : Boolean read FSubMenuOpenVclStyle write FSubMenuOpenVclStyle;
+  end;
 
-procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
-procedure ExtractIconFile(Icon: TIcon; const Filename: string;IconType : Cardinal);
-procedure ExtractBitmapFile(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
+  procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
+  procedure ExtractIconFile(Icon: TIcon; const Filename: string;IconType : Cardinal);
+  procedure ExtractBitmapFile(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
 
-function  GetFileVersion(const FileName: string): string;
-function  IsAppRunning(const FileName: string): boolean;
-function  GetLocalAppDataFolder: string;
-function  GetTempDirectory: string;
-procedure MsgBox(const Msg: string);
-procedure CreateArrayBitmap(Width,Height:Word;Colors: Array of TColor;var bmp : TBitmap);
-function  GetSpecialFolder(const CSIDL: integer) : string;
-function  IsUACEnabled: Boolean;
-procedure RunAsAdmin(const FileName, Params: string; hWnd: HWND = 0);
-function  CurrentUserIsAdmin: Boolean;
-function  GetModuleName: string;
-procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName : string);
+  function  GetFileVersion(const FileName: string): string;
+  function  IsAppRunning(const FileName: string): boolean;
+  function  GetLocalAppDataFolder: string;
+  function  GetTempDirectory: string;
+  procedure MsgBox(const Msg: string);
+  procedure CreateArrayBitmap(Width,Height:Word;Colors: Array of TColor;var bmp : TBitmap);
+  function  GetSpecialFolder(const CSIDL: integer) : string;
+  function  IsUACEnabled: Boolean;
+  procedure RunAsAdmin(const FileName, Params: string; hWnd: HWND = 0);
+  function  CurrentUserIsAdmin: Boolean;
+  function  GetModuleName: string;
+  procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName : string);
+  function  GetDelphiDevShellToolsFolder : string;
+  procedure ReadSettings(var Settings: TSettings);
+  procedure WriteSettings(const Settings: TSettings);
 
 
 implementation
@@ -63,6 +98,8 @@ uses
   ShLwApi,
   System.UITypes,
   Registry,
+  TypInfo,
+  IniFiles,
   SysUtils;
 
 Const
@@ -72,8 +109,6 @@ Const
  DOMAIN_ALIAS_RID_USERS      = $00000221;
  DOMAIN_ALIAS_RID_GUESTS     = $00000222;
  DOMAIN_ALIAS_RID_POWER_USERS= $00000223;
-
-
 
 type
   TAssocStr = (
@@ -103,6 +138,82 @@ const
   'ASSOCSTR_DDETOPIC' );
 
 function CheckTokenMembership(TokenHandle: THandle; SidToCheck: PSID; var IsMember: BOOL): BOOL; stdcall; external advapi32;
+
+
+function GetDelphiDevShellToolsFolder : string;
+begin
+ Result:=IncludeTrailingPathDelimiter(GetSpecialFolder(CSIDL_APPDATA))+ 'DelphiDevShellTools\';
+ //C:\Users\Dexter\AppData\Roaming\DelphiDevShellTools\
+ ForceDirectories(Result);
+end;
+
+
+procedure ReadSettings(var Settings: TSettings);
+var
+  iniFile: TIniFile;
+  LCtx   : TRttiContext;
+  LProp  : TRttiProperty;
+  BooleanValue : Boolean;
+begin
+  iniFile := TIniFile.Create(GetDelphiDevShellToolsFolder + 'Settings.ini');
+  try
+   LCtx:=TRttiContext.Create;
+   try
+    {
+    Settings.SubMenuOpenCmdRAD        := iniFile.ReadBool('Global', 'SubMenuOpenCmdRAD', True);
+    Settings.SubMenuLazarus           := iniFile.ReadBool('Global', 'SubMenuLazarus', True);
+    Settings.ShowInfoDProj            := iniFile.ReadBool('Global', 'ShowInfoDProj', True);
+    Settings.ActivateLazarus          := iniFile.ReadBool('Global', 'ActivateLazarus', True);
+    Settings.SubMenuCommonTasks       := iniFile.ReadBool('Global', 'SubMenuCommonTasks', False);
+    }
+    for LProp in LCtx.GetType(TypeInfo(TSettings)).GetProperties do
+    if LProp.PropertyType.TypeKind=tkEnumeration then
+    begin
+      BooleanValue:= iniFile.ReadBool('Global', LProp.Name, True);
+      LProp.SetValue(Settings, BooleanValue);
+    end;
+
+   finally
+     LCtx.Free;
+   end;
+  finally
+    iniFile.Free;
+  end;
+end;
+
+procedure WriteSettings(const Settings: TSettings);
+var
+  iniFile: TIniFile;
+  LCtx   : TRttiContext;
+  LProp  : TRttiProperty;
+  BooleanValue : Boolean;
+begin
+  iniFile := TIniFile.Create(GetDelphiDevShellToolsFolder + 'Settings.ini');
+  try
+   LCtx:=TRttiContext.Create;
+   try
+    {
+    iniFile.WriteBool('Global', 'SubMenuOpenCmdRAD', Settings.SubMenuOpenCmdRAD);
+    iniFile.WriteBool('Global', 'SubMenuLazarus', Settings.SubMenuLazarus);
+    iniFile.WriteBool('Global', 'ShowInfoDProj', Settings.ShowInfoDProj);
+    iniFile.WriteBool('Global', 'ActivateLazarus', Settings.ActivateLazarus);
+    iniFile.WriteBool('Global', 'SubMenuCommonTasks', Settings.SubMenuCommonTasks);
+    }
+    for LProp in LCtx.GetType(TypeInfo(TSettings)).GetProperties do
+    if LProp.PropertyType.TypeKind=tkEnumeration then
+    begin
+       BooleanValue:= LProp.GetValue(Settings).AsBoolean;
+       iniFile.WriteBool('Global', LProp.Name, BooleanValue);
+    end;
+   finally
+     LCtx.Free;
+   end;
+  finally
+    iniFile.Free;
+  end;
+end;
+
+
 
 procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName : string);
 var
