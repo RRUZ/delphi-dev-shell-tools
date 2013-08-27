@@ -30,6 +30,15 @@ uses
  ImgList;
 
 type
+  TMethodInfo=class
+   hwnd   : HWND;
+   Value1 : TValue;
+   Value2 : TValue;
+   Value3 : TValue;
+   Value4 : TValue;
+   Method : procedure (Info : TMethodInfo) of object;
+  end;
+
   TSettings =class
   private
     FSubMenuOpenCmdRAD: Boolean;
@@ -45,6 +54,7 @@ type
     FSubMenuOpenVclStyle: Boolean;
     FSubMenuOpenFMXStyle: Boolean;
     FSubMenuCompileRC: Boolean;
+    FCheckForUpdates: Boolean;
   public
     property SubMenuOpenCmdRAD : Boolean read FSubMenuOpenCmdRAD write FSubMenuOpenCmdRAD;
     property SubMenuLazarus : Boolean read FSubMenuLazarus write FSubMenuLazarus;
@@ -59,6 +69,8 @@ type
     property SubMenuCompileRC : Boolean read FSubMenuCompileRC  write FSubMenuCompileRC;
     property SubMenuOpenFMXStyle : Boolean read FSubMenuOpenFMXStyle write FSubMenuOpenFMXStyle;
     property SubMenuOpenVclStyle : Boolean read FSubMenuOpenVclStyle write FSubMenuOpenVclStyle;
+
+    property CheckForUpdates     : Boolean read FCheckForUpdates write FCheckForUpdates;
   end;
 
   procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
@@ -80,6 +92,8 @@ type
   function  GetDelphiDevShellToolsFolder : string;
   procedure ReadSettings(var Settings: TSettings);
   procedure WriteSettings(const Settings: TSettings);
+
+  procedure CheckUpdates;
 
 
 implementation
@@ -139,6 +153,48 @@ const
 
 function CheckTokenMembership(TokenHandle: THandle; SidToCheck: PSID; var IsMember: BOOL): BOOL; stdcall; external advapi32;
 
+
+procedure CheckUpdates;
+var
+  LRegistry : TRegistry;
+  dt : TDateTime;
+begin
+  LRegistry:=TRegistry.Create;
+  try
+    LRegistry.RootKey := HKEY_CURRENT_USER;
+    if LRegistry.OpenKeyReadOnly('Software\DelphiDevShellTools\') then
+    begin
+      try
+        LRegistry.ReadBinaryData('LastUpdateCheck', dt, SizeOf(dt));
+      finally
+        LRegistry.CloseKey;
+      end;
+    end;
+  finally
+    LRegistry.Free;
+  end;
+
+  if Abs(Now-dt)>=1 then
+  begin
+    ShellExecute(0, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(GetModuleName))+'GUIDelphiDevShell.exe'), PChar('-checkupdates') , nil , SW_SHOWNORMAL);
+
+    LRegistry:=TRegistry.Create;
+    try
+      LRegistry.RootKey := HKEY_CURRENT_USER;
+      if LRegistry.OpenKey('Software\DelphiDevShellTools\', True) then
+      begin
+        try
+          dt:=Now;
+          LRegistry.WriteBinaryData('LastUpdateCheck', dt, SizeOf(dt));
+        finally
+          LRegistry.CloseKey;
+        end;
+      end;
+    finally
+      LRegistry.Free;
+    end;
+  end;
+end;
 
 function GetDelphiDevShellToolsFolder : string;
 begin
