@@ -64,6 +64,8 @@ begin
   end;
 end;
 
+var
+  Frm: TFrmCheckUpdate;
 
 begin
   OnlyOne;
@@ -78,6 +80,28 @@ begin
    else
    if SameText('-settings',ParamStr(1)) then
     Application.CreateForm(TFrmSettings, FrmSettings)
+   else
+   if SameText('-update',ParamStr(1)) then
+   begin
+      Frm := GetUpdaterInstance;
+      try
+        Frm.ShowModal();
+      finally
+        Frm.Free;
+      end;
+   end
+   else
+   if SameText('-checkupdates',ParamStr(1)) then
+   begin
+      Frm := GetUpdaterInstance;
+      try
+        Frm.CheckExternal:=True;
+        if Frm.UpdateAvailable then
+          Frm.ExecuteUpdater;
+      finally
+        //Frm.Free;
+      end;
+   end
    else
     Application.CreateForm(TFrmAbout, FrmAbout);
   end

@@ -26,7 +26,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, uMisc,
-  Vcl.Imaging.pngimage;
+  Vcl.Imaging.pngimage, Vcl.ComCtrls;
 
 type
   TFrmSettings = class(TForm)
@@ -49,6 +49,13 @@ type
     CheckBoxSubMenuCompileRC: TCheckBox;
     CheckBoxSubMenuVCLStyles: TCheckBox;
     CheckBoxSubMenuFMXStyles: TCheckBox;
+    PageControl1: TPageControl;
+    TabSheet1: TTabSheet;
+    Panel1: TPanel;
+    TabSheet2: TTabSheet;
+    RadioButtonCheckUpdates: TRadioButton;
+    RadioButtonNoCheckUpdates: TRadioButton;
+    Label1: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ButtonCancelClick(Sender: TObject);
@@ -89,7 +96,7 @@ begin
     FSettings.SubMenuCompileRC        := CheckBoxSubMenuCompileRC.Checked;
     FSettings.SubMenuOpenVclStyle        := CheckBoxSubMenuVCLStyles.Checked;
     FSettings.SubMenuOpenFMXStyle        := CheckBoxSubMenuFMXStyles.Checked;
-
+    FSettings.CheckForUpdates            := RadioButtonCheckUpdates.Checked;
     WriteSettings(FSettings);
     Close();
     //LoadVCLStyle(ComboBoxVCLStyle.Text);
@@ -128,6 +135,10 @@ begin
   CheckBoxSubMenuCompileRC.Checked:= FSettings.SubMenuCompileRC;
   CheckBoxSubMenuVCLStyles.Checked:= FSettings.SubMenuOpenVclStyle;
   CheckBoxSubMenuFMXStyles.Checked:= FSettings.SubMenuOpenFMXStyle;
+  RadioButtonCheckUpdates.Checked := FSettings.CheckForUpdates;
+
+  if not FSettings.CheckForUpdates then
+   RadioButtonNoCheckUpdates.Checked:=True;
 
 end;
 

@@ -1,5 +1,5 @@
 1 VERSIONINFO 
- FILEVERSION 0,1,25,2  
+ FILEVERSION 0,1,31,12  
  PRODUCTVERSION 1   
  FILEOS VOS__WINDOWS32   
  FILETYPE VFT_APP   
@@ -10,7 +10,7 @@
      BEGIN   
        VALUE "CompanyName","The Road To Delphi\000"   
        VALUE "FileDescription","Shell Extension for Delphi Developers \000"   
-       VALUE "FileVersion","0.1.25.2\000"   
+       VALUE "FileVersion","0.1.31.12\000"   
        VALUE "InternalName","DelphiDevShellTools\000"   
        VALUE "LegalCopyright","The Road To Delphi Copyright 2013\000"   
        VALUE "LegalTrademarks","The Road To Delphi\000"   

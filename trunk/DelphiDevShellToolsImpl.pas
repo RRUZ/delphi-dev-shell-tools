@@ -35,18 +35,11 @@ uses
   DelphiDevShellTools_TLB,
   System.Rtti,
   Winapi.ShlObj,
+  uMisc,
   Winapi.Windows,
   Winapi.ShellAPI;
 
 type
-  TMethodInfo=class
-   hwnd   : HWND;
-   Value1 : TValue;
-   Value2 : TValue;
-   Value3 : TValue;
-   Value4 : TValue;
-   Method : procedure(Info : TMethodInfo) of object;
-  end;
 
   TDelphiDevShellToolsContextMenu = class(TAutoObject, IDelphiDevShellToolsContextMenu,
   IShellExtInit, IContextMenu, IContextMenu2, IContextMenu3)
@@ -76,6 +69,7 @@ type
     procedure OpenFMXStyle(Info : TMethodInfo);
     procedure OpenWithLazarus(Info : TMethodInfo);
     procedure BuildWithLazBuild(Info : TMethodInfo);
+    procedure PAClientTest(Info : TMethodInfo);
 
     procedure AddCommonTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenRADCmdTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
@@ -85,6 +79,7 @@ type
     procedure AddMSBuildRAD_AllTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenWithDelphi(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddMSBuildPAClientTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 
     procedure AddCompileRCTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenVclStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
@@ -121,7 +116,6 @@ type
 implementation
 
 uses
-  uMisc,
   uLazarusVersions,
   ClipBrd,
   Vcl.Graphics,
@@ -138,6 +132,7 @@ uses
 
 var
   InstalledDelphiVersions : TObjectList<TDelphiVersionData>;
+  PAClientProfiles        : TPAClientProfileList;
   BitmapsDict    : TObjectDictionary<string, TBitmap>;
   ExeNameTxt, FriendlyAppNameTxt : string;
   LazarusInstalled : Boolean;
@@ -286,6 +281,33 @@ begin
  end;
 end;
 
+procedure TDelphiDevShellToolsContextMenu.PAClientTest(Info: TMethodInfo);
+var
+  LDelphiVersion  : TDelphiVersionData;
+  LPAClientApp, BatchFileName, Params : string;
+  BatchFile : TStrings;
+begin
+  try
+    LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
+    LPAClientApp:=IncludeTrailingPathDelimiter(ExtractFilePath(LDelphiVersion.Path))+'PAClient.exe';
+    log('PAClientTest '+LPAClientApp+' '+Format(' "%s"',[Info.Value2.AsString]));
+    BatchFile:=TStringList.Create;
+    try
+      BatchFile.Add(Format('"%s" "%s"',[LPAClientApp, Info.Value2.AsString]));
+      BatchFile.Add('Pause');
+      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
+      BatchFile.SaveToFile(BatchFileName);
+      Params:='/C "'+BatchFileName+'"';
+      ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+    finally
+      BatchFile.Free;
+    end;
+  except
+   on  E : Exception do
+   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+
+end;
 procedure TDelphiDevShellToolsContextMenu.OpenWithApp(Info : TMethodInfo);
 begin
  try
@@ -563,7 +585,7 @@ end;
 procedure TDelphiDevShellToolsContextMenu.OpenGUI(Info : TMethodInfo);
 begin
  try
-  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString) , nil , SW_SHOWNORMAL);
+  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(uMisc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
    log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -1206,6 +1228,105 @@ begin
    log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
+
+procedure TDelphiDevShellToolsContextMenu.AddMSBuildPAClientTasks(hMenu: HMENU;
+  var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
+  const SupportedExts: array of string);
+var
+  Found : Boolean;
+  LSubMenu: Winapi.Windows.HMENU;
+  i, LSubMenuIndex : Integer;
+  LMenuItem: TMenuItemInfo;
+  LCurrentDelphiVersionData  : TDelphiVersionData;
+  LFileName, sSubMenuCaption : string;
+  LMethodInfo : TMethodInfo;
+  LPAClientProfile : TPAClientProfile;
+begin
+  try
+     if not MatchText(FFileExt, SupportedExts) then exit;
+
+     Found:=False;
+
+     for LCurrentDelphiVersionData in InstalledDelphiVersions do
+      if (LCurrentDelphiVersionData.Version>=DelphiXE2) and  not Found then
+       for i:= 0 to PAClientProfiles.Profiles.Count-1 do
+        if PAClientProfiles.Profiles[i].RADStudioVersion=LCurrentDelphiVersionData.Version then
+        begin
+         Found:=True;
+         Break;
+        end;
+
+     if Found and (InstalledDelphiVersions.Count>0)  then
+       begin
+
+        if {Settings.SubMenuMSBuild}1=1 then
+        begin
+          LSubMenuIndex :=0;
+          LSubMenu   := CreatePopupMenu;
+          sSubMenuCaption:='PAClient';
+
+          ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+          LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+          LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+          LMenuItem.fType := MFT_STRING;
+          LMenuItem.wID := FMenuItemIndex;
+          LMenuItem.hSubMenu := LSubMenu;
+          LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+          LMenuItem.cch := Length(sSubMenuCaption);
+          InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+          SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['delphi'].Handle, BitmapsDict.Items['delphi'].Handle);
+
+          Inc(uIDNewItem);
+          Inc(MenuIndex);
+        end
+        else
+        begin
+          LSubMenu:=hMenu;
+          LSubMenuIndex:=MenuIndex;
+        end;
+
+          LFileName:=FFileName;
+
+        for LCurrentDelphiVersionData in InstalledDelphiVersions do
+          if (LCurrentDelphiVersionData.Version>=DelphiXE2) then
+            for i:= 0 to PAClientProfiles.Profiles.Count-1 do
+             if PAClientProfiles.Profiles[i].RADStudioVersion=LCurrentDelphiVersionData.Version then
+             begin
+               LPAClientProfile:=PAClientProfiles.Profiles[i];
+               sSubMenuCaption:='Test Profile '+LPAClientProfile.Name+Format(' (Platform : %s - Host : %s - Port : %d)',[LPAClientProfile.Platform, LPAClientProfile.Host, LPAClientProfile.Port]);
+
+                 InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
+                 log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
+
+                 if StartsText('Win', LPAClientProfile.Platform) then
+                   SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['win'].Handle, BitmapsDict.Items['win'].Handle)
+                 else
+                 if StartsText('OSX', LPAClientProfile.Platform) then
+                   SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['osx'].Handle, BitmapsDict.Items['osx'].Handle)
+                 else
+                 if StartsText('IOS', LPAClientProfile.Platform) then
+                   SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['ios'].Handle, BitmapsDict.Items['ios'].Handle);
+
+                 LMethodInfo:=TMethodInfo.Create;
+                 LMethodInfo.Method:=PAClientTest;
+                 LMethodInfo.Value1:=LCurrentDelphiVersionData;
+                 LMethodInfo.Value2:=LPAClientProfile.Name;
+
+                 FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+                 Inc(uIDNewItem);
+                 Inc(LSubMenuIndex);
+             end;
+
+        if not Settings.SubMenuMSBuild then
+          MenuIndex:=LSubMenuIndex;
+
+       end;
+  except
+   on  E : Exception do
+   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
+
 
 procedure TDelphiDevShellToolsContextMenu.AddMSBuildRAD_AllTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 var
@@ -1850,6 +1971,10 @@ begin
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddMSBuildRAD_AllTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj','.dpr']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMSBuildPAClientTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
+    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+
+
     AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj','.dpr','.pas','.inc','.pp','.dpk']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
@@ -1871,6 +1996,16 @@ begin
     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
     Inc(uIDNewItem);
     Inc(hSubMenuIndex);
+
+    InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Check for updates'));
+    SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['updates'].Handle, BitmapsDict.Items['updates'].Handle);
+    LMethodInfo:=TMethodInfo.Create;
+    LMethodInfo.Method:=OpenGUI;
+    LMethodInfo.Value1:='-update';
+    FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+    Inc(uIDNewItem);
+    Inc(hSubMenuIndex);
+
 
     InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('About'));
     SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['logo'].Handle, BitmapsDict.Items['logo'].Handle);
@@ -2027,12 +2162,16 @@ begin
 
 end;
 
+
+
+
 initialization
   log('initialization');
   TDelphiDevShellObjectFactory.Create(ComServer, TDelphiDevShellToolsContextMenu, CLASS_DelphiDevShellToolsContextMenu, ciMultiInstance, tmApartment);
   Settings:=TSettings.Create;
   InstalledDelphiVersions:=TObjectList<TDelphiVersionData>.Create;
   FillListDelphiVersions(InstalledDelphiVersions);
+  PAClientProfiles:=TPAClientProfileList.Create(InstalledDelphiVersions);
 
   BitmapsDict:=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
 
@@ -2065,6 +2204,7 @@ initialization
   RegisterBitmap('platforms', 'platforms2');
   RegisterBitmap('settings');
   RegisterBitmap('common');
+  RegisterBitmap('updates');
 
    try
      BitmapsDict.Add('txt',TBitmap.Create);
@@ -2097,10 +2237,15 @@ initialization
      end;
    end;
 
+   ReadSettings(Settings);
+   if Settings.CheckForUpdates then
+     CheckUpdates;
+
 
 finalization
   Settings.Free;
   BitmapsDict.Free;
   InstalledDelphiVersions.Free;
+  PAClientProfiles.Free;
   log('finalization');
 end.

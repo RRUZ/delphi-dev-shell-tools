@@ -106,6 +106,34 @@ type
     Destructor  Destroy; override;
   end;
 
+  TPAClientProfile=class
+  private
+    FPlatform: string;
+    FHost: string;
+    FPort: Integer;
+    FName: string;
+    FFileName: string;
+    FRADStudioVersion: TDelphiVersions;
+  public
+    property Platform : string read FPlatform;
+    property Host : string read FHost;
+    property Port : Integer read FPort;
+    property Name : string read FName;
+    property FileName : string read FFileName;
+    property RADStudioVersion : TDelphiVersions read FRADStudioVersion;
+  end;
+
+  TPAClientProfileList=class
+  private
+    FProfiles: TObjectList<TPAClientProfile>;
+    FListDelphiVersions:TList<TDelphiVersionData>;
+    procedure LoadData;
+  public
+    property    Profiles : TObjectList<TPAClientProfile> read FProfiles;
+    constructor Create(ListDelphiVersions:TList<TDelphiVersionData>);
+    Destructor  Destroy; override;
+  end;
+
 const
   {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
   DelphiOldVersions = 2;
@@ -169,6 +197,23 @@ const
     '\Software\Embarcadero\BDS\11.0'
     );
 
+ PAClientProfilesPaths: array[TDelphiVersions] of string = (
+  {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
+    '',
+    '',
+  {$ENDIF}
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '\Embarcadero\BDS\9.0',
+    '\Embarcadero\BDS\10.0',
+    '\Embarcadero\BDS\11.0'
+    );
 
   procedure FillListDelphiVersions(AList:TList<TDelphiVersionData>);
   {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
@@ -193,7 +238,10 @@ uses
   CommCtrl,
   Typinfo,
   ShellAPI,
+  Winapi.ShlObj,
+  IOUtils,
   uRegistry,
+  System.Types,
   Registry;
 
 constructor TMSBuildDProj.Create(const ProjectFile : string);
@@ -563,6 +611,77 @@ begin
     FBitmap13.Free;
   }
   inherited;
+end;
+
+{ TPAClientProfileList }
+
+constructor TPAClientProfileList.Create(ListDelphiVersions:TList<TDelphiVersionData>);
+begin
+  inherited Create;
+  FListDelphiVersions:=ListDelphiVersions;
+  FProfiles:=TObjectList<TPAClientProfile>.Create(True);
+  LoadData;
+end;
+
+destructor TPAClientProfileList.Destroy;
+begin
+  FProfiles.Free;
+  inherited;
+end;
+
+procedure TPAClientProfileList.LoadData;
+var
+  LDelphiVersionData  : TDelphiVersionData;
+  ns, sProfile, sProfilePath : string;
+  XmlDoc: OleVariant;
+  Node: OleVariant;
+begin
+  CoInitialize(nil);
+  try
+    for LDelphiVersionData in FListDelphiVersions do
+    if LDelphiVersionData.Version>=DelphiXE2  then
+    begin
+      sProfilePath:=IncludeTrailingPathDelimiter(GetSpecialFolder(CSIDL_APPDATA))+PAClientProfilesPaths[LDelphiVersionData.Version];
+      for sProfile in TDirectory.GetFiles(sProfilePath,'*.profile') do
+      begin
+        FProfiles.Add(TPAClientProfile.Create);
+        FProfiles[FProfiles.Count-1].FName:=ChangeFileExt(ExtractFileName(sProfile),'');
+        FProfiles[FProfiles.Count-1].FFileName:=ExtractFileName(sProfile);
+        FProfiles[FProfiles.Count-1].FRADStudioVersion:=LDelphiVersionData.Version;
+
+        XmlDoc := CreateOleObject('Msxml2.DOMDocument.6.0');
+        try
+          XmlDoc.Async := False;
+          XmlDoc.Load(sProfile);
+          XmlDoc.SetProperty('SelectionLanguage', 'XPath');
+           ns := Format('xmlns:a=%s',[QuotedStr('http://schemas.microsoft.com/developer/msbuild/2003')]);
+           XmlDoc.setProperty('SelectionNamespaces', ns);
+
+          if (XmlDoc.parseError.errorCode <> 0) then
+            raise Exception.CreateFmt('Error in Xml Data %s', [XmlDoc.parseError]);
+
+          Node := XmlDoc.selectSingleNode('/a:Project//a:PropertyGroup/a:Profile_platform');
+          if not VarIsClear(Node) then
+           FProfiles[FProfiles.Count-1].FPlatform:=Node.text;
+
+          Node := XmlDoc.selectSingleNode('/a:Project//a:PropertyGroup/a:Profile_host');
+          if not VarIsClear(Node) then
+           FProfiles[FProfiles.Count-1].FHost:=Node.text;
+
+          Node := XmlDoc.selectSingleNode('/a:Project//a:PropertyGroup/a:Profile_port');
+          if not VarIsClear(Node) then
+           TryStrToInt(Node.text, FProfiles[FProfiles.Count-1].FPort);
+
+        finally
+          XmlDoc := Unassigned;
+        end;
+
+      end;
+    end;
+  finally
+    CoUninitialize;
+  end;
+
 end;
 
 end.
