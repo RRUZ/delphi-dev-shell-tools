@@ -60,6 +60,7 @@ type
     procedure OpenCmdHere(Info : TMethodInfo);
     procedure CopyPathClipboard(Info : TMethodInfo);
     procedure CopyFileNameClipboard(Info : TMethodInfo);
+    procedure CopyFileContentClipboard(Info : TMethodInfo);
     procedure OpenGUI(Info : TMethodInfo);
     procedure OpenRADCmd(Info : TMethodInfo);
     procedure FormatSourceRAD(Info : TMethodInfo);
@@ -168,7 +169,7 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('-pDelphi "%s"',[FFileName])) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.OpenWithDelphi Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
@@ -188,7 +189,7 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('"%s" "%s"',[LFileName, Info.Value3.AsString])) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.OpenRADStudio Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
@@ -209,7 +210,7 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(LVclStyleEditor), PChar(Format('"%s"',[FFileName])) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.OpenVclStyle Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
@@ -226,7 +227,7 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(LVclStyleEditor), PChar(Format('"%s"',[FFileName])) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.OpenFMXStyle Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
@@ -241,7 +242,7 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(LazarusIDE), PChar(Format('"%s"',[FFileName])) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.OpenWithLazarus Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
@@ -266,7 +267,7 @@ begin
     end;
   except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.BuildWithLazBuild Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
@@ -277,7 +278,7 @@ begin
   ShellExecute(Info.hwnd, 'open', 'C:\Windows\notepad.exe', PChar(FFileName) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.OpenWithNotepad Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
@@ -304,7 +305,7 @@ begin
     end;
   except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.PAClientTest Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 
 end;
@@ -314,7 +315,7 @@ begin
    ShellExecute(Info.hwnd, 'open', PChar(Info.Value1.AsString), PChar(FFileName) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.OpenWithApp Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
@@ -327,7 +328,7 @@ begin
   Clipboard.AsText := FilePath;
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.CopyPathClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
@@ -337,7 +338,18 @@ begin
   Clipboard.AsText := FFileName;
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.CopyFileNameClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
+ end;
+end;
+
+
+procedure TDelphiDevShellToolsContextMenu.CopyFileContentClipboard(Info : TMethodInfo);
+begin
+ try
+  Clipboard.AsText := TFile.ReadAllText(FFileName);
+ except
+   on  E : Exception do
+   log(Format('TDelphiDevShellToolsContextMenu.CopyFileContentClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
@@ -363,7 +375,7 @@ begin
     end;
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.OpenCmdHere Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
@@ -393,7 +405,7 @@ begin
   end;
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.OpenRADCmd Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
@@ -455,7 +467,7 @@ begin
   end;
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.MSBuildWithDelphi_Default Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
@@ -487,7 +499,7 @@ begin
   end;
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.Compile_BRCC32 Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
@@ -522,7 +534,7 @@ begin
   end;
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.MSBuildWithDelphi Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
@@ -549,7 +561,7 @@ begin
   end;
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.FormatSourceRAD Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
@@ -577,7 +589,7 @@ begin
   end;
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.TouchRAD Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
@@ -588,7 +600,7 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(uMisc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellToolsContextMenu.OpenGUI Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
@@ -633,7 +645,6 @@ var
   i, Lx,Ly :Integer;
   LCanvas: TCanvas;
   SaveIndex: Integer;
-
 begin
 log('MenuMessageHandler');
   case uMsg of
@@ -772,12 +783,8 @@ end;
 //IContextMenu3
 function TDelphiDevShellToolsContextMenu.HandleMenuMsg2(uMsg: UINT; wParam: WPARAM; lParam: LPARAM; var lpResult: LRESULT): HResult; stdcall;
 begin
- log('HandleMenuMsg2');
- {
-  if ( lpResult = 0 )  then
-    Result:= MenuMessageHandler( uMsg, wParam, lParam, res)
-  else          }
-    Result:= MenuMessageHandler( uMsg, wParam, lParam, lpResult);
+  log('HandleMenuMsg2');
+  Result:= MenuMessageHandler( uMsg, wParam, lParam, lpResult);
 end;
 
 
@@ -833,6 +840,15 @@ begin
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy file content to the clipboard'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=CopyFileContentClipboard;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
 
      InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open In Notepad'));
      SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['notepad'].Handle, BitmapsDict.Items['notepad'].Handle);

@@ -57,7 +57,6 @@ TODO :
   deploy in OSX , IOS, Android
   view and open vcl and firemonkey styles done
   Add options to register external tools
-
   add tasks for packages (.dpk)  done
 
 
@@ -70,12 +69,6 @@ TODO :
   //EurekaLog
   //http://www.eurekalog.com/help/eurekalog/index.php?profiles.php
 
-  build
-  opt
-    ms build release x86
-    ms build debug x86
-    ms build release x64
-    ms build debug  x86
 
   common
    crc, sha1 calculation

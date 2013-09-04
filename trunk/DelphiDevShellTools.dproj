@@ -1,6 +1,6 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{0DF7C998-D966-449B-9C65-1EAF1B707684}</ProjectGuid>
+        <ProjectGuid>{93B8A149-40C5-44F2-AF82-FD06AA5CEC4A}</ProjectGuid>
         <ProjectVersion>14.6</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
         <MainSource>DelphiDevShellTools.dpr</MainSource>
