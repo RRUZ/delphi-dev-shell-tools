@@ -56,6 +56,16 @@ type
     RadioButtonCheckUpdates: TRadioButton;
     RadioButtonNoCheckUpdates: TRadioButton;
     Label1: TLabel;
+    Label2: TLabel;
+    EditCommonTaskExt: TEdit;
+    EditOpenDelphiExt: TEdit;
+    Label3: TLabel;
+    Label4: TLabel;
+    EditOpenLazarusExt: TEdit;
+    Label5: TLabel;
+    EditFormatPascalExt: TEdit;
+    EditCheckSumExt: TEdit;
+    Label6: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ButtonCancelClick(Sender: TObject);
@@ -97,6 +107,12 @@ begin
     FSettings.SubMenuOpenVclStyle        := CheckBoxSubMenuVCLStyles.Checked;
     FSettings.SubMenuOpenFMXStyle        := CheckBoxSubMenuFMXStyles.Checked;
     FSettings.CheckForUpdates            := RadioButtonCheckUpdates.Checked;
+    FSettings.CommonTaskExt              := EditCommonTaskExt.Text;
+    FSettings.FormatPascalExt            := EditFormatPascalExt.Text;
+    FSettings.OpenDelphiExt              := EditOpenDelphiExt.Text;
+    FSettings.OpenLazarusExt             := EditOpenLazarusExt.Text;
+    FSettings.CheckSumExt                := EditCheckSumExt.Text;
+
     WriteSettings(FSettings);
     Close();
     //LoadVCLStyle(ComboBoxVCLStyle.Text);
@@ -136,6 +152,11 @@ begin
   CheckBoxSubMenuVCLStyles.Checked:= FSettings.SubMenuOpenVclStyle;
   CheckBoxSubMenuFMXStyles.Checked:= FSettings.SubMenuOpenFMXStyle;
   RadioButtonCheckUpdates.Checked := FSettings.CheckForUpdates;
+  EditCommonTaskExt.Text          := FSettings.CommonTaskExt;
+  EditFormatPascalExt.Text        := FSettings.FormatPascalExt;
+  EditOpenDelphiExt.Text          := FSettings.OpenDelphiExt;
+  EditOpenLazarusExt.Text         := FSettings.OpenLazarusExt;
+  EditCheckSumExt.Text            := FSettings.CheckSumExt;
 
   if not FSettings.CheckForUpdates then
    RadioButtonNoCheckUpdates.Checked:=True;

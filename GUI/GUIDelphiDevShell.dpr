@@ -37,7 +37,8 @@ uses
   Vcl.Themes,
   Vcl.Styles,
   uSettings in 'uSettings.pas' {FrmSettings},
-  uMisc in '..\units\uMisc.pas';
+  uMisc in '..\units\uMisc.pas',
+  uCheckSum in 'uCheckSum.pas' {FrmCheckSum};
 
 {$R *.res}
 
@@ -68,6 +69,7 @@ var
   Frm: TFrmCheckUpdate;
 
 begin
+  if (ParamCount>0) and MatchText(ParamStr(1),['-settings','-update','-checkupdates','-about']) then
   OnlyOne;
 
   Application.Initialize;
@@ -77,6 +79,13 @@ begin
   begin
    if SameText('-about',ParamStr(1)) then
     Application.CreateForm(TFrmAbout, FrmAbout)
+   else
+   if MatchText(ParamStr(1),['CRC32', 'SHA1', 'MD4', 'MD5', 'SHA-256', 'SHA-384', 'SHA-512']) then
+   begin
+    Application.CreateForm(TFrmCheckSum, FrmCheckSum);
+    FrmCheckSum.CheckSumAlgo:=ParamStr(1);
+    FrmCheckSum.FileName:=ParamStr(2);
+   end
    else
    if SameText('-settings',ParamStr(1)) then
     Application.CreateForm(TFrmSettings, FrmSettings)

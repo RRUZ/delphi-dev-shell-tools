@@ -413,7 +413,7 @@ begin
            XmlDoc.setProperty('SelectionNamespaces', ns);
 
           if (XmlDoc.parseError.errorCode <> 0) then
-            raise Exception.CreateFmt('Error in Xml Data %s', [XmlDoc.parseError]);
+            exit;  //raise Exception.CreateFmt('Error in Xml Data %s', [XmlDoc.parseError]);
 
           Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:ProjectVersion');
           if not VarIsClear(Node) then
@@ -658,7 +658,7 @@ begin
            XmlDoc.setProperty('SelectionNamespaces', ns);
 
           if (XmlDoc.parseError.errorCode <> 0) then
-            raise Exception.CreateFmt('Error in Xml Data %s', [XmlDoc.parseError]);
+            Exit;//raise Exception.CreateFmt('Error in Xml Data %s', [XmlDoc.parseError]);
 
           Node := XmlDoc.selectSingleNode('/a:Project//a:PropertyGroup/a:Profile_platform');
           if not VarIsClear(Node) then

@@ -25,7 +25,7 @@ object FrmSettings: TFrmSettings
     Width = 416
     Height = 35
     Align = alBottom
-    TabOrder = 0
+    TabOrder = 1
     object ButtonApply: TButton
       Left = 6
       Top = 6
@@ -53,7 +53,7 @@ object FrmSettings: TFrmSettings
     Align = alClient
     BevelOuter = bvNone
     BorderWidth = 3
-    TabOrder = 1
+    TabOrder = 0
     object PageControl1: TPageControl
       Left = 3
       Top = 3
@@ -72,6 +72,41 @@ object FrmSettings: TFrmSettings
           Height = 13
           Caption = 'Updates'
         end
+        object Label2: TLabel
+          Left = 3
+          Top = 72
+          Width = 126
+          Height = 13
+          Caption = 'Common Tasks extensions'
+        end
+        object Label3: TLabel
+          Left = 3
+          Top = 120
+          Width = 136
+          Height = 13
+          Caption = 'Open with Delphi extensions'
+        end
+        object Label4: TLabel
+          Left = 3
+          Top = 176
+          Width = 144
+          Height = 13
+          Caption = 'Open with Lazarus extensions'
+        end
+        object Label5: TLabel
+          Left = 3
+          Top = 232
+          Width = 150
+          Height = 13
+          Caption = 'Format Pascal Code extensions'
+        end
+        object Label6: TLabel
+          Left = 3
+          Top = 278
+          Width = 151
+          Height = 13
+          Caption = 'Calculate CheckSum extensions'
+        end
         object RadioButtonCheckUpdates: TRadioButton
           Left = 3
           Top = 40
@@ -89,6 +124,41 @@ object FrmSettings: TFrmSettings
           Height = 17
           Caption = 'Never check for updates'
           TabOrder = 1
+        end
+        object EditCommonTaskExt: TEdit
+          Left = 3
+          Top = 91
+          Width = 390
+          Height = 21
+          TabOrder = 2
+        end
+        object EditOpenDelphiExt: TEdit
+          Left = 3
+          Top = 139
+          Width = 390
+          Height = 21
+          TabOrder = 3
+        end
+        object EditOpenLazarusExt: TEdit
+          Left = 3
+          Top = 195
+          Width = 390
+          Height = 21
+          TabOrder = 4
+        end
+        object EditFormatPascalExt: TEdit
+          Left = 3
+          Top = 251
+          Width = 390
+          Height = 21
+          TabOrder = 5
+        end
+        object EditCheckSumExt: TEdit
+          Left = 3
+          Top = 297
+          Width = 390
+          Height = 21
+          TabOrder = 6
         end
       end
       object TabSheet1: TTabSheet
@@ -331,7 +401,7 @@ object FrmSettings: TFrmSettings
           Width = 363
           Height = 17
           Caption = 'Activate Lazarus support (Only works if lazarus is installed) '
-          TabOrder = 0
+          TabOrder = 11
         end
         object CheckBoxShowInfoDProj: TCheckBox
           Left = 46
@@ -347,7 +417,7 @@ object FrmSettings: TFrmSettings
           Width = 361
           Height = 17
           Caption = 'Create submenu for "Common Tasks"'
-          TabOrder = 2
+          TabOrder = 0
         end
         object CheckBoxSubMenuCompileRC: TCheckBox
           Left = 45
@@ -355,7 +425,7 @@ object FrmSettings: TFrmSettings
           Width = 236
           Height = 17
           Caption = 'Create submenu for "Compile Resource files"'
-          TabOrder = 3
+          TabOrder = 2
         end
         object CheckBoxSubMenuFMXStyles: TCheckBox
           Left = 45
@@ -363,7 +433,7 @@ object FrmSettings: TFrmSettings
           Width = 347
           Height = 17
           Caption = 'Create submenu for "View FMX Style"'
-          TabOrder = 4
+          TabOrder = 10
         end
         object CheckBoxSubMenuFormat: TCheckBox
           Left = 46
@@ -371,7 +441,7 @@ object FrmSettings: TFrmSettings
           Width = 347
           Height = 17
           Caption = 'Create submenu for "Format source code"'
-          TabOrder = 5
+          TabOrder = 8
         end
         object CheckBoxSubMenuLazarus: TCheckBox
           Left = 63
@@ -379,7 +449,7 @@ object FrmSettings: TFrmSettings
           Width = 329
           Height = 17
           Caption = 'Create submenu for "Lazarus" options'
-          TabOrder = 6
+          TabOrder = 12
         end
         object CheckBoxSubMenuMSBuild: TCheckBox
           Left = 46
@@ -387,7 +457,7 @@ object FrmSettings: TFrmSettings
           Width = 361
           Height = 17
           Caption = 'Create submenu for "Run MSBuild ..."'
-          TabOrder = 7
+          TabOrder = 4
         end
         object CheckBoxSubMenuMSBuildAnother: TCheckBox
           Left = 46
@@ -395,7 +465,7 @@ object FrmSettings: TFrmSettings
           Width = 361
           Height = 17
           Caption = 'Create submenu for "Run MSBuild with another Delphi version"'
-          TabOrder = 8
+          TabOrder = 5
         end
         object CheckBoxSubMenuOpenCmdRAD: TCheckBox
           Left = 46
@@ -403,7 +473,7 @@ object FrmSettings: TFrmSettings
           Width = 361
           Height = 17
           Caption = 'Create submenu for "Open RAD Studio Command Prompt Here"'
-          TabOrder = 9
+          TabOrder = 3
         end
         object CheckBoxSubMenuOpenDelphi: TCheckBox
           Left = 46
@@ -411,7 +481,7 @@ object FrmSettings: TFrmSettings
           Width = 347
           Height = 17
           Caption = 'Create submenu for "Open with Delphi"'
-          TabOrder = 10
+          TabOrder = 7
         end
         object CheckBoxSubMenuRunTouch: TCheckBox
           Left = 45
@@ -419,7 +489,7 @@ object FrmSettings: TFrmSettings
           Width = 347
           Height = 17
           Caption = 'Create submenu for "Run Touch"'
-          TabOrder = 11
+          TabOrder = 6
         end
         object CheckBoxSubMenuVCLStyles: TCheckBox
           Left = 45
@@ -427,7 +497,7 @@ object FrmSettings: TFrmSettings
           Width = 347
           Height = 17
           Caption = 'Create submenu for "View VCL Style"'
-          TabOrder = 12
+          TabOrder = 9
         end
       end
     end
