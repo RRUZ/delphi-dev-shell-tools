@@ -32,21 +32,23 @@ exports
 {$R VersionInfo.res}
 
 {
-TODO :
-    rect.right = ::GetSystemMetrics(SM_CXMENUCHECK);
-    rect.bottom = ::GetSystemMetrics(SM_CYMENUCHECK);
+TODO
+
+
+  add register extensions by task      done
+  Add options to register external tools
 
   Add paclient.exe options
     deploy
-    test profile connection
+    test profile connection  done
 
 
   detect delphi version.     DONE
   enumerate builds and plattform from msbuild file dproj   DONE
-  Add extra info to default msbuild conf (platform, type (dll, app), framweork) use owner draw?
-  
+  Add extra info to default msbuild conf (platform, type (dll, app), framweork) use owner draw?  DONE
+
   Auto Update  done
-  settings app
+  settings app       done
   Map dpr to dproj >=Delphi2007    done
   Add open RadStudio Command Prompt Here  %comspec%  /K "C:\Program Files (x86)\Embarcadero\RAD Studio\11.0\bin\rsvars.bat"  DONE
   Add Format code (formatter)  done
@@ -56,7 +58,6 @@ TODO :
   Add support for tdump.exe, tdump64.exe
   deploy in OSX , IOS, Android
   view and open vcl and firemonkey styles done
-  Add options to register external tools
   add tasks for packages (.dpk)  done
 
 
@@ -71,7 +72,7 @@ TODO :
 
 
   common
-   crc, sha1 calculation
+   crc, sha1 calculation done
    copy path to clipboard   DONE
    copy full filename (Path + FileName) to clipboard     DONE
    open in notepad      DONE

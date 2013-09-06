@@ -30,14 +30,6 @@ uses
  ImgList;
 
 type
-  TMethodInfo=class
-   hwnd   : HWND;
-   Value1 : TValue;
-   Value2 : TValue;
-   Value3 : TValue;
-   Value4 : TValue;
-   Method : procedure (Info : TMethodInfo) of object;
-  end;
 
   TSettings =class
   private
@@ -55,6 +47,7 @@ type
     FSubMenuOpenFMXStyle: Boolean;
     FSubMenuCompileRC: Boolean;
     FCheckForUpdates: Boolean;
+    FCheckSumExt, FFormatPascalExt, FOpenLazarusExt, FOpenDelphiExt, FCommonTaskExt : string;
   public
     property SubMenuOpenCmdRAD : Boolean read FSubMenuOpenCmdRAD write FSubMenuOpenCmdRAD;
     property SubMenuLazarus : Boolean read FSubMenuLazarus write FSubMenuLazarus;
@@ -71,6 +64,20 @@ type
     property SubMenuOpenVclStyle : Boolean read FSubMenuOpenVclStyle write FSubMenuOpenVclStyle;
 
     property CheckForUpdates     : Boolean read FCheckForUpdates write FCheckForUpdates;
+    property CommonTaskExt : string read FCommonTaskExt write FCommonTaskExt;
+    property OpenDelphiExt : string read FOpenDelphiExt write FOpenDelphiExt;
+    property OpenLazarusExt : string read FOpenLazarusExt write FOpenLazarusExt;
+    property FormatPascalExt : string read FFormatPascalExt write FFormatPascalExt;
+    property CheckSumExt : string read FCheckSumExt write FCheckSumExt;
+  end;
+
+  TMethodInfo=class
+   hwnd   : HWND;
+   Value1 : TValue;
+   Value2 : TValue;
+   Value3 : TValue;
+   Value4 : TValue;
+   Method : procedure (Info : TMethodInfo) of object;
   end;
 
   procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
@@ -210,24 +217,25 @@ var
   LCtx   : TRttiContext;
   LProp  : TRttiProperty;
   BooleanValue : Boolean;
+  StringValue : string;
 begin
   iniFile := TIniFile.Create(GetDelphiDevShellToolsFolder + 'Settings.ini');
   try
    LCtx:=TRttiContext.Create;
    try
-    {
-    Settings.SubMenuOpenCmdRAD        := iniFile.ReadBool('Global', 'SubMenuOpenCmdRAD', True);
-    Settings.SubMenuLazarus           := iniFile.ReadBool('Global', 'SubMenuLazarus', True);
-    Settings.ShowInfoDProj            := iniFile.ReadBool('Global', 'ShowInfoDProj', True);
-    Settings.ActivateLazarus          := iniFile.ReadBool('Global', 'ActivateLazarus', True);
-    Settings.SubMenuCommonTasks       := iniFile.ReadBool('Global', 'SubMenuCommonTasks', False);
-    }
     for LProp in LCtx.GetType(TypeInfo(TSettings)).GetProperties do
     if LProp.PropertyType.TypeKind=tkEnumeration then
     begin
       BooleanValue:= iniFile.ReadBool('Global', LProp.Name, True);
       LProp.SetValue(Settings, BooleanValue);
+    end
+    else
+    if (LProp.PropertyType.TypeKind=tkString) or  (LProp.PropertyType.TypeKind=tkUString) then
+    begin
+      StringValue:= iniFile.ReadString('Global', LProp.Name, '');
+      LProp.SetValue(Settings, StringValue);
     end;
+
 
    finally
      LCtx.Free;
@@ -243,23 +251,23 @@ var
   LCtx   : TRttiContext;
   LProp  : TRttiProperty;
   BooleanValue : Boolean;
+  StringValue : string;
 begin
   iniFile := TIniFile.Create(GetDelphiDevShellToolsFolder + 'Settings.ini');
   try
    LCtx:=TRttiContext.Create;
    try
-    {
-    iniFile.WriteBool('Global', 'SubMenuOpenCmdRAD', Settings.SubMenuOpenCmdRAD);
-    iniFile.WriteBool('Global', 'SubMenuLazarus', Settings.SubMenuLazarus);
-    iniFile.WriteBool('Global', 'ShowInfoDProj', Settings.ShowInfoDProj);
-    iniFile.WriteBool('Global', 'ActivateLazarus', Settings.ActivateLazarus);
-    iniFile.WriteBool('Global', 'SubMenuCommonTasks', Settings.SubMenuCommonTasks);
-    }
     for LProp in LCtx.GetType(TypeInfo(TSettings)).GetProperties do
     if LProp.PropertyType.TypeKind=tkEnumeration then
     begin
        BooleanValue:= LProp.GetValue(Settings).AsBoolean;
        iniFile.WriteBool('Global', LProp.Name, BooleanValue);
+    end
+    else
+    if (LProp.PropertyType.TypeKind=tkString) or  (LProp.PropertyType.TypeKind=tkUString) then
+    begin
+       StringValue:= LProp.GetValue(Settings).AsString;
+       iniFile.WriteString('Global', LProp.Name, StringValue);
     end;
    finally
      LCtx.Free;

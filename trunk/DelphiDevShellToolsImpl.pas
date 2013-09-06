@@ -62,6 +62,7 @@ type
     procedure CopyFileNameClipboard(Info : TMethodInfo);
     procedure CopyFileContentClipboard(Info : TMethodInfo);
     procedure OpenGUI(Info : TMethodInfo);
+    procedure OpenGUICheckSum(Info : TMethodInfo);
     procedure OpenRADCmd(Info : TMethodInfo);
     procedure FormatSourceRAD(Info : TMethodInfo);
     procedure TouchRAD(Info : TMethodInfo);
@@ -85,6 +86,7 @@ type
     procedure AddCompileRCTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenVclStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenFmxStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddCheckSumTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 
     procedure AddMenuSeparator(hMenu : HMENU; var MenuIndex : Integer);
   protected
@@ -604,6 +606,16 @@ begin
  end;
 end;
 
+procedure TDelphiDevShellToolsContextMenu.OpenGUICheckSum(Info: TMethodInfo);
+begin
+ try
+  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(uMisc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString+' "'+Info.Value2.AsString+'"'), nil , SW_SHOWNORMAL);
+ except
+   on  E : Exception do
+   log(Format('TDelphiDevShellToolsContextMenu.OpenGUI Message %s  Trace %s',[E.Message, e.StackTrace]));
+ end;
+end;
+
 function TDelphiDevShellToolsContextMenu.GetCommandString(idCmd: UINT_PTR; uFlags: UINT;
   pwReserved: PUINT; pszName: LPSTR; cchMax: UINT): HResult;
 begin
@@ -788,6 +800,124 @@ begin
 end;
 
 
+procedure TDelphiDevShellToolsContextMenu.AddCheckSumTasks(hMenu: HMENU;
+  var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
+  const SupportedExts: array of string);
+var
+  LMethodInfo : TMethodInfo;
+  LSubMenuIndex : Integer;
+  LSubMenu: Winapi.Windows.HMENU;
+  LMenuItem: TMenuItemInfo;
+  sSubMenuCaption : string;
+begin
+  try
+   if not MatchText(FFileExt, SupportedExts) then exit;
+
+      if (1=1){Settings.SubMenuCommonTasks} then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='Calculate Checksum';
+
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['checksum'].Handle, BitmapsDict.Items['checksum'].Handle);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+         LSubMenuIndex:=MenuIndex;
+         LSubMenu:=hMenu;
+      end;
+
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate CRC32'));
+     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=OpenGUICheckSum;
+     LMethodInfo.Value1:='CRC32';
+     LMethodInfo.Value2:=FFileName;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate MD4'));
+     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=OpenGUICheckSum;
+     LMethodInfo.Value1:='MD4';
+     LMethodInfo.Value2:=FFileName;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate MD5'));
+     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=OpenGUICheckSum;
+     LMethodInfo.Value1:='MD5';
+     LMethodInfo.Value2:=FFileName;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate SHA1'));
+     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=OpenGUICheckSum;
+     LMethodInfo.Value1:='SHA1';
+     LMethodInfo.Value2:=FFileName;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate SHA-256'));
+     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=OpenGUICheckSum;
+     LMethodInfo.Value1:='SHA-256';
+     LMethodInfo.Value2:=FFileName;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate SHA-384'));
+     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=OpenGUICheckSum;
+     LMethodInfo.Value1:='SHA-384';
+     LMethodInfo.Value2:=FFileName;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate SHA-512'));
+     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=OpenGUICheckSum;
+     LMethodInfo.Value1:='SHA-512';
+     LMethodInfo.Value2:=FFileName;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
+     {
+      if not Settings.SubMenuCommonTasks then
+       MenuIndex:=LSubMenuIndex;
+     }
+  except
+    on  E : Exception do
+     log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
 procedure TDelphiDevShellToolsContextMenu.AddCommonTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 var
   LMethodInfo : TMethodInfo;
@@ -1360,7 +1490,7 @@ begin
     log('AddMSBuildRAD_AllTasks');
     Found:=False;
     for LCurrentDelphiVersionData in InstalledDelphiVersions do
-    if (LCurrentDelphiVersionData.Version>=Delphi2007) and (  ((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or SameText('.groupproj', FFileExt)) then
+    if (LCurrentDelphiVersionData.Version>=Delphi2007) and (  ((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or MatchText(FFileExt,['.groupproj','.proj'])) then
     begin
       Found:=True;
       Break;
@@ -1396,7 +1526,7 @@ begin
       end;
 
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
-       if (LCurrentDelphiVersionData.Version>=Delphi2007) and (((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or SameText('.groupproj', FFileExt)) then
+       if (LCurrentDelphiVersionData.Version>=Delphi2007) and (((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or MatchText(FFileExt,['.groupproj','.proj'])) then
        begin
         InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('MSBuild with '+LCurrentDelphiVersionData.Name));
         SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
@@ -1750,7 +1880,50 @@ begin
      end;
 
 
-     if  MatchText(FFileExt, ['.pas','.inc','.pp','.dpk'])  then
+     if  MatchText(FFileExt, ['.dproj', '.dpr']) then
+     begin
+       for LCurrentDelphiVersionData in InstalledDelphiVersions do
+       if LCurrentDelphiVersionData.Version>=Delphi2007 then
+       begin
+         Found:=False;
+         for LCurrentDelphiVersion in DProjectVersion do
+         if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
+         begin
+           sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name+' (Detected)';
+           InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
+           log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
+           Found:=True;
+           Break;
+         end;
+
+         if not Found then
+         begin
+           sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name;
+           InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
+           log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
+         end;
+
+         SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
+         LMethodInfo:=TMethodInfo.Create;
+         LMethodInfo.Method:=OpenRADStudio;
+         LMethodInfo.Value1:=LCurrentDelphiVersionData;
+         LMethodInfo.Value2:=EmptyStr;
+         LMethodInfo.Value3:='-pDelphi';
+
+         if SameText(FFileExt, '.dpr') then
+         begin
+          sValue:=ChangeFileExt(FFileName,'.dproj');
+          if TFile.Exists(sValue) then
+            LMethodInfo.Value2:=sValue;
+         end;
+
+         FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+         Inc(uIDNewItem);
+         Inc(LSubMenuIndex);
+       end
+     end
+     else
+     //if  MatchText(FFileExt, ['.pas','.inc','.pp','.dpk'])  then
      for LCurrentDelphiVersionData in InstalledDelphiVersions do
      begin
        sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name;
@@ -1761,48 +1934,9 @@ begin
        LMethodInfo.Method:=OpenWithDelphi;
        LMethodInfo.Value1:=LCurrentDelphiVersionData;
        LMethodInfo.Value2:=EmptyStr;
-       LMethodInfo.Value3:='-pDelphi';
-       FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
-       Inc(uIDNewItem);
-       Inc(LSubMenuIndex);
-     end
-     else
-     //if  MatchText(FFileExt, ['.dproj', '.bdsproj','.dpr']) then
-     for LCurrentDelphiVersionData in InstalledDelphiVersions do
-     if LCurrentDelphiVersionData.Version>=Delphi2007 then
-     begin
-
-       Found:=False;
-       for LCurrentDelphiVersion in DProjectVersion do
-       if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
-       begin
-         sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name+' (Detected)';
-         InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
-         log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
-         Found:=True;
-         Break;
-       end;
-
-       if not Found then
-       begin
-         sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name;
-         InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
-         log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
-       end;
-
-       SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
-       LMethodInfo:=TMethodInfo.Create;
-       LMethodInfo.Method:=OpenRADStudio;
-       LMethodInfo.Value1:=LCurrentDelphiVersionData;
-       LMethodInfo.Value2:=EmptyStr;
-       LMethodInfo.Value3:='-pDelphi';
-
-       if SameText(FFileExt, '.dpr') then
-       begin
-        sValue:=ChangeFileExt(FFileName,'.dproj');
-        if TFile.Exists(sValue) then
-          LMethodInfo.Value2:=sValue;
-       end;
+       LMethodInfo.Value3:=EmptyStr;
+       if LCurrentDelphiVersionData.Version>=Delphi2005 then
+        LMethodInfo.Value3:='-pDelphi';
 
        FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
        Inc(uIDNewItem);
@@ -1866,7 +2000,14 @@ begin
     FMethodsDict:=TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues]);
 
 
-  if not MatchText(FFileExt,['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style','.lpi','.lpr','.lpk']) then
+  if (not MatchText(FFileExt,['.pas','.dpr','.inc','.pp','.proj','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.lfm','.fmx','.vsf','.style','.lpi','.lpr','.lpk']))
+     and (not MatchText(FFileExt, SplitString(Settings.CommonTaskExt,',')))
+     and (not MatchText(FFileExt, SplitString(Settings.FormatPascalExt,',')))
+     and (not MatchText(FFileExt, SplitString(Settings.OpenDelphiExt,',')))
+     and (not MatchText(FFileExt, SplitString(Settings.OpenLazarusExt,',')))
+     and (not MatchText(FFileExt, SplitString(Settings.CheckSumExt,',')))
+
+  then
    Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0));
 
    if  MatchText(FFileExt ,['.dproj', '.bdsproj','.dpr']) then
@@ -1905,11 +2046,17 @@ begin
      end;
 
 
-    AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.lpi','.lpr','.lpk']);
+    //AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj','.bdsproj','.dpk','.groupproj','.rc','.lfm','.dfm','.fmx','.lpi','.lpr','.lpk']);
+    AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.CommonTaskExt,','));
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
-    AddOpenRADCmdTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style']);
+
+    AddCheckSumTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.CheckSumExt,','));
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
-    AddFormatCodeRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp']);
+
+    AddOpenRADCmdTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj','.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style']);
+    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    //AddFormatCodeRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp']);
+    AddFormatCodeRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.FormatPascalExt,','));
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddCompileRCTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.rc']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
@@ -1985,18 +2132,20 @@ begin
 
     AddMSBuildRAD_SpecificTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
-    AddMSBuildRAD_AllTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj','.dpr']);
+    AddMSBuildRAD_AllTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.groupproj','.dpr','.proj']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddMSBuildPAClientTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
 
-    AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj','.dpr','.pas','.inc','.pp','.dpk']);
+    //AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj','.dpr','.pas','.inc','.pp','.dpk']);
+    AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.OpenDelphiExt,','));
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
     if Settings.ActivateLazarus and LazarusInstalled then
     begin
-      AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.lpi','.pp','.inc','.pas','.lpk']);
+      //AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.lpi','.pp','.inc','.pas','.lpk']);
+      AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.OpenLazarusExt,','));
       AddMenuSeparator(hSubMenu, hSubMenuIndex);
     end;
 
@@ -2221,6 +2370,8 @@ initialization
   RegisterBitmap('settings');
   RegisterBitmap('common');
   RegisterBitmap('updates');
+  RegisterBitmap('checksum');
+  //RegisterBitmap('lazarus');
 
    try
      BitmapsDict.Add('txt',TBitmap.Create);
@@ -2256,7 +2407,6 @@ initialization
    ReadSettings(Settings);
    if Settings.CheckForUpdates then
      CheckUpdates;
-
 
 finalization
   Settings.Free;
