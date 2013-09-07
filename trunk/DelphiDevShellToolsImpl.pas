@@ -27,6 +27,7 @@ unit DelphiDevShellToolsImpl;
 interface
 
 uses
+  uMisc,
   Generics.Defaults,
   Generics.Collections,
   System.Win.ComObj,
@@ -35,7 +36,6 @@ uses
   DelphiDevShellTools_TLB,
   System.Rtti,
   Winapi.ShlObj,
-  uMisc,
   Winapi.Windows,
   Winapi.ShellAPI;
 
@@ -667,8 +667,8 @@ log('MenuMessageHandler');
         begin
           itemWidth :=250;
           itemHeight:=90;
-            if (FMSBuildDProj<>nil) and (FMSBuildDProj.Platforms.Count>1) then
-              itemHeight:= itemHeight+((18+Dy)*UINT(FMSBuildDProj.Platforms.Count));
+            if (FMSBuildDProj<>nil) and (FMSBuildDProj.TargetPlatforms.Count>1) then
+              itemHeight:= itemHeight+((18+Dy)*UINT(FMSBuildDProj.TargetPlatforms.Count));
         end;
         log('WM_MEASUREITEM '+IntToStr(PMeasureItemStruct(lParam)^.itemID));
       end;
@@ -744,24 +744,24 @@ log('MenuMessageHandler');
                //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['ios']);
                BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['ios2'].Width, BitmapsDict.Items['ios2'].Height, BitmapsDict.Items['ios2'].Canvas.Handle, 0, 0, SRCCOPY);
 
-              if (FMSBuildDProj<>nil) and (FMSBuildDProj.Platforms.Count>1) then
+              if (FMSBuildDProj<>nil) and (FMSBuildDProj.TargetPlatforms.Count>1) then
               begin
                 Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
                 LCanvas.TextOut(Lx, Ly, 'Target Platforms');
                 LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['platforms2']);
-                 for i := 0 to FMSBuildDProj.Platforms.Count-1 do
+                 for i := 0 to FMSBuildDProj.TargetPlatforms.Count-1 do
                  begin
                     Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                    LCanvas.TextOut(Lx+25, Ly, FMSBuildDProj.Platforms[i]);
-                    if StartsText('Win', FMSBuildDProj.Platforms[i]) then
+                    LCanvas.TextOut(Lx+25, Ly, FMSBuildDProj.TargetPlatforms[i]);
+                    if StartsText('Win', FMSBuildDProj.TargetPlatforms[i]) then
                       //LCanvas.Draw(Lx+5, Ly, BitmapsDict.Items['win'])
                       BitBlt(LCanvas.Handle, Lx+5, Ly, BitmapsDict.Items['win2'].Width, BitmapsDict.Items['win2'].Height, BitmapsDict.Items['win2'].Canvas.Handle, 0, 0, SRCCOPY)
                     else
-                    if StartsText('OSX', FMSBuildDProj.Platforms[i]) then
+                    if StartsText('OSX', FMSBuildDProj.TargetPlatforms[i]) then
                       //LCanvas.Draw(Lx+5, Ly, BitmapsDict.Items['osx'])
                       BitBlt(LCanvas.Handle, Lx+5, Ly, BitmapsDict.Items['osx2'].Width, BitmapsDict.Items['osx2'].Height, BitmapsDict.Items['osx2'].Canvas.Handle, 0, 0, SRCCOPY)
                     else
-                    if StartsText('IOS', FMSBuildDProj.Platforms[i]) then
+                    if StartsText('IOS', FMSBuildDProj.TargetPlatforms[i]) then
                      //LCanvas.Draw(Lx+5, Ly, BitmapsDict.Items['ios']);
                      BitBlt(LCanvas.Handle, Lx+5, Ly, BitmapsDict.Items['ios2'].Width, BitmapsDict.Items['ios2'].Height, BitmapsDict.Items['ios2'].Canvas.Handle, 0, 0, SRCCOPY);
                  end;
@@ -1250,7 +1250,7 @@ var
   LMenuItem: TMenuItemInfo;
   LCurrentDelphiVersionData  : TDelphiVersionData;
   LCurrentDelphiVersion      : TDelphiVersions;
-  LFileName, sPlatform, sSubMenuCaption : string;
+  LFileName, sPlatform, sSubMenuCaption, sBuildConfiguration : string;
   LMethodInfo : TMethodInfo;
 begin
   try
@@ -1303,16 +1303,17 @@ begin
 
          if  (FMSBuildDProj<>nil) and (FMSBuildDProj.ValidData) then
          for LCurrentDelphiVersion in DProjectVersion do
-         for sPlatform in FMSBuildDProj.Platforms do
+         for sPlatform in FMSBuildDProj.TargetPlatforms do
          begin
            Found:=False;
 
-           //LCurrentDelphiVersionData:=InstalledDelphiVersions.Items[0];
+           for sBuildConfiguration in FMSBuildDProj.BuildConfigurations do
+           begin
 
-             if SameText(sPlatform, FMSBuildDProj.DefaultPlatForm) and (SameText('release', FMSBuildDProj.DefaultConfiguration)) then
-               sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' (Default '+sPlatform+' - Release)'
+             if SameText(sPlatform, FMSBuildDProj.DefaultPlatForm) and (SameText(sBuildConfiguration, FMSBuildDProj.DefaultConfiguration)) then
+               sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' ('+sPlatform+' - '+sBuildConfiguration+') - Default Configuration'
              else
-               sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' ('+sPlatform+' - Release)';
+               sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' ('+sPlatform+' - '+sBuildConfiguration+')';
 
              InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
              log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
@@ -1330,39 +1331,13 @@ begin
              LMethodInfo.Method:=MSBuildWithDelphi;
              LMethodInfo.Value1:=LCurrentDelphiVersionData;
              LMethodInfo.Value2:=sPlatform;
-             LMethodInfo.Value3:='release';
+             LMethodInfo.Value3:=sBuildConfiguration;
              LMethodInfo.Value4:=LFileName;
 
              FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
              Inc(uIDNewItem);
              Inc(LSubMenuIndex);
-
-             if SameText(sPlatform, FMSBuildDProj.DefaultPlatForm) and (SameText('debug', FMSBuildDProj.DefaultConfiguration)) then
-               sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' (Default '+sPlatform+' - Debug)'
-             else
-               sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' ('+sPlatform+' - Debug)';
-
-             InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
-             log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
-
-             if StartsText('Win', sPlatform) then
-               SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['win'].Handle, BitmapsDict.Items['win'].Handle)
-             else
-             if StartsText('OSX', sPlatform) then
-               SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['osx'].Handle, BitmapsDict.Items['osx'].Handle)
-             else
-             if StartsText('IOS', sPlatform) then
-               SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['ios'].Handle, BitmapsDict.Items['ios'].Handle);
-
-             LMethodInfo:=TMethodInfo.Create;
-             LMethodInfo.Method:=MSBuildWithDelphi;
-             LMethodInfo.Value1:=LCurrentDelphiVersionData;
-             LMethodInfo.Value2:=sPlatform;
-             LMethodInfo.Value3:='debug';
-             LMethodInfo.Value4:=LFileName;
-             FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
-             Inc(uIDNewItem);
-             Inc(LSubMenuIndex);
+           end;
          end;
 
         if not Settings.SubMenuMSBuild then
@@ -1852,7 +1827,7 @@ var
   LMethodInfo : TMethodInfo;
 begin
   try
-     if not MatchText(FFileExt, SupportedExts) then exit;
+     if (InstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
 
      if Settings.SubMenuOpenDelphi then
      begin

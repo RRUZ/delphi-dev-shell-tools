@@ -33,7 +33,10 @@ exports
 
 {
 TODO
+  add project to RAD Studio favorites
 
+  add binary files tasks
+    Add support for tdump.exe, tdump64.exe
 
   add register extensions by task      done
   Add options to register external tools
@@ -55,7 +58,6 @@ TODO
   Add support for touch.exe  done
 
   Add support for convert.exe (convert forms)
-  Add support for tdump.exe, tdump64.exe
   deploy in OSX , IOS, Android
   view and open vcl and firemonkey styles done
   add tasks for packages (.dpk)  done
