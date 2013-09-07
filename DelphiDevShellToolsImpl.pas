@@ -984,15 +984,15 @@ begin
       end;
 
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy file path to clipboard'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy File Path to clipboard'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy_path'].Handle, BitmapsDict.Items['copy_path'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyPathClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy full filename (Path + FileName) to clipboard'));
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy full FileName (Path + FileName) to clipboard'));
      SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyFileNameClipboard;
@@ -1000,8 +1000,8 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy FileName using File Url format (file://) to clipboard'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy FileName using URL format (file://...) to clipboard'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy_url'].Handle, BitmapsDict.Items['copy_url'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyFileNameUrlClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
@@ -1009,15 +1009,15 @@ begin
      Inc(LSubMenuIndex);
 
      InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy FileName using UNC format (\\server-name\Shared...) to clipboard'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy_unc'].Handle, BitmapsDict.Items['copy_unc'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyFileNameUNCClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy file content to the clipboard'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy File content to the clipboard'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy_content'].Handle, BitmapsDict.Items['copy_content'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyFileContentClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
@@ -1052,7 +1052,7 @@ begin
        log('GetAssocAppByExt '+E.Message);
      end;
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open cmd here'));
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open Command Line here'));
      SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['cmd'].Handle, BitmapsDict.Items['cmd'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenCmdHere;
@@ -1061,8 +1061,8 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open cmd here as Administrator'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['cmd'].Handle, BitmapsDict.Items['cmd'].Handle);
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open Command Line here as Administrator'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['shield'].Handle, BitmapsDict.Items['shield'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenCmdHere;
      LMethodInfo.Value1:=True;
@@ -2402,7 +2402,11 @@ initialization
   RegisterBitmap('common');
   RegisterBitmap('updates');
   RegisterBitmap('checksum');
-  //RegisterBitmap('lazarus');
+  RegisterBitmap('copy_unc');
+  RegisterBitmap('copy_url');
+  RegisterBitmap('copy_content');
+  RegisterBitmap('copy_path');
+  RegisterBitmap('shield');
 
    try
      BitmapsDict.Add('txt',TBitmap.Create);
