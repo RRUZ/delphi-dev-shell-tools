@@ -60,6 +60,8 @@ type
     procedure OpenCmdHere(Info : TMethodInfo);
     procedure CopyPathClipboard(Info : TMethodInfo);
     procedure CopyFileNameClipboard(Info : TMethodInfo);
+    procedure CopyFileNameUrlClipboard(Info : TMethodInfo);
+    procedure CopyFileNameUNCClipboard(Info : TMethodInfo);
     procedure CopyFileContentClipboard(Info : TMethodInfo);
     procedure OpenGUI(Info : TMethodInfo);
     procedure OpenGUICheckSum(Info : TMethodInfo);
@@ -345,6 +347,29 @@ begin
 end;
 
 
+procedure TDelphiDevShellToolsContextMenu.CopyFileNameUNCClipboard(
+  Info: TMethodInfo);
+begin
+ try
+  Clipboard.AsText := GetUNCNameEx(FFileName);
+ except
+   on  E : Exception do
+   log(Format('TDelphiDevShellToolsContextMenu.CopyFileNameUNCClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
+ end;
+end;
+procedure TDelphiDevShellToolsContextMenu.CopyFileNameUrlClipboard(
+  Info: TMethodInfo);
+begin
+ try
+  Clipboard.AsText := LocalPathToFileURL(FFileName);
+ except
+   on  E : Exception do
+   log(Format('TDelphiDevShellToolsContextMenu.CopyFileNameUrlClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
+ end;
+end;
+
+
+
 procedure TDelphiDevShellToolsContextMenu.CopyFileContentClipboard(Info : TMethodInfo);
 begin
  try
@@ -371,7 +396,11 @@ begin
       BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
       BatchFile.SaveToFile(BatchFileName);
       Params:='/K "'+BatchFileName+'"';
-      ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+
+      if Info.Value1.AsBoolean then
+       ShellExecute(Info.hwnd, 'runas', PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL)
+      else
+       ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
     finally
       BatchFile.Free;
     end;
@@ -971,6 +1000,22 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy FileName using File Url format (file://) to clipboard'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=CopyFileNameUrlClipboard;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy FileName using UNC format (\\server-name\Shared...) to clipboard'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=CopyFileNameUNCClipboard;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
      InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy file content to the clipboard'));
      SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
@@ -1011,9 +1056,20 @@ begin
      SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['cmd'].Handle, BitmapsDict.Items['cmd'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenCmdHere;
+     LMethodInfo.Value1:=False;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
+
+     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open cmd here as Administrator'));
+     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['cmd'].Handle, BitmapsDict.Items['cmd'].Handle);
+     LMethodInfo:=TMethodInfo.Create;
+     LMethodInfo.Method:=OpenCmdHere;
+     LMethodInfo.Value1:=True;
+     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+     Inc(uIDNewItem);
+     Inc(LSubMenuIndex);
+
 
       if not Settings.SubMenuCommonTasks then
        MenuIndex:=LSubMenuIndex;

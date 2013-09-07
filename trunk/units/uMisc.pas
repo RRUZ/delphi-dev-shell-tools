@@ -100,6 +100,9 @@ type
   procedure ReadSettings(var Settings: TSettings);
   procedure WriteSettings(const Settings: TSettings);
 
+  function GetUNCNameEx(const lpLocalPath: string): string;
+  function LocalPathToFileURL(const pszPath: string): string;
+
   procedure CheckUpdates;
 
 
@@ -160,6 +163,36 @@ const
 
 function CheckTokenMembership(TokenHandle: THandle; SidToCheck: PSID; var IsMember: BOOL): BOOL; stdcall; external advapi32;
 
+function GetComputerName: string;
+var
+  nSize: Cardinal;
+begin
+  nSize := MAX_COMPUTERNAME_LENGTH + 1;
+  Result := StringOfChar(#0, nSize);
+  Windows.GetComputerName(PChar(Result), nSize);
+  SetLength(Result, nSize);
+end;
+
+function GetUNCNameEx(const lpLocalPath: string): string;
+begin
+  if GetDriveType(PChar(Copy(lpLocalPath,1,3)))=DRIVE_REMOTE then
+   Result:=ExpandUNCFileName(lpLocalPath)
+  else
+    Result := '\\' + GetComputerName + '\' + StringReplace(lpLocalPath,':','$', [rfReplaceAll]);
+end;
+
+function LocalPathToFileURL(const pszPath: string): string;
+var
+  pszUrl: string;
+  pcchUrl: DWORD;
+begin
+  Result := '';
+  pcchUrl := Length('file:///' + pszPath + #0);
+  SetLength(pszUrl, pcchUrl);
+
+  if UrlCreateFromPath(PChar(pszPath), PChar(pszUrl), @pcchUrl, 0) = S_OK then
+    Result := pszUrl;
+end;
 
 procedure CheckUpdates;
 var
