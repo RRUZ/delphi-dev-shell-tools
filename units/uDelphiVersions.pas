@@ -85,17 +85,19 @@ type
   private
     FFrameworkType: string;
     FProjectFile : string;
-    FPlatforms: TStrings;
+    FTargetPlatforms: TStrings;
     FGUID: string;
     FAppType : string;
     FDelphiVersion : TDelphiVersions;
     FDefaultConfiguration : string;
     FDefaultPlatForm : string;
     FValidData : Boolean;
+    FBuildConfigurations: TStrings;
     procedure LoadInfo;
   public
     property FrameworkType : string read FFrameworkType;
-    property Platforms : TStrings read FPlatforms write FPlatforms;
+    property TargetPlatforms : TStrings read FTargetPlatforms write FTargetPlatforms;
+    property BuildConfigurations : TStrings read FBuildConfigurations write FBuildConfigurations;
     property GUID : string read FGUID;
     property AppType : string read FAppType;
     property DelphiVersion : TDelphiVersions read FDelphiVersion;
@@ -248,7 +250,8 @@ constructor TMSBuildDProj.Create(const ProjectFile : string);
 begin
  inherited Create;
  FProjectFile:=ProjectFile;
- FPlatforms  :=TStringList.Create;
+ FTargetPlatforms  :=TStringList.Create;
+ FBuildConfigurations :=TStringList.Create;
  FValidData  := False;
  if FileExists(ProjectFile) then
    LoadInfo;
@@ -256,7 +259,8 @@ end;
 
 destructor TMSBuildDProj.Destroy;
 begin
-  FPlatforms.Free;
+  FTargetPlatforms.Free;
+  FBuildConfigurations.Free;
   inherited;
 end;
 
@@ -278,7 +282,7 @@ begin
   begin
     FDelphiVersion:=LDelphiVersion;
     FFrameworkType := 'VCL';
-    FPlatforms.Add('Win32');
+    FTargetPlatforms.Add('Win32');
 
     CoInitialize(nil);
     try
@@ -323,6 +327,8 @@ begin
         if not VarIsClear(Node) then
           FAppType := Node.Text;
 
+        FBuildConfigurations.Add('Debug');
+        FBuildConfigurations.Add('Release');
       finally
         XmlDoc := Unassigned;
       end;
@@ -378,7 +384,15 @@ begin
         lNodes:= Nodes.Length;
         for i:= 0 to lNodes-1 do
          if SameText(Nodes.Item(i).Text,'True') then
-           FPlatforms.Add(Nodes.Item(i).getAttribute('value'));
+           FTargetPlatforms.Add(Nodes.Item(i).getAttribute('value'));
+
+
+        Nodes := XmlDoc.selectNodes('//a:Project/a:ItemGroup/a:BuildConfiguration');
+        lNodes:= Nodes.Length;
+        for i:= 0 to lNodes-1 do
+         if not SameText(Nodes.Item(i).getAttribute('Include'),'Base') then
+           FBuildConfigurations.Add(Nodes.Item(i).getAttribute('Include'));
+
 
       finally
         XmlDoc := Unassigned;

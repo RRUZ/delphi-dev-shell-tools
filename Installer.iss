@@ -23,6 +23,7 @@ Source: OpenSSL\openssl-1.0.1e-i386-win32\libeay32.dll; DestDir: {app}; Check: n
 Source: OpenSSL\openssl-1.0.1e-x64_86-win64\ssleay32.dll; DestDir: {app}; Check: Is64BitInstallMode; Components: program
 Source: OpenSSL\openssl-1.0.1e-x64_86-win64\libeay32.dll; DestDir: {app}; Check: Is64BitInstallMode; Components: program
 Source: Settings.ini; DestDir: {userappdata}\DelphiDevShellTools
+Source: OpenSSL\openssl-1.0.1e-i386-win32\OpenSSL License.txt; DestDir: {app}; Components: program
 [Run]
 Filename: regsvr32.exe; Parameters: "/s ""{app}\DelphiDevShellTools.dll"""; StatusMsg: Registering plugin
 [UninstallRun]
