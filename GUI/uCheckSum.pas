@@ -70,7 +70,7 @@ var
   LSHA1: TIdHashSHA1;
   LStream : TFileStream;
 begin
-  LStream:=TFileStream.Create(FileName, fmOpenRead);
+  LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
     LSHA1 := TIdHashSHA1.Create;
     try
@@ -88,7 +88,7 @@ var
   LSHA256: TIdHashSHA256;
   LStream : TFileStream;
 begin
-  LStream:=TFileStream.Create(FileName, fmOpenRead);
+  LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
     LSHA256 := TIdHashSHA256.Create;
     try
@@ -106,7 +106,7 @@ var
   LSHA384: TIdHashSHA384;
   LStream : TFileStream;
 begin
-  LStream:=TFileStream.Create(FileName, fmOpenRead);
+  LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
     LSHA384 := TIdHashSHA384.Create;
     try
@@ -124,7 +124,7 @@ var
   LSHA512: TIdHashSHA512;
   LStream : TFileStream;
 begin
-  LStream:=TFileStream.Create(FileName, fmOpenRead);
+  LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
     LSHA512 := TIdHashSHA512.Create;
     try
@@ -142,7 +142,7 @@ var
   LMD4: TIdHashMessageDigest4;
   LStream : TFileStream;
 begin
-  LStream:=TFileStream.Create(FileName, fmOpenRead);
+  LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
     LMD4 := TIdHashMessageDigest4.Create;
     try
@@ -160,7 +160,7 @@ var
   LMD5: TIdHashMessageDigest5;
   LStream : TFileStream;
 begin
-  LStream:=TFileStream.Create(FileName, fmOpenRead);
+  LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
     LMD5 := TIdHashMessageDigest5.Create;
     try
@@ -178,7 +178,7 @@ var
   LCRC32: TIdHashCRC32;
   LStream : TFileStream;
 begin
-  LStream:=TFileStream.Create(FileName, fmOpenRead);
+  LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
     LCRC32 := TIdHashCRC32.Create;
     try
