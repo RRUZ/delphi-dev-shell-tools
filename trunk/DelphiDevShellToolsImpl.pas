@@ -74,6 +74,7 @@ type
     procedure OpenWithLazarus(Info : TMethodInfo);
     procedure BuildWithLazBuild(Info : TMethodInfo);
     procedure PAClientTest(Info : TMethodInfo);
+    procedure RunAuditsCLI(Info : TMethodInfo);
 
     procedure AddCommonTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenRADCmdTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
@@ -84,6 +85,7 @@ type
     procedure AddOpenWithDelphi(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddMSBuildPAClientTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddAuditsCLITasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 
     procedure AddCompileRCTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenVclStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
@@ -569,6 +571,44 @@ begin
  end;
 end;
 
+
+procedure TDelphiDevShellToolsContextMenu.RunAuditsCLI(Info: TMethodInfo);
+var
+  LDelphiVersion  : TDelphiVersionData;
+  RsvarsPath, LFileName, AuditsCLIPath, Params, BatchFileName : string;
+  BatchFile : TStrings;
+begin
+ try
+  log('RunAuditsCLI');
+  LFileName:=ChangeFileExt(FFileName,'.dproj');
+  LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
+  RsvarsPath  :=ExtractFilePath(LDelphiVersion.Path)+'rsvars.bat';
+  AuditsCLIPath:=ExtractFilePath(LDelphiVersion.Path)+'AuditsCLI.exe';
+  BatchFile:=TStringList.Create;
+  try
+    BatchFile.Add(Format('call "%s"',[RsvarsPath]));
+    BatchFile.Add(Format('"%s" --html %s "%s"', [AuditsCLIPath, Info.Value2.AsString, LFileName]));
+    if SameText('--audits', Info.Value2.AsString) then
+      BatchFile.Add(Format('explorer.exe "%s"',[Trim(LocalPathToFileURL(ChangeFileExt(LFileName,'.audits.html')))]))
+    else
+    if SameText('--metrics', Info.Value2.AsString) then
+      BatchFile.Add(Format('explorer.exe "%s"',[Trim(LocalPathToFileURL(ChangeFileExt(LFileName,'.metrics.html')))]));
+
+    BatchFile.Add('pause');
+    BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
+    BatchFile.SaveToFile(BatchFileName);
+    Params:='/C "'+BatchFileName+'"';
+    ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+  finally
+    BatchFile.Free;
+  end;
+ except
+   on  E : Exception do
+   log(Format('TDelphiDevShellToolsContextMenu.RunAuditsCLI Message %s  Trace %s',[E.Message, e.StackTrace]));
+ end;
+
+end;
+
 procedure TDelphiDevShellToolsContextMenu.FormatSourceRAD(Info : TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
@@ -828,6 +868,104 @@ begin
   Result:= MenuMessageHandler( uMsg, wParam, lParam, lpResult);
 end;
 
+
+procedure TDelphiDevShellToolsContextMenu.AddAuditsCLITasks(hMenu: HMENU;
+  var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
+  const SupportedExts: array of string);
+var
+  Found : Boolean;
+  LSubMenu: Winapi.Windows.HMENU;
+  LSubMenuIndex : Integer;
+  LMenuItem: TMenuItemInfo;
+  LCurrentDelphiVersionData  : TDelphiVersionData;
+  LCurrentDelphiVersion      : TDelphiVersions;
+  LFileName, sSubMenuCaption : string;
+  LMethodInfo : TMethodInfo;
+begin
+  try
+     if not MatchText(FFileExt, SupportedExts) then exit;
+
+     if (Length(DProjectVersion)=0) then exit;
+
+     Found:=False;
+
+     LCurrentDelphiVersion:=DProjectVersion[0];
+
+     LCurrentDelphiVersionData:=InstalledDelphiVersions[0];
+     for LCurrentDelphiVersionData in InstalledDelphiVersions do
+      if (LCurrentDelphiVersionData.Version>=DelphiXE) and (LCurrentDelphiVersionData.Version=LCurrentDelphiVersion) then
+      begin
+       Found:=True;
+       Break;
+      end;
+
+     if Found and (InstalledDelphiVersions.Count>0) and (Length(DProjectVersion)>0) then
+       begin
+
+        if (1=1){Settings.SubMenuMSBuild} then
+        begin
+          LSubMenuIndex :=0;
+          LSubMenu   := CreatePopupMenu;
+          sSubMenuCaption:='Audits and Metrics '+DelphiVersionsNames[DProjectVersion[0]];
+
+          ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+          LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+          LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+          LMenuItem.fType := MFT_STRING;
+          LMenuItem.wID := FMenuItemIndex;
+          LMenuItem.hSubMenu := LSubMenu;
+          LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+          LMenuItem.cch := Length(sSubMenuCaption);
+          InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+          //SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['delphi'].Handle, BitmapsDict.Items['delphi'].Handle);
+
+          Inc(uIDNewItem);
+          Inc(MenuIndex);
+        end
+        else
+        begin
+          LSubMenu:=hMenu;
+          LSubMenuIndex:=MenuIndex;
+        end;
+
+          LFileName:=FFileName;
+
+         for LCurrentDelphiVersion in DProjectVersion do
+         begin
+           Found:=False;
+
+           sSubMenuCaption:=LCurrentDelphiVersionData.Name+' - AuditsCLI Run QA Metrics for '+ExtractFileName(FFileName);
+           InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
+           SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['metrics'].Handle, BitmapsDict.Items['metrics'].Handle);
+           LMethodInfo:=TMethodInfo.Create;
+           LMethodInfo.Method:=RunAuditsCLI;
+           LMethodInfo.Value1:=LCurrentDelphiVersionData;
+           LMethodInfo.Value2:='--metrics';
+           FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+           Inc(uIDNewItem);
+           Inc(LSubMenuIndex);
+
+           sSubMenuCaption:=LCurrentDelphiVersionData.Name+' - AuditsCLI Run QA Audits for '+ExtractFileName(FFileName);
+           InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
+           SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['audits'].Handle, BitmapsDict.Items['audits'].Handle);
+           LMethodInfo:=TMethodInfo.Create;
+           LMethodInfo.Method:=RunAuditsCLI;
+           LMethodInfo.Value1:=LCurrentDelphiVersionData;
+           LMethodInfo.Value2:='--audits';
+           FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+           Inc(uIDNewItem);
+           Inc(LSubMenuIndex);
+         end;
+               {
+        if not Settings.SubMenuMSBuild then
+          MenuIndex:=LSubMenuIndex;
+               }
+       end;
+  except
+   on  E : Exception do
+   log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
 
 procedure TDelphiDevShellToolsContextMenu.AddCheckSumTasks(hMenu: HMENU;
   var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
@@ -2080,10 +2218,8 @@ begin
     //AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj','.bdsproj','.dpk','.groupproj','.rc','.lfm','.dfm','.fmx','.lpi','.lpr','.lpk']);
     AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.CommonTaskExt,','));
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
-
     AddCheckSumTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.CheckSumExt,','));
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
-
     AddOpenRADCmdTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj','.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
     //AddFormatCodeRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp']);
@@ -2125,37 +2261,6 @@ begin
              Inc(uIDNewItem);
              Inc(hSubMenuIndex);
          end;
-         {
-         else
-         for LCurrentDelphiVersionData in InstalledDelphiVersions do
-         begin
-
-           for LCurrentDelphiVersion in DProjectVersion do
-           if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
-           begin
-             sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+
-             ' (Current Settings '+FMSBuildDProj.DefaultConfiguration+' - '+FMSBuildDProj.DefaultPlatForm+')';
-             InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
-             log(Format('%s %d',[sSubMenuCaption, hSubMenuIndex]));
-             SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
-             LMethodInfo:=TMethodInfo.Create;
-             LMethodInfo.Method:=MSBuildWithDelphi_Default;
-             LMethodInfo.Value1:=LCurrentDelphiVersionData;
-             if SameText(FFileExt, '.dpr') then
-             begin
-              sValue:=ChangeFileExt(FFileName,'.dproj');
-              if TFile.Exists(sValue) then
-                LMethodInfo.Value2:=sValue;
-             end;
-
-             FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
-             Inc(uIDNewItem);
-             Inc(hSubMenuIndex);
-             Break;
-           end;
-
-         end;
-         }
        end;
      end;
 
@@ -2163,6 +2268,10 @@ begin
 
     AddMSBuildRAD_SpecificTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddAuditsCLITasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
+    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+
+
     AddMSBuildRAD_AllTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.groupproj','.dpr','.proj']);
     AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddMSBuildPAClientTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
@@ -2226,6 +2335,8 @@ begin
     log('uIDNewItem-idCmdFirst '+IntToStr(uIDNewItem-idCmdFirst));
     Result := MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, uIDNewItem-idCmdFirst);
 end;
+
+
 
 function TDelphiDevShellToolsContextMenu.ShellExtInitialize(pidlFolder: PItemIDList;
   lpdobj: IDataObject; hKeyProgID: HKEY): HResult;
@@ -2407,6 +2518,8 @@ initialization
   RegisterBitmap('copy_content');
   RegisterBitmap('copy_path');
   RegisterBitmap('shield');
+  RegisterBitmap('audits');
+  RegisterBitmap('metrics');
 
    try
      BitmapsDict.Add('txt',TBitmap.Create);

@@ -27,4 +27,5 @@ copy_url BITMAP "copy_url.bmp"
 copy_content BITMAP "copy_content.bmp"
 copy_path BITMAP "copy_path.bmp"
 shield BITMAP "shield.bmp"
-  
+audits BITMAP "audits.bmp" 
+metrics BITMAP "metrics.bmp" 
