@@ -25,90 +25,16 @@ unit uMiscGUI;
 
 interface
 
-uses
- System.Win.ComObj,
- System.SysUtils,
- System.Classes;
-
   procedure MsgWarning(const Msg: string);
   procedure MsgInformation(const Msg: string);
   function  MsgQuestion(const Msg: string):Boolean;
-  function  GetFileVersion(const FileName: string): string;
-  function  GetTempDirectory: string;
-  function  GetWindowsDirectory : string;
-  function  GetSpecialFolder(const CSIDL: integer) : string;
-  function  IsWow64: boolean;
 
 implementation
 
 Uses
  System.UITypes,
- Winapi.ShlObj,
- Winapi.ShellAPi,
- WinApi.Windows,
  Vcl.Dialogs;
 
-
-function IsWow64: boolean;
-type
-  TIsWow64Process = function(Handle: WinApi.Windows.THandle;
-      var Res: WinApi.Windows.BOOL): WinApi.Windows.BOOL; stdcall;
-var
-  IsWow64Result:  WinApi.Windows.BOOL;
-  IsWow64Process: TIsWow64Process;
-begin
-  IsWow64Process := WinApi.Windows.GetProcAddress(WinApi.Windows.GetModuleHandle('kernel32.dll'),
-    'IsWow64Process');
-  if Assigned(IsWow64Process) then
-  begin
-    if not IsWow64Process(WinApi.Windows.GetCurrentProcess, IsWow64Result) then
-      Result := False
-    else
-      Result := IsWow64Result;
-  end
-  else
-    Result := False;
-end;
-
-function GetTempDirectory: string;
-var
-  lpBuffer: array[0..MAX_PATH] of Char;
-begin
-  GetTempPath(MAX_PATH, @lpBuffer);
-  Result := StrPas(lpBuffer);
-end;
-
-function GetWindowsDirectory : string;
-var
-  lpBuffer: array[0..MAX_PATH] of Char;
-begin
-  WinApi.Windows.GetWindowsDirectory(@lpBuffer, MAX_PATH);
-  Result := StrPas(lpBuffer);
-end;
-
-function GetSpecialFolder(const CSIDL: integer) : string;
-var
-  lpszPath : PWideChar;
-begin
-  lpszPath := StrAlloc(MAX_PATH);
-  try
-     ZeroMemory(lpszPath, MAX_PATH);
-    if SHGetSpecialFolderPath(0, lpszPath, CSIDL, False)  then
-      Result := lpszPath
-    else
-      Result := '';
-  finally
-    StrDispose(lpszPath);
-  end;
-end;
-
-function GetFileVersion(const FileName: string): string;
-var
-  FSO  : OleVariant;
-begin
-  FSO    := CreateOleObject('Scripting.FileSystemObject');
-  Result := FSO.GetFileVersion(FileName);
-end;
 
 procedure MsgWarning(const Msg: string);
 begin

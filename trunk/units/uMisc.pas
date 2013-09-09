@@ -27,6 +27,7 @@ uses
  Windows,
  Graphics,
  Rtti,
+ System.Types,
  ImgList;
 
 type
@@ -105,6 +106,7 @@ type
 
   procedure CheckUpdates;
 
+  function GetGroupToolsExtensions(const GroupName : string) : TStringDynArray;
 
 implementation
 
@@ -121,6 +123,9 @@ uses
   Dialogs,
   ShLwApi,
   System.UITypes,
+  Datasnap.DBClient,
+  MidasLib,
+  Db,
   Registry,
   TypInfo,
   IniFiles,
@@ -160,6 +165,52 @@ const
   'ASSOCSTR_DDEIFEXEC',
   'ASSOCSTR_DDEAPPLICATION',
   'ASSOCSTR_DDETOPIC' );
+
+function GetGroupToolsExtensions(const GroupName : string) : TStringDynArray;
+var
+ LClientDataSet : TClientDataSet;
+ List : TStrings;
+ LArray  : TStringDynArray;
+ s : string;
+ i : integer;
+begin
+Result:=nil;
+ LClientDataSet:= TClientDataSet.Create(nil);
+ try
+   List:=TStringList.Create;
+   try
+     LClientDataSet.ReadOnly:=True;
+     LClientDataSet.LoadFromFile(GetDelphiDevShellToolsFolder+'tools.db');
+     LClientDataSet.Open;
+     LClientDataSet.Filter:='Group='+QuotedStr(GroupName);
+      while not LClientDataSet.eof do
+      begin
+
+       LArray:= SplitString(LClientDataSet.FieldByName('Extensions').AsString, ',');
+       if Length(LArray)>0 then
+        for s in LArray do
+          if List.IndexOf(s)=-1 then
+             List.Add(s);
+
+       LClientDataSet.Next;
+      end;
+
+     if List.Count>0 then
+     begin
+      SetLength(Result, List.Count);
+      for i:=0 to List.Count-1 do
+        Result[i]:=List[i];
+     end;
+
+   finally
+     List.Free;
+   end;
+ finally
+   LClientDataSet.Free;
+ end;
+end;
+
+
 
 function CheckTokenMembership(TokenHandle: THandle; SidToCheck: PSID; var IsMember: BOOL): BOOL; stdcall; external advapi32;
 
@@ -243,7 +294,6 @@ begin
  ForceDirectories(Result);
 end;
 
-
 procedure ReadSettings(var Settings: TSettings);
 var
   iniFile: TIniFile;
@@ -268,8 +318,6 @@ begin
       StringValue:= iniFile.ReadString('Global', LProp.Name, '');
       LProp.SetValue(Settings, StringValue);
     end;
-
-
    finally
      LCtx.Free;
    end;
@@ -310,8 +358,6 @@ begin
   end;
 end;
 
-
-
 procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName : string);
 var
  pszOut: array [0..1024] of Char;
@@ -334,7 +380,6 @@ begin
    SetString(FriendlyAppName, PChar(@pszOut[0]), pcchOut-1);
 end;
 
-
 function GetModuleName: string;
 var
   lpFilename: array[0..MAX_PATH] of Char;
@@ -343,7 +388,6 @@ begin
   GetModuleFileName(hInstance, lpFilename, MAX_PATH);
   Result := lpFilename;
 end;
-
 
 function IsUACEnabled: Boolean;
 var

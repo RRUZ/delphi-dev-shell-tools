@@ -33,6 +33,24 @@ exports
 
 {
 TODO
+  FPC
+  ------------------------------------------------------------------------------
+  Tools that come with Free Pascal - http://www.freepascal.org/tools/tools.var
+
+    done - h2pas is a small command-line utility that can be used to translate C header files to pascal units. The Free Pascal team uses it to make import units for important C libraries such as GTK or MySQL.
+      //h2pas -e -m -s PortableDeviceTypes.h Winapi.Portabledevicetypes.pas
+    fpcmake is a tool that allows you to make complex makefiles to compile programs and units with FPC. The Free Pascal team uses it to create all it's makefiles.
+    done - ppdep is a small utility that scans a program or unit and creates a depend file that can be used for inclusion by make. It understands conditional symbols and interdependency of units.
+    delp is a small utility that scans a directory for files left over by the Free Pascal compiler, and deletes them.
+    done - ppudump dumps the contents of a unit in human-readable format. It understands older versions of units and gracefully handles unknown (future) versions.
+    ppufiles lists the object files that you need to link in when using a unit file. It lists all libraries and units that are needed.
+    ppumove combines several units into one; as such it can be used to create static and dynamic libraries.
+    ptop is a configurable source formatter. It pretty-prints your pascal code, much like indent does for C code.
+    rstconv is a small utility that converts .rst files (files that contain resource strings, as created by the compiler to some other format. (GNU gettext at the moment)
+    TP Lex and Yacc, written by Albert Graef. It can be used to create pascal units from a Lex vocabulary and Yacc grammar.
+  ------------------------------------------------------------------------------
+
+
   add project to RAD Studio favorites
 
   add binary files tasks

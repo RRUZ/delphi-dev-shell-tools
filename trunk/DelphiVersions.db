@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<DATAPACKET Version="2.0">
+  <METADATA>
+    <FIELDS>
+      <FIELD attrname="Version" fieldtype="i4" />
+      <FIELD attrname="Name" fieldtype="string" required="true" WIDTH="40" />
+    </FIELDS>
+    <PARAMS />
+  </METADATA>
+  <ROWDATA>
+    <ROW Version="0" Name="Delphi 5"/>
+    <ROW Version="1" Name="Delphi 6"/>
+    <ROW Version="2" Name="Delphi 7"/>
+    <ROW Version="3" Name="Delphi 8"/>
+    <ROW Version="4" Name="BDS 2005"/>
+    <ROW Version="5" Name="BDS 2006"/>
+    <ROW Version="6" Name="RAD Studio 2007"/>
+    <ROW Version="7" Name="RAD Studio 2009"/>
+    <ROW Version="8" Name="RAD Studio 2010"/>
+    <ROW Version="9" Name="RAD Studio XE"/>
+    <ROW Version="10" Name="RAD Studio XE2"/>
+    <ROW Version="11" Name="RAD Studio XE3"/>
+    <ROW Version="12" Name="RAD Studio XE4"/>	
+  </ROWDATA>
+</DATAPACKET>
