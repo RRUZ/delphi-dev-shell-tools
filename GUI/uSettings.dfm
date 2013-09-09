@@ -5,7 +5,7 @@ object FrmSettings: TFrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Delphi Dev. Shell Tools Settings'
-  ClientHeight = 411
+  ClientHeight = 572
   ClientWidth = 416
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -15,13 +15,14 @@ object FrmSettings: TFrmSettings
   Font.Style = []
   OldCreateOrder = False
   Position = poScreenCenter
+  OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
   object Panel2: TPanel
     Left = 0
-    Top = 376
+    Top = 537
     Width = 416
     Height = 35
     Align = alBottom
@@ -49,7 +50,7 @@ object FrmSettings: TFrmSettings
     Left = 0
     Top = 0
     Width = 416
-    Height = 376
+    Height = 537
     Align = alClient
     BevelOuter = bvNone
     BorderWidth = 3
@@ -58,7 +59,7 @@ object FrmSettings: TFrmSettings
       Left = 3
       Top = 3
       Width = 410
-      Height = 370
+      Height = 531
       ActivePage = TabSheet2
       Align = alClient
       TabOrder = 0
@@ -500,6 +501,182 @@ object FrmSettings: TFrmSettings
           TabOrder = 9
         end
       end
+      object TabSheet3: TTabSheet
+        Caption = 'Custom Tools'
+        ImageIndex = 2
+        object Label7: TLabel
+          Left = 3
+          Top = 34
+          Width = 29
+          Height = 13
+          Caption = 'Group'
+        end
+        object Label8: TLabel
+          Left = 256
+          Top = 34
+          Width = 27
+          Height = 13
+          Caption = 'Name'
+        end
+        object Label9: TLabel
+          Left = 3
+          Top = 82
+          Width = 54
+          Height = 13
+          Caption = 'Menu Label'
+        end
+        object Label10: TLabel
+          Left = 3
+          Top = 180
+          Width = 27
+          Height = 13
+          Caption = 'Script'
+        end
+        object Label11: TLabel
+          Left = 3
+          Top = 128
+          Width = 52
+          Height = 13
+          Caption = 'Extensions'
+        end
+        object Label12: TLabel
+          Left = 3
+          Top = 345
+          Width = 34
+          Height = 13
+          Caption = 'Macros'
+        end
+        object Label13: TLabel
+          Left = 119
+          Top = 34
+          Width = 113
+          Height = 13
+          Caption = 'Minimum  Delphi Version'
+        end
+        object DBNavigator1: TDBNavigator
+          Left = 3
+          Top = 3
+          Width = 240
+          Height = 25
+          DataSource = DataSource1
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 0
+        end
+        object DBEditMenu: TDBEdit
+          Left = 3
+          Top = 101
+          Width = 380
+          Height = 21
+          DataField = 'Men'
+          DataSource = DataSource1
+          TabOrder = 3
+        end
+        object DBEditName: TDBEdit
+          Left = 256
+          Top = 53
+          Width = 127
+          Height = 21
+          DataField = 'Name'
+          DataSource = DataSource1
+          TabOrder = 2
+        end
+        object DBMemoScript: TDBMemo
+          Left = 3
+          Top = 199
+          Width = 380
+          Height = 140
+          DataSource = DataSource1
+          Font.Charset = ANSI_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -13
+          Font.Name = 'Consolas'
+          Font.Style = []
+          ParentFont = False
+          ScrollBars = ssBoth
+          TabOrder = 5
+        end
+        object DBEditExtensions: TDBEdit
+          Left = 3
+          Top = 147
+          Width = 380
+          Height = 21
+          DataSource = DataSource1
+          TabOrder = 4
+        end
+        object ListViewMacros: TListView
+          Left = 3
+          Top = 364
+          Width = 380
+          Height = 104
+          Columns = <
+            item
+              Caption = 'Name'
+              Width = 100
+            end
+            item
+              Caption = 'Description'
+              Width = 250
+            end>
+          ReadOnly = True
+          RowSelect = True
+          TabOrder = 6
+          ViewStyle = vsReport
+        end
+        object BtnInsertMacro: TButton
+          Left = 308
+          Top = 474
+          Width = 75
+          Height = 25
+          Caption = 'Insert'
+          TabOrder = 7
+          OnClick = BtnInsertMacroClick
+        end
+        object DBComboBoxGroup: TDBComboBox
+          Left = 3
+          Top = 55
+          Width = 110
+          Height = 21
+          Style = csDropDownList
+          DataSource = DataSource1
+          Items.Strings = (
+            'FPC Tools'
+            'Delphi Tools'
+            'External Tools')
+          TabOrder = 1
+          OnChange = DBComboBoxGroupChange
+        end
+        object DBLookupComboBoxDelphi: TDBLookupComboBox
+          Left = 119
+          Top = 53
+          Width = 131
+          Height = 21
+          DataSource = DataSource1
+          ListSource = DataSource2
+          TabOrder = 8
+        end
+      end
     end
+  end
+  object DataSource1: TDataSource
+    DataSet = ClientDataSet1
+    Left = 296
+    Top = 8
+  end
+  object ClientDataSet1: TClientDataSet
+    Aggregates = <>
+    Params = <>
+    Left = 256
+  end
+  object ClientDataSet2: TClientDataSet
+    Aggregates = <>
+    Params = <>
+    Left = 352
+    Top = 32
+  end
+  object DataSource2: TDataSource
+    DataSet = ClientDataSet2
+    Left = 384
+    Top = 48
   end
 end

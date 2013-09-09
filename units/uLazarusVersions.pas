@@ -40,6 +40,7 @@ function GetLazarusEditorOptionsFileName: string;
 function GetLazarusIDEFolder: string;
 function GetLazarusIDEFileName: string;
 function GetLazarusCompilerFileName: string;
+function GetFPCPath: string;
 function IsLazarusInstalled: Boolean;
 procedure FillListViewLazarusVersions(ListView: TListView);
 procedure FillListLazarusVersions(AList:TList<TDelphiVersionData>);
@@ -94,25 +95,14 @@ begin
   if Found then
   begin
     FileName:=GetLazarusIDEFileName;
-    {
-    ExtractIconFileToImageList(ListView.SmallImages, Filename);
-    Item := ListView.Items.Add;
-    Item.ImageIndex := ListView.SmallImages.Count - 1;
-    Item.Caption := Format('Lazarus %s',[uMisc.GetFileVersion(FileName)]);
-    item.SubItems.Add(FileName);
-    item.SubItems.Add(IntToStr(Ord(TSupportedIDEs.LazarusIDE)));
-    Item.Data := nil;
-     }
-      VersionData:=TDelphiVersionData.Create;
-      VersionData.Path:=Filename;
-      //VersionData.Version:=;
-      VersionData.Name   :=Format('Lazarus %s',[uMisc.GetFileVersion(FileName)]);
-      VersionData.IDEType:=TSupportedIDEs.LazarusIDE;
-      VersionData.Icon    :=TIcon.Create;
-      ExtractIconFile(VersionData.Icon, Filename, SHGFI_SMALLICON);
-      AList.Add(VersionData);
+    VersionData:=TDelphiVersionData.Create;
+    VersionData.Path:=Filename;
+    VersionData.Name   :=Format('Lazarus %s',[uMisc.GetFileVersion(FileName)]);
+    VersionData.IDEType:=TSupportedIDEs.LazarusIDE;
+    VersionData.Icon    :=TIcon.Create;
+    ExtractIconFile(VersionData.Icon, Filename, SHGFI_SMALLICON);
+    AList.Add(VersionData);
   end;
-
 end;
 
 
@@ -122,7 +112,6 @@ begin
   if not DirectoryExists(Result) then
     Result := '';
 end;
-
 
 function GetConfigLazarusValue(const AValue: string): string;
 var
@@ -172,6 +161,11 @@ end;
 function GetLazarusCompilerFileName: string;
 begin
   Result := GetConfigLazarusValue('//CONFIG/EnvironmentOptions/CompilerFilename/@Value');
+end;
+
+function GetFPCPath: string;
+begin
+  Result := ExtractFilePath(GetLazarusCompilerFileName);
 end;
 
 function IsLazarusInstalled: boolean;

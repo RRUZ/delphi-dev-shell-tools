@@ -50,11 +50,12 @@ type
     FMenuItemIndex: UINT;
     FMethodsDict : TObjectDictionary<Integer, TMethodInfo>;
     FOwnerDrawId : UINT;
+
     procedure OpenWithDelphi(Info : TMethodInfo);
     procedure OpenRADStudio(Info : TMethodInfo);
-    //procedure BuildWithDelphi(Info : TMethodInfo);
     procedure MSBuildWithDelphi_Default(Info : TMethodInfo);
     procedure MSBuildWithDelphi(Info : TMethodInfo);
+
     procedure OpenWithNotepad(Info : TMethodInfo);
     procedure OpenWithApp(Info : TMethodInfo);
     procedure OpenCmdHere(Info : TMethodInfo);
@@ -66,15 +67,23 @@ type
     procedure OpenGUI(Info : TMethodInfo);
     procedure OpenGUICheckSum(Info : TMethodInfo);
     procedure OpenRADCmd(Info : TMethodInfo);
+
+
     procedure FormatSourceRAD(Info : TMethodInfo);
     procedure TouchRAD(Info : TMethodInfo);
     procedure Compile_BRCC32(Info : TMethodInfo);
     procedure OpenVclStyle(Info : TMethodInfo);
     procedure OpenFMXStyle(Info : TMethodInfo);
-    procedure OpenWithLazarus(Info : TMethodInfo);
-    procedure BuildWithLazBuild(Info : TMethodInfo);
     procedure PAClientTest(Info : TMethodInfo);
     procedure RunAuditsCLI(Info : TMethodInfo);
+
+    //Lazarus & FPC
+    procedure OpenWithLazarus(Info : TMethodInfo);
+    procedure BuildWithLazBuild(Info : TMethodInfo);
+    procedure FPCTools(Info : TMethodInfo);
+    //procedure FPCTools_h2pas(Info : TMethodInfo);
+    //procedure FPCTools_ppudump(Info : TMethodInfo);
+    //-------------------
 
     procedure AddCommonTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenRADCmdTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
@@ -83,7 +92,6 @@ type
     procedure AddMSBuildRAD_SpecificTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddMSBuildRAD_AllTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenWithDelphi(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-    procedure AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddMSBuildPAClientTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddAuditsCLITasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 
@@ -91,8 +99,13 @@ type
     procedure AddOpenVclStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenFmxStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddCheckSumTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-
+    //Lazarus & FPC
+    procedure AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddFPCToolsTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    //-------------------
     procedure AddMenuSeparator(hMenu : HMENU; var MenuIndex : Integer);
+
+    function ParseMacros(const Data : string) : string;
   protected
     function IShellExtInit.Initialize = ShellExtInitialize;
     function ShellExtInitialize(pidlFolder: PItemIDList; lpdobj: IDataObject; hKeyProgID: HKEY): HResult; stdcall;
@@ -127,7 +140,9 @@ uses
   ClipBrd,
   Vcl.Graphics,
   Vcl.GraphUtil,
-  messages,
+  Winapi.Messages,
+  Datasnap.DBClient,
+  System.Types,
   System.Classes,
   System.IOUtils,
   System.StrUtils,
@@ -144,6 +159,7 @@ var
   ExeNameTxt, FriendlyAppNameTxt : string;
   LazarusInstalled : Boolean;
   Settings         : TSettings;
+  FPCToolsExts     : TStringDynArray;
 
 procedure log(const msg: string);
 begin
@@ -315,6 +331,21 @@ begin
   end;
 
 end;
+function TDelphiDevShellToolsContextMenu.ParseMacros(
+  const Data: string): string;
+begin
+  Result:=Data;
+  if Pos('$', Result)>0 then
+  begin
+    Result:=StringReplace(Result, '$FILENAME$', FFileName, [rfReplaceAll]);
+    Result:=StringReplace(Result, '$NAME$', ExtractFileName(FFileName), [rfReplaceAll]);
+    Result:=StringReplace(Result, '$EXT$', FFileExt, [rfReplaceAll]);
+    Result:=StringReplace(Result, '$PATH$', ExtractFilePath(FFileName), [rfReplaceAll]);
+    if IsLazarusInstalled then
+     Result:=StringReplace(Result, '$FPCPATH$', GetFPCPath, [rfReplaceAll]);
+  end;
+end;
+
 procedure TDelphiDevShellToolsContextMenu.OpenWithApp(Info : TMethodInfo);
 begin
  try
@@ -637,6 +668,82 @@ begin
 
 end;
 
+procedure TDelphiDevShellToolsContextMenu.FPCTools(Info: TMethodInfo);
+var
+  BatchFileName, Params : string;
+  BatchFile : TStrings;
+begin
+  try
+    log('FPCTools');
+    BatchFile:=TStringList.Create;
+    try
+      BatchFile.Text:=Info.Value1.AsString;
+      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
+      BatchFile.SaveToFile(BatchFileName);
+      Params:='/K "'+BatchFileName+'"';
+      ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+    finally
+      BatchFile.Free;
+    end;
+  except
+   on  E : Exception do
+   log(Format('TDelphiDevShellToolsContextMenu.FPCTools Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
+
+{
+procedure TDelphiDevShellToolsContextMenu.FPCTools_h2pas(Info: TMethodInfo);
+var
+  h2Pas, BatchFileName, Params : string;
+  BatchFile : TStrings;
+begin
+  try
+    h2Pas:=IncludeTrailingPathDelimiter(Info.Value1.AsString)+'h2pas.exe';
+    log('FPCTools_h2pas '+h2Pas+' '+Format(' "%s"',[FFileName]));
+    BatchFile:=TStringList.Create;
+    try
+      BatchFile.Add(Format('"%s" -e -s "%s"',[h2Pas, FFileName]));
+      BatchFile.Add('Pause');
+      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
+      BatchFile.SaveToFile(BatchFileName);
+      Params:='/K "'+BatchFileName+'"';
+      ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+    finally
+      BatchFile.Free;
+    end;
+  except
+   on  E : Exception do
+   log(Format('TDelphiDevShellToolsContextMenu.FPCTools_h2pas Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
+}
+{
+procedure TDelphiDevShellToolsContextMenu.FPCTools_ppudump(Info: TMethodInfo);
+var
+  ppudump, BatchFileName, Params : string;
+  BatchFile : TStrings;
+begin
+  try
+    ppudump:=IncludeTrailingPathDelimiter(Info.Value1.AsString)+'ppudump.exe';
+    log('FPCTools_ppudump '+ppudump+' '+Format(' "%s"',[FFileName]));
+    BatchFile:=TStringList.Create;
+    try
+      BatchFile.Add(Format('"%s" -a "%s" > "%s"',[ppudump, FFileName, ChangeFileExt(FFileName,'.ppudump')]));
+      BatchFile.Add(Format('notepad.exe "%s"',[ChangeFileExt(FFileName,'.ppudump')]));
+      //BatchFile.Add('Pause');
+      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
+      BatchFile.SaveToFile(BatchFileName);
+      Params:='/C "'+BatchFileName+'"';
+      ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+    finally
+      BatchFile.Free;
+    end;
+  except
+   on  E : Exception do
+   log(Format('TDelphiDevShellToolsContextMenu.FPCTools_ppudump Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
+}
 procedure TDelphiDevShellToolsContextMenu.TouchRAD(Info : TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
@@ -932,8 +1039,6 @@ begin
 
          for LCurrentDelphiVersion in DProjectVersion do
          begin
-           Found:=False;
-
            sSubMenuCaption:=LCurrentDelphiVersionData.Name+' - AuditsCLI Run QA Metrics for '+ExtractFileName(FFileName);
            InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
            SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['metrics'].Handle, BitmapsDict.Items['metrics'].Handle);
@@ -1362,6 +1467,112 @@ begin
  end;
 
 end;
+
+procedure TDelphiDevShellToolsContextMenu.AddFPCToolsTasks(hMenu: HMENU;
+  var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
+  const SupportedExts: array of string);
+var
+  LClientDataSet : TClientDataSet;
+  LSubMenuIndex : Integer;
+  LSubMenu: Winapi.Windows.HMENU;
+  LMenuItem: TMenuItemInfo;
+  sSubMenuCaption : string;
+  LMethodInfo : TMethodInfo;
+  LArray : TStringDynArray;
+begin
+  try
+    if not MatchText(FFileExt, SupportedExts) then exit;
+
+
+      if (1=1){Settings.SubMenuLazarus} then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='Free Pascal Tools';
+
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['fpc_tools'].Handle, BitmapsDict.Items['fpc_tools'].Handle);
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+         LSubMenuIndex:=MenuIndex;
+         LSubMenu:=hMenu;
+      end;
+
+       LClientDataSet:= TClientDataSet.Create(nil);
+       try
+           LClientDataSet.ReadOnly:=True;
+           LClientDataSet.LoadFromFile(GetDelphiDevShellToolsFolder+'tools.db');
+           LClientDataSet.Open;
+           LClientDataSet.Filter:='Group='+QuotedStr('FPC Tools');
+            while not LClientDataSet.eof do
+            begin
+             LArray:= SplitString(LClientDataSet.FieldByName('Extensions').AsString, ',');
+             if MatchText(FFileExt, LArray) then
+             begin
+              InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(ParseMacros(LClientDataSet.FieldByName('Menu').AsString)));
+              //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazbuild'].Handle, BitmapsDict.Items['lazbuild'].Handle);
+              LMethodInfo:=TMethodInfo.Create;
+              LMethodInfo.Method:=FPCTools;
+              LMethodInfo.Value1:=ParseMacros(LClientDataSet.FieldByName('Script').AsString);
+              FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+              Inc(uIDNewItem);
+              Inc(LSubMenuIndex);
+             end;
+             LClientDataSet.Next;
+            end;
+
+       finally
+         LClientDataSet.Free;
+       end;
+
+      {
+      if MatchText(FFileExt, ['.h']) then
+      begin
+        InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('h2pas '+ExtractFileName(FFileName)));
+        //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazbuild'].Handle, BitmapsDict.Items['lazbuild'].Handle);
+        LMethodInfo:=TMethodInfo.Create;
+        LMethodInfo.Method:=FPCTools_h2pas;
+        LMethodInfo.Value1:=GetFPCPath;
+        FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+        Inc(uIDNewItem);
+        Inc(LSubMenuIndex);
+      end;
+
+
+      if MatchText(FFileExt, ['.ppu']) then
+      begin
+        InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('ppudump '+ExtractFileName(FFileName)));
+        //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazbuild'].Handle, BitmapsDict.Items['lazbuild'].Handle);
+        LMethodInfo:=TMethodInfo.Create;
+        LMethodInfo.Method:=FPCTools_ppudump;
+        LMethodInfo.Value1:=GetFPCPath;
+        FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+        Inc(uIDNewItem);
+        Inc(LSubMenuIndex);
+      end;
+       }
+
+               {
+      if not Settings.SubMenuLazarus then
+       MenuIndex:=LSubMenuIndex;
+               }
+  except
+    on  E : Exception do
+    log(Format('TDelphiDevShellToolsContextMenu.AddFPCToolsTasks Message %s Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
+
 
 procedure TDelphiDevShellToolsContextMenu.AddTouchRADTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
 var
@@ -2169,7 +2380,10 @@ begin
     FMethodsDict:=TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues]);
 
 
-  if (not MatchText(FFileExt,['.pas','.dpr','.inc','.pp','.proj','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm','.lfm','.fmx','.vsf','.style','.lpi','.lpr','.lpk']))
+  if (not MatchText(FFileExt,[
+     '.pas','.dpr','.inc','.pp','.proj','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm',
+     '.lfm','.fmx','.vsf','.style','.lpi','.lpr','.lpk','.h','.ppu']))
+     and (not MatchText(FFileExt, FPCToolsExts))
      and (not MatchText(FFileExt, SplitString(Settings.CommonTaskExt,',')))
      and (not MatchText(FFileExt, SplitString(Settings.FormatPascalExt,',')))
      and (not MatchText(FFileExt, SplitString(Settings.OpenDelphiExt,',')))
@@ -2286,6 +2500,10 @@ begin
     begin
       //AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.lpi','.pp','.inc','.pas','.lpk']);
       AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.OpenLazarusExt,','));
+      AddMenuSeparator(hSubMenu, hSubMenuIndex);
+
+
+      AddFPCToolsTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, FPCToolsExts);
       AddMenuSeparator(hSubMenu, hSubMenuIndex);
     end;
 
@@ -2520,6 +2738,7 @@ initialization
   RegisterBitmap('shield');
   RegisterBitmap('audits');
   RegisterBitmap('metrics');
+  RegisterBitmap('fpc_tools');
 
    try
      BitmapsDict.Add('txt',TBitmap.Create);
@@ -2540,6 +2759,8 @@ initialization
 
    if LazarusInstalled then
    begin
+     FPCToolsExts:=GetGroupToolsExtensions('FPC Tools');
+
      try
        BitmapsDict.Add('lazarus',TBitmap.Create);
        BitmapsDict.Add('lazarus13',TBitmap.Create);

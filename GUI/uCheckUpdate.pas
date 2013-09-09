@@ -100,6 +100,7 @@ uses
   System.UITypes,
   ShellAPI,
   uUpdatesChanges,
+  uMisc,
   uMiscGUI,
   ComObj;
 
@@ -305,7 +306,7 @@ end;
 
 procedure TFrmCheckUpdate.ReadLocalInfo;
 begin
-   FLocalVersion:=GetFileVersion(IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)))+'DelphiDevShellTools.dll');
+   FLocalVersion:=uMisc.GetFileVersion(IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)))+'DelphiDevShellTools.dll');
 end;
 
 procedure TFrmCheckUpdate.ReadRemoteInfo;
