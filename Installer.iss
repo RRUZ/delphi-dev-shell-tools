@@ -23,6 +23,65 @@ Source: OpenSSL\openssl-1.0.1e-i386-win32\OpenSSL License.txt; DestDir: {app}; C
 Source: Tools.db; DestDir: {userappdata}\DelphiDevShellTools
 Source: macros.xml; DestDir: {userappdata}\DelphiDevShellTools
 Source: DelphiVersions.db; DestDir: {userappdata}\DelphiDevShellTools
+Source: png\application_osx_terminal.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\application_xp_terminal.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\audits.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\bullet_green.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\bullet_orange.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\bullet_pink.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\bullet_purple.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\bullet_red.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\bullet_white.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\bullet_yellow.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\check_boxes.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\check_boxes_series.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\check_box_list.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\cog.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\compile.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\compile_error.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\compile_warning.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\delphi.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\document_properties.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\edit_chain.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\edit_diff.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\firemonkey.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\fpc_tools.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\ftp.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\ftp_accounts.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\ftp_session_control.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\gear_in.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\google_webmaster_tools.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\installer_box.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\interface_preferences.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\investment_menu_quality.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\ios.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\ip.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\ipad.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\iphone.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\lazarus.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\lazbuild.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\legend.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\light_circle_green.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\linechart.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\menu.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\menu_item.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\metrics.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\network_cloud.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\network_clouds.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\network_ethernet.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\network_folder.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\network_hub.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\network_ip.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\network_tools.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\network_wireless.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\osx.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\platforms.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\source_code.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\synchronize_ftp_password.png; DestDir: {{userappdata}\DelphiDevShellTools\png\
+Source: png\system_monitor.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\touch.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\vcl.png; DestDir: {userappdata}\DelphiDevShellTools\png\
+Source: png\win.png; DestDir: {userappdata}\DelphiDevShellTools\png\
 [Run]
 Filename: regsvr32.exe; Parameters: "/s ""{app}\DelphiDevShellTools.dll"""; StatusMsg: Registering plugin
 [UninstallRun]
@@ -136,3 +195,5 @@ begin
     end;
   end;
 end;
+[Dirs]
+Name: {userappdata}\DelphiDevShellTools\png

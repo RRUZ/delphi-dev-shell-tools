@@ -6,7 +6,7 @@ object FrmSettings: TFrmSettings
   BorderStyle = bsSingle
   Caption = 'Delphi Dev. Shell Tools Settings'
   ClientHeight = 572
-  ClientWidth = 416
+  ClientWidth = 548
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -23,7 +23,7 @@ object FrmSettings: TFrmSettings
   object Panel2: TPanel
     Left = 0
     Top = 537
-    Width = 416
+    Width = 548
     Height = 35
     Align = alBottom
     TabOrder = 1
@@ -49,26 +49,30 @@ object FrmSettings: TFrmSettings
   object Panel1: TPanel
     Left = 0
     Top = 0
-    Width = 416
+    Width = 548
     Height = 537
     Align = alClient
     BevelOuter = bvNone
-    BorderWidth = 3
+    BorderWidth = 5
     TabOrder = 0
     object PageControl1: TPageControl
-      Left = 3
-      Top = 3
-      Width = 410
-      Height = 531
+      Left = 5
+      Top = 5
+      Width = 538
+      Height = 527
       ActivePage = TabSheet2
       Align = alClient
       TabOrder = 0
       object TabSheet2: TTabSheet
         Caption = 'General'
         ImageIndex = 1
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object Label1: TLabel
-          Left = 3
-          Top = 21
+          Left = 51
+          Top = 17
           Width = 40
           Height = 13
           Caption = 'Updates'
@@ -94,23 +98,98 @@ object FrmSettings: TFrmSettings
           Height = 13
           Caption = 'Open with Lazarus extensions'
         end
-        object Label5: TLabel
-          Left = 3
-          Top = 232
-          Width = 150
-          Height = 13
-          Caption = 'Format Pascal Code extensions'
-        end
         object Label6: TLabel
           Left = 3
-          Top = 278
+          Top = 230
           Width = 151
           Height = 13
           Caption = 'Calculate CheckSum extensions'
         end
-        object RadioButtonCheckUpdates: TRadioButton
+        object Image4: TImage
           Left = 3
-          Top = 40
+          Top = 21
+          Width = 32
+          Height = 32
+          AutoSize = True
+          Picture.Data = {
+            0954506E67496D61676589504E470D0A1A0A0000000D49484452000000200000
+            00200806000000737A7AF40000001974455874536F6674776172650041646F62
+            6520496D616765526561647971C9653C000008C14944415478DAB597095454E7
+            15C7FFB321AB2CC23028B827B2680D8B4B35E2119B460B04266E24B58A4D4CE3
+            69AC2022CAA6C82252638EDA4413AD9EB45A342898D6137B342A4B4A15881114
+            10181641188655860166657ADFE38D5202687A4EDF39F70033F7FBFEBF7BBF7B
+            EFF7E0E1259F8D9BC36D5D242E19E6E6E69B241289B9EB94C9B0B2B282402080
+            ACB6168F1E55E57FFCC7432BC97570FF81D4283E9F1F613018263B393941A150
+            80C7A32F0C86EC01B57A2FF9D5909F91D997F712DA82BD7109274422D1566968
+            08E6CF9B0B1E9F8FE69616DCB973977ECA515D5D9DFBE9F1A3E1E4DB959276A8
+            7AB2C445B27CC53238393AC2683492380F1A8D063535B5B879EB369A9B9BDC4F
+            7EF6693503F1220041CCDEB8AC057E7EA41DCC0AF7ABFA702B370FF90505A828
+            2F4F57A97A9B0AF2F30AC9B72D3935FD7BF7397324FEFEAFA3B4EC215A5B5B41
+            99604DEC2CC63C2F4F0251E3D4E933484EDA674E6B34E30108F6C4C667F9FAF9
+            48D74AA5E8ECEC425777376E9378555555C791C319EBC8A79D4C49A68A8ADEB3
+            C1CBC3F34460D02A022C8041AF678F47A95432116390126E1C1C64932E10F071
+            607FA203FDD13D160093F62C5F1F5FE99AB743F0B8F109FAFAFB9097970F994C
+            D64CE2EBC9A79149399996CC2C2939AD6EE3C6779C6B6B1BD0D6D646510B2014
+            0AD0D0D080DDBB2257938F6ED8FEDD64F56301907822A5DD572A0D7D0B0D8F1B
+            D928CCCCCC50F6E0016E7E7BF3EA179F9FD8467E8A619BDA53E1754545EE40CE
+            D7FF6023678C59535B2B437454A43B276A7A98757D0CFC4800617C6252B6AF8F
+            773073E675F50D24AE8256AB81502484CF6BF371393B0777EE165D3D9C912E25
+            7F3DB74EBC2F2945F1C1D6F770F3761E84244E450B0B0B735456563200CE4C8D
+            8C96EA91003609FB929507F6C793783D1BB946A38356A3C500158FF98409F05F
+            B614541B3874307522F9F79A0012F7272B7EBFED435CFFF6261BB9B939631628
+            2B7B4000112F05C014DDC5C58B16AD59B0C08F2A58018D564BE21AF627D3466A
+            B506F6F676B871E30632D2D3C45C11B20071F109F78383825C7A28634CBDB010
+            94817B25F7B03B7AE7B800C294B4F42B4E4EE2C06953DD307BD64CF6DCADADAD
+            296A0D0BA0566BD963A0C182BABA7A388B1DD1D2DC9C939010C77482816C5244
+            64544E5858D8327B7B7BD4C8645480423663AD34848A8B8BD9566405692630BF
+            A7A7A54C30D5804DEAC10C65EC9E68D6E1169D615D5D1D3BB9A64D9F41E26AF6
+            080669A0D4534D08857CFC367C339E76B5E3CA85CC4B11B1091B9363F79E7B23
+            3078ED1C4F0FDCA7FE57A954B0B1B16121D84C10084D50AA0B01E42DADB89C93
+            5347D3D097E49E320093F6C4C65DF6F1F659EEE1E181DE5E25CACB2BD94D44B4
+            B8BD5DC1268A9968B61327C2DBDB1B46BD169E73BD109425437D67AF61FB2B10
+            C4872C455169397A689D8A8695BD9D1D654ACCAE63A2D1E974A87CF4882DCA7F
+            5EFB467AEFFB925C13800DD98CA8E898E3EE733CFC67BD32133A3A7399AC0E55
+            8F2A6F1515DDB924128A787A9DD63863AADBBAD0909015768ECED8F9830E9181
+            2B512457A1B8518EA93A3976CE1E44A3A20305FF2A6CB6B5B57520690B2B4B4B
+            0A6AA85695CA9EC2539F9F8CA15F1F736DCC1E8190CC8E6C2A417C326BD66C7F
+            57575794969622216ECF62FABC83EB5B1199C3FAB56B93AA166E5DFDD1AAE578
+            D83E8056951A3A231F25B5F50812C830F830B7EDE4E9D3EF72B5C1A78BCB9A46
+            721FD7B23D9CB069803DBB0B04CC30612076EDDE7B9C0A6949AFF26961FAC1B4
+            30AE7A99CD0416019B3CA604BEFF43EC9B0B715F310079EF00F43463F5B44DBF
+            9E87F28A12B426052F25DF2764030C0057E8466E0F0DF7B97E78176004C464B2
+            89DCE46AE47A9DE7B0ED4FB3667AF9D4A406FF1CDFC8BAD1D2AB66C575B4AD8E
+            009AE99EB034F4604DC78DAF6312F731E0EA611A468CF1FC6812925990997129
+            62680D0EBF3B3663E65CDFDA94E025ACB85CC5440E565CCF89EB3BEA90FFBE1F
+            D47D2A6467665EDA119718C6453DEEF3A2EB983F29E6C2A685EEAF9EFDC30A6F
+            5C1B216E20F1D69EA7D0773DC6511F1104BC412CF27D0D5BFE5E8DE28E41F428
+            9557DA9382D60D4FF94F01E03B449FDF1CE03DFF4CC40A2F5C7CD8C5169CDEF8
+            5CBC5DD98D06851C01A55F5C5F1FFAD62F274B243850A6016F921B9256CF43C6
+            F50AE45654E774A4484D03EBA501F8F6BBCE6F22F1B31101CFC50DC3C43B945D
+            686E7D828E2F13C2B435C5F2F07736EC972FFACD0A91780676ADF4C4ADDA5EFC
+            62BA0D8EE69623AFA2664C88D10084F671395F7DE0EF270D9CE78AAFCA3B495C
+            F323F196D626745F4CDFD0FF20AF842B3897578FFDBBE45CF8621CC96D431FCD
+            92E9769658EFE580A3B7CB2913A3438C0410D8C7666745BEB954EA3F5B8CAC8A
+            4E28C612CF4C5DD75FFE5D3186FA9A39638963F4F9F356CE33FD5D9CDC6033C1
+            086B110F6E761658E7393604EFBF221F120F65C5297245DFE8E29A8AC2D48EBF
+            25FF99D6C831D4DB4C9BB113551275F6B8F514777F6782B0A25EB2A2BE1A0FE2
+            D920728ACB3EFDDEF285E1ABBCA68C224E4341D58BA6967A68CABF4BEBC84CFD
+            12CF878DA9C79F4D5497A8B39F301062314188C687300158BBA55DEFCDDCF206
+            321F0C1737B291ABE83DE0F1931AF497E5A5765C48FB2BF9B760E8956A70E411
+            829BA86341AC278863B915C8AB945D551C08919A001C034E15B57F14B000E74A
+            5BD8375866CA99C41B485CDFD59A2F3FBCF9432EF2D1C45F0C4135319D20DEFD
+            993D023FBB86B6C45F4D3401883D8FE42AD2D62CC799E221002603CFC43BE5F9
+            F28FC37760E816EB19477C4C086706C28C073B73019AA87D6B6555798A8C5FBF
+            6D027012C76517C584BE3EFDAE9CA2D618D0D3C79C791D745DF202F9E1F0080C
+            DD0B4F31CE541B17C2D5C3DFC5791ABA3A1BD15E5F91AF38B2653B7D576F02B0
+            259B2D89BB9CCD33B79CCAE70DBD3A19DA9AAEC98F6E8DE7C4BBF112B37D4C88
+            5D7F396EE6E4BA44DBFEA4507E78D37653402600E6AE9F443605433721738DEA
+            3851F94F8C7C2C08D32DCBFC27D5620A68F81C60202C317413F2B8736626DCC0
+            FF10F9C8C774CB8AB8C09EBD13BCCC7FC7FFD7E73FD9C3679137732246000000
+            0049454E44AE426082}
+        end
+        object RadioButtonCheckUpdates: TRadioButton
+          Left = 51
+          Top = 36
           Width = 166
           Height = 17
           Caption = 'Check for updates once a day'
@@ -119,8 +198,8 @@ object FrmSettings: TFrmSettings
           TabStop = True
         end
         object RadioButtonNoCheckUpdates: TRadioButton
-          Left = 192
-          Top = 40
+          Left = 240
+          Top = 36
           Width = 137
           Height = 17
           Caption = 'Never check for updates'
@@ -129,41 +208,38 @@ object FrmSettings: TFrmSettings
         object EditCommonTaskExt: TEdit
           Left = 3
           Top = 91
-          Width = 390
+          Width = 518
           Height = 21
           TabOrder = 2
         end
         object EditOpenDelphiExt: TEdit
           Left = 3
           Top = 139
-          Width = 390
+          Width = 518
           Height = 21
           TabOrder = 3
         end
         object EditOpenLazarusExt: TEdit
           Left = 3
           Top = 195
-          Width = 390
+          Width = 518
           Height = 21
           TabOrder = 4
         end
-        object EditFormatPascalExt: TEdit
-          Left = 3
-          Top = 251
-          Width = 390
-          Height = 21
-          TabOrder = 5
-        end
         object EditCheckSumExt: TEdit
           Left = 3
-          Top = 297
-          Width = 390
+          Top = 249
+          Width = 518
           Height = 21
-          TabOrder = 6
+          TabOrder = 5
         end
       end
       object TabSheet1: TTabSheet
         Caption = 'Menu'
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object Image1: TImage
           Left = 8
           Top = 21
@@ -504,57 +580,68 @@ object FrmSettings: TFrmSettings
       object TabSheet3: TTabSheet
         Caption = 'Custom Tools'
         ImageIndex = 2
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object Label7: TLabel
-          Left = 3
+          Left = 139
           Top = 34
           Width = 29
           Height = 13
           Caption = 'Group'
         end
         object Label8: TLabel
-          Left = 256
+          Left = 392
           Top = 34
           Width = 27
           Height = 13
           Caption = 'Name'
         end
         object Label9: TLabel
-          Left = 3
+          Left = 139
           Top = 82
           Width = 54
           Height = 13
           Caption = 'Menu Label'
         end
         object Label10: TLabel
-          Left = 3
+          Left = 139
           Top = 180
           Width = 27
           Height = 13
           Caption = 'Script'
         end
         object Label11: TLabel
-          Left = 3
+          Left = 139
           Top = 128
           Width = 52
           Height = 13
           Caption = 'Extensions'
         end
         object Label12: TLabel
-          Left = 3
+          Left = 139
           Top = 345
           Width = 34
           Height = 13
           Caption = 'Macros'
         end
         object Label13: TLabel
-          Left = 119
+          Left = 255
           Top = 34
           Width = 113
           Height = 13
           Caption = 'Minimum  Delphi Version'
         end
+        object Label14: TLabel
+          Left = 392
+          Top = 82
+          Width = 30
+          Height = 13
+          Caption = 'Image'
+        end
         object DBNavigator1: TDBNavigator
-          Left = 3
+          Left = 139
           Top = 3
           Width = 240
           Height = 25
@@ -564,16 +651,16 @@ object FrmSettings: TFrmSettings
           TabOrder = 0
         end
         object DBEditMenu: TDBEdit
-          Left = 3
+          Left = 139
           Top = 101
-          Width = 380
+          Width = 247
           Height = 21
           DataField = 'Men'
           DataSource = DataSource1
           TabOrder = 3
         end
         object DBEditName: TDBEdit
-          Left = 256
+          Left = 392
           Top = 53
           Width = 127
           Height = 21
@@ -582,7 +669,7 @@ object FrmSettings: TFrmSettings
           TabOrder = 2
         end
         object DBMemoScript: TDBMemo
-          Left = 3
+          Left = 139
           Top = 199
           Width = 380
           Height = 140
@@ -597,7 +684,7 @@ object FrmSettings: TFrmSettings
           TabOrder = 5
         end
         object DBEditExtensions: TDBEdit
-          Left = 3
+          Left = 139
           Top = 147
           Width = 380
           Height = 21
@@ -605,7 +692,7 @@ object FrmSettings: TFrmSettings
           TabOrder = 4
         end
         object ListViewMacros: TListView
-          Left = 3
+          Left = 139
           Top = 364
           Width = 380
           Height = 104
@@ -624,7 +711,7 @@ object FrmSettings: TFrmSettings
           ViewStyle = vsReport
         end
         object BtnInsertMacro: TButton
-          Left = 308
+          Left = 444
           Top = 474
           Width = 75
           Height = 25
@@ -633,7 +720,7 @@ object FrmSettings: TFrmSettings
           OnClick = BtnInsertMacroClick
         end
         object DBComboBoxGroup: TDBComboBox
-          Left = 3
+          Left = 139
           Top = 55
           Width = 110
           Height = 21
@@ -647,7 +734,7 @@ object FrmSettings: TFrmSettings
           OnChange = DBComboBoxGroupChange
         end
         object DBLookupComboBoxDelphi: TDBLookupComboBox
-          Left = 119
+          Left = 255
           Top = 53
           Width = 131
           Height = 21
@@ -655,28 +742,62 @@ object FrmSettings: TFrmSettings
           ListSource = DataSource2
           TabOrder = 8
         end
+        object DBGrid1: TDBGrid
+          Left = 3
+          Top = 3
+          Width = 130
+          Height = 465
+          DataSource = DataSource1
+          Options = [dgTitles, dgColumnResize, dgColLines, dgRowLines, dgTabs, dgRowSelect, dgConfirmDelete, dgCancelOnExit, dgTitleClick, dgTitleHotTrack]
+          ReadOnly = True
+          TabOrder = 9
+          TitleFont.Charset = DEFAULT_CHARSET
+          TitleFont.Color = clWindowText
+          TitleFont.Height = -11
+          TitleFont.Name = 'Tahoma'
+          TitleFont.Style = []
+          Columns = <
+            item
+              Expanded = False
+              FieldName = 'Name'
+              Title.Caption = 'Tool'
+              Width = 100
+              Visible = True
+            end>
+        end
+        object DBComboBoxImage: TDBComboBox
+          Left = 392
+          Top = 101
+          Width = 127
+          Height = 22
+          Style = csOwnerDrawFixed
+          DataSource = DataSource1
+          TabOrder = 10
+          OnDrawItem = DBComboBoxImageDrawItem
+        end
       end
     end
   end
   object DataSource1: TDataSource
     DataSet = ClientDataSet1
-    Left = 296
-    Top = 8
+    Left = 56
+    Top = 152
   end
   object ClientDataSet1: TClientDataSet
     Aggregates = <>
     Params = <>
-    Left = 256
+    Left = 40
+    Top = 136
   end
   object ClientDataSet2: TClientDataSet
     Aggregates = <>
     Params = <>
-    Left = 352
-    Top = 32
+    Left = 56
+    Top = 392
   end
   object DataSource2: TDataSource
     DataSet = ClientDataSet2
-    Left = 384
-    Top = 48
+    Left = 72
+    Top = 416
   end
 end

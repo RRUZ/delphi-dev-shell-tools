@@ -27,7 +27,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, uMisc,
   Vcl.Imaging.pngimage, Vcl.ComCtrls, Vcl.DBCtrls, Vcl.Mask, Data.DB,
-  Datasnap.DBClient;
+  Datasnap.DBClient, Vcl.Grids, Vcl.DBGrids;
 
 type
   TFrmSettings = class(TForm)
@@ -63,8 +63,6 @@ type
     Label3: TLabel;
     Label4: TLabel;
     EditOpenLazarusExt: TEdit;
-    Label5: TLabel;
-    EditFormatPascalExt: TEdit;
     EditCheckSumExt: TEdit;
     Label6: TLabel;
     TabSheet3: TTabSheet;
@@ -88,6 +86,10 @@ type
     DBLookupComboBoxDelphi: TDBLookupComboBox;
     ClientDataSet2: TClientDataSet;
     DataSource2: TDataSource;
+    DBGrid1: TDBGrid;
+    Image4: TImage;
+    DBComboBoxImage: TDBComboBox;
+    Label14: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ButtonCancelClick(Sender: TObject);
@@ -95,6 +97,8 @@ type
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnInsertMacroClick(Sender: TObject);
     procedure DBComboBoxGroupChange(Sender: TObject);
+    procedure DBComboBoxImageDrawItem(Control: TWinControl; Index: Integer;
+      Rect: TRect; State: TOwnerDrawState);
   private
     FSettings: TSettings;
     procedure CreateStructure;
@@ -112,6 +116,7 @@ implementation
 Uses
   uMiscGUI,
   StrUtils,
+  System.Types,
   ComObj,
   IOUtils,
   MidasLib,
@@ -160,11 +165,9 @@ begin
     FSettings.SubMenuOpenFMXStyle        := CheckBoxSubMenuFMXStyles.Checked;
     FSettings.CheckForUpdates            := RadioButtonCheckUpdates.Checked;
     FSettings.CommonTaskExt              := EditCommonTaskExt.Text;
-    FSettings.FormatPascalExt            := EditFormatPascalExt.Text;
     FSettings.OpenDelphiExt              := EditOpenDelphiExt.Text;
     FSettings.OpenLazarusExt             := EditOpenLazarusExt.Text;
     FSettings.CheckSumExt                := EditCheckSumExt.Text;
-
     WriteSettings(FSettings);
     Close();
     //LoadVCLStyle(ComboBoxVCLStyle.Text);
@@ -191,6 +194,7 @@ begin
   ClientDataSet1.CreateDataSet;
 end;
 
+
 procedure TFrmSettings.DBComboBoxGroupChange(Sender: TObject);
 begin
 {
@@ -202,14 +206,35 @@ begin
 }
 end;
 
-function GetDevShellToolsDbName : String;
-begin
- Result:=GetDelphiDevShellToolsFolder + 'Tools.db';
-end;
 
-function GetDevShellToolsDbDelphi : String;
+
+procedure TFrmSettings.DBComboBoxImageDrawItem(Control: TWinControl;
+  Index: Integer; Rect: TRect; State: TOwnerDrawState);
+var
+  Png : TPngImage;
+  PngFile : string;
+  LRect : TRect;  
 begin
- Result:=GetDelphiDevShellToolsFolder + 'DelphiVersions.db';
+  with TDBComboBox(Control).Canvas do
+  begin
+    FillRect(Rect);
+    TextRect(Rect, Rect.Left+22, Rect.Top+1,  ChangeFileExt(TDBComboBox(Control).Items[Index],''));
+    Png:=TPngImage.Create;
+    try
+      PngFile:=GetDevShellToolsImagesFolder+TDBComboBox(Control).Items[Index];
+      if FileExists(PngFile) then
+      begin
+        Png.LoadFromFile(PngFile);
+        LRect:=Rect;
+        LRect.Width:=16;
+        LRect.Height:=16;
+        LRect.SetLocation(Rect.Location.X+3, Rect.Location.Y);
+        Png.Draw((Control as TDBComboBox).Canvas, LRect);
+      end;
+    finally
+      Png.Free;
+    end;
+  end;
 end;
 
 function ExistevShellToolsDb : Boolean;
@@ -220,16 +245,18 @@ end;
 procedure TFrmSettings.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
  ClientDataSet1.SaveToFile(GetDevShellToolsDbName, dfXML);
-
 end;
 
 procedure TFrmSettings.FormCreate(Sender: TObject);
+var
+ s : string;
 begin
   DBComboBoxGroup.DataField:='Group';
   DBEditName.DataField:='Name';
   DBEditMenu.DataField:='Menu';
   DBEditExtensions.DataField:='Extensions';
   DBMemoScript.DataField:='Script';
+  DBComboBoxImage.DataField:='Image';
 
   DBLookupComboBoxDelphi.DataField:='DelphiVersion';
   DBLookupComboBoxDelphi.ListField:='Name';
@@ -249,19 +276,9 @@ begin
 
   ClientDataSet1.Open;
   ClientDataSet1.LogChanges:=False;
-   {
-  ClientDataSet1.DisableControls;
-  try
-    while not ClientDataSet1.eof do
-    begin
-     DBComboBoxGroup.Items.Add(ClientDataSet1.FieldByName('Group').AsString);
-     ClientDataSet1.Next;
-    end;
-    ClientDataSet1.First;
-  finally
-    ClientDataSet1.EnableControls;
-  end;
-      }
+
+  for s in TDirectory.GetFiles(GetDevShellToolsImagesFolder,'*.png') do
+    DBComboBoxImage.Items.Add(ExtractFileName(s));
 
 
   LoadMacros;
@@ -330,14 +347,12 @@ begin
   CheckBoxSubMenuFMXStyles.Checked:= FSettings.SubMenuOpenFMXStyle;
   RadioButtonCheckUpdates.Checked := FSettings.CheckForUpdates;
   EditCommonTaskExt.Text          := FSettings.CommonTaskExt;
-  EditFormatPascalExt.Text        := FSettings.FormatPascalExt;
   EditOpenDelphiExt.Text          := FSettings.OpenDelphiExt;
   EditOpenLazarusExt.Text         := FSettings.OpenLazarusExt;
   EditCheckSumExt.Text            := FSettings.CheckSumExt;
 
   if not FSettings.CheckForUpdates then
    RadioButtonNoCheckUpdates.Checked:=True;
-
 end;
 
 
