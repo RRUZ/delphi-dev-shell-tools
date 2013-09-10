@@ -25,7 +25,7 @@ interface
 
 uses
  Windows,
- Graphics,
+ Vcl.Graphics,
  Rtti,
  System.Types,
  ImgList;
@@ -48,7 +48,7 @@ type
     FSubMenuOpenFMXStyle: Boolean;
     FSubMenuCompileRC: Boolean;
     FCheckForUpdates: Boolean;
-    FCheckSumExt, FFormatPascalExt, FOpenLazarusExt, FOpenDelphiExt, FCommonTaskExt : string;
+    FCheckSumExt, FOpenLazarusExt, FOpenDelphiExt, FCommonTaskExt : string;
   public
     property SubMenuOpenCmdRAD : Boolean read FSubMenuOpenCmdRAD write FSubMenuOpenCmdRAD;
     property SubMenuLazarus : Boolean read FSubMenuLazarus write FSubMenuLazarus;
@@ -68,7 +68,6 @@ type
     property CommonTaskExt : string read FCommonTaskExt write FCommonTaskExt;
     property OpenDelphiExt : string read FOpenDelphiExt write FOpenDelphiExt;
     property OpenLazarusExt : string read FOpenLazarusExt write FOpenLazarusExt;
-    property FormatPascalExt : string read FFormatPascalExt write FFormatPascalExt;
     property CheckSumExt : string read FCheckSumExt write FCheckSumExt;
   end;
 
@@ -84,6 +83,7 @@ type
   procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
   procedure ExtractIconFile(Icon: TIcon; const Filename: string;IconType : Cardinal);
   procedure ExtractBitmapFile(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
+  procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
 
   function  GetFileVersion(const FileName: string): string;
   function  IsAppRunning(const FileName: string): boolean;
@@ -98,6 +98,10 @@ type
   function  GetModuleName: string;
   procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName : string);
   function  GetDelphiDevShellToolsFolder : string;
+  function  GetDevShellToolsDbName : String;
+  function  GetDevShellToolsDbDelphi : String;
+  function  GetDevShellToolsImagesFolder : String;
+
   procedure ReadSettings(var Settings: TSettings);
   procedure WriteSettings(const Settings: TSettings);
 
@@ -107,6 +111,8 @@ type
   procedure CheckUpdates;
 
   function GetGroupToolsExtensions(const GroupName : string) : TStringDynArray;
+
+  procedure ScaleImage32(const SourceBitmap, ResizedBitmap: TBitmap; const ScaleAmount: Double);
 
 implementation
 
@@ -182,7 +188,8 @@ Result:=nil;
      LClientDataSet.ReadOnly:=True;
      LClientDataSet.LoadFromFile(GetDelphiDevShellToolsFolder+'tools.db');
      LClientDataSet.Open;
-     LClientDataSet.Filter:='Group='+QuotedStr(GroupName);
+     LClientDataSet.Filter:='Group = '+QuotedStr(GroupName);
+     LClientDataSet.Filtered:=True;
       while not LClientDataSet.eof do
       begin
 
@@ -293,6 +300,23 @@ begin
  //C:\Users\Dexter\AppData\Roaming\DelphiDevShellTools\
  ForceDirectories(Result);
 end;
+
+function GetDevShellToolsDbName : String;
+begin
+ Result:=GetDelphiDevShellToolsFolder + 'Tools.db';
+end;
+
+function GetDevShellToolsDbDelphi : String;
+begin
+ Result:=GetDelphiDevShellToolsFolder + 'DelphiVersions.db';
+end;
+
+function GetDevShellToolsImagesFolder : String;
+begin
+ Result:=GetDelphiDevShellToolsFolder+'png\';
+end;
+
+
 
 procedure ReadSettings(var Settings: TSettings);
 var
@@ -586,6 +610,25 @@ begin
 
 end;
 
+
+procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
+var
+ Icon: TIcon;
+begin
+  Icon:=TIcon.Create;
+  try
+    ExtractIconFile(Icon, Filename, SHGFI_SMALLICON);
+    Bmp.PixelFormat:=pf32bit;  {
+    Bmp.Width := Icon.Width;
+    Bmp.Height := Icon.Height;
+    Bmp.Canvas.Draw(0, 0, Icon);
+    }
+    Bmp.Assign(Icon);
+  finally
+    Icon.Free;
+  end;
+
+end;
 procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
 var
   FileInfo: TShFileInfo;
@@ -625,5 +668,178 @@ begin
   end;
 end;
 
+procedure ShrinkImage32(const SourceBitmap, StretchedBitmap: TBitmap;
+  Scale: Double);
+var
+  ScanLines: array of PByteArray;
+  DestLine: PByteArray;
+  CurrentLine: PByteArray;
+  DestX, DestY: Integer;
+  DestA, DestR, DestB, DestG: Integer;
+  SourceYStart, SourceXStart: Integer;
+  SourceYEnd, SourceXEnd: Integer;
+  AvgX, AvgY: Integer;
+  ActualX: Integer;
+  PixelsUsed: Integer;
+  DestWidth, DestHeight: Integer;
+begin
+  DestWidth := StretchedBitmap.Width;
+  DestHeight := StretchedBitmap.Height;
+  SetLength(ScanLines, SourceBitmap.Height);
+  for DestY := 0 to DestHeight - 1 do
+  begin
+    SourceYStart := Round(DestY / Scale);
+    SourceYEnd := Round((DestY + 1) / Scale) - 1;
+
+    if SourceYEnd >= SourceBitmap.Height then
+      SourceYEnd := SourceBitmap.Height - 1;
+
+    { Grab the destination pixels }
+    DestLine := StretchedBitmap.ScanLine[DestY];
+    for DestX := 0 to DestWidth - 1 do
+    begin
+      { Calculate the RGB value at this destination pixel }
+      SourceXStart := Round(DestX / Scale);
+      SourceXEnd := Round((DestX + 1) / Scale) - 1;
+
+      DestR := 0;
+      DestB := 0;
+      DestG := 0;
+      DestA := 0;
+
+      PixelsUsed := 0;
+      if SourceXEnd >= SourceBitmap.Width then
+        SourceXEnd := SourceBitmap.Width - 1;
+      for AvgY := SourceYStart to SourceYEnd do
+      begin
+        if ScanLines[AvgY] = nil then
+          ScanLines[AvgY] := SourceBitmap.ScanLine[AvgY];
+        CurrentLine := ScanLines[AvgY];
+        for AvgX := SourceXStart to SourceXEnd do
+        begin
+          ActualX := AvgX*4; { 4 bytes per pixel }
+          DestR := DestR + CurrentLine[ActualX];
+          DestB := DestB + CurrentLine[ActualX+1];
+          DestG := DestG + CurrentLine[ActualX+2];
+          DestA := DestA + CurrentLine[ActualX+3];
+          Inc(PixelsUsed);
+        end;
+      end;
+
+      { pf32bit = 4 bytes per pixel }
+      ActualX := DestX*4;
+      DestLine[ActualX]   := Round(DestR / PixelsUsed);
+      DestLine[ActualX+1] := Round(DestB / PixelsUsed);
+      DestLine[ActualX+2] := Round(DestG / PixelsUsed);
+      DestLine[ActualX+3] := Round(DestA / PixelsUsed);
+    end;
+  end;
+end;
+
+
+procedure EnlargeImage32(const SourceBitmap, StretchedBitmap: TBitmap;
+  Scale: Double);
+var
+  ScanLines: array of PByteArray;
+  DestLine: PByteArray;
+  CurrentLine: PByteArray;
+  DestX, DestY: Integer;
+  DestA, DestR, DestB, DestG: Double;
+  SourceYStart, SourceXStart: Integer;
+  SourceYPos: Integer;
+  AvgX, AvgY: Integer;
+  ActualX: Integer;
+  { Use a 4 pixels for enlarging }
+  XWeights, YWeights: array[0..1] of Double;
+  PixelWeight: Double;
+  DistFromStart: Double;
+  DestWidth, DestHeight: Integer;
+begin
+  DestWidth := StretchedBitmap.Width;
+  DestHeight := StretchedBitmap.Height;
+  Scale := StretchedBitmap.Width / SourceBitmap.Width;
+  SetLength(ScanLines, SourceBitmap.Height);
+  for DestY := 0 to DestHeight - 1 do
+  begin
+    DistFromStart := DestY / Scale;
+    SourceYStart := Round(DistFromSTart);
+    YWeights[1] := DistFromStart - SourceYStart;
+    if YWeights[1] < 0 then
+      YWeights[1] := 0;
+    YWeights[0] := 1 - YWeights[1];
+
+    DestLine := StretchedBitmap.ScanLine[DestY];
+    for DestX := 0 to DestWidth - 1 do
+    begin
+      { Calculate the RGB value at this destination pixel }
+      DistFromStart := DestX / Scale;
+      if DistFromStart > (SourceBitmap.Width - 1) then
+        DistFromStart := SourceBitmap.Width - 1;
+      SourceXStart := Round(DistFromStart);
+      XWeights[1] := DistFromStart - SourceXStart;
+      if XWeights[1] < 0 then
+        XWeights[1] := 0;
+      XWeights[0] := 1 - XWeights[1];
+
+      { Average the four nearest pixels from the source mapped point }
+      DestR := 0;
+      DestB := 0;
+      DestG := 0;
+      DestA := 0;
+      for AvgY := 0 to 1 do
+      begin
+        SourceYPos := SourceYStart + AvgY;
+        if SourceYPos >= SourceBitmap.Height then
+          SourceYPos := SourceBitmap.Height - 1;
+        if ScanLines[SourceYPos] = nil then
+          ScanLines[SourceYPos] := SourceBitmap.ScanLine[SourceYPos];
+            CurrentLine := ScanLines[SourceYPos];
+
+        for AvgX := 0 to 1 do
+        begin
+          if SourceXStart + AvgX >= SourceBitmap.Width then
+            SourceXStart := SourceBitmap.Width - 1;
+
+          ActualX := (SourceXStart + AvgX) * 4; { 4 bytes per pixel }
+
+          { Calculate how heavy this pixel is based on how far away
+            it is from the mapped pixel }
+          PixelWeight := XWeights[AvgX] * YWeights[AvgY];
+          DestR := DestR + CurrentLine[ActualX] * PixelWeight;
+          DestB := DestB + CurrentLine[ActualX+1] * PixelWeight;
+          DestG := DestG + CurrentLine[ActualX+2] * PixelWeight;
+          DestA := DestA + CurrentLine[ActualX+3] * PixelWeight;
+        end;
+      end;
+
+      ActualX := DestX * 4; { 4 bytes per pixel }
+      DestLine[ActualX] := Round(DestR);
+      DestLine[ActualX+1] := Round(DestB);
+      DestLine[ActualX+2] := Round(DestG);
+      DestLine[ActualX+3] := Round(DestA);
+    end;
+  end;
+end;
+
+procedure ScaleImage32(const SourceBitmap, ResizedBitmap: TBitmap;
+  const ScaleAmount: Double);
+var
+  DestWidth, DestHeight: Integer;
+begin
+  DestWidth := Round(SourceBitmap.Width * ScaleAmount);
+  DestHeight := Round(SourceBitmap.Height * ScaleAmount);
+  SourceBitmap.PixelFormat := pf32bit;
+
+  ResizedBitmap.Width := DestWidth;
+  ResizedBitmap.Height := DestHeight;
+  //ResizedBitmap.Canvas.Brush.Color := Vcl.Graphics.clNone;
+  //ResizedBitmap.Canvas.FillRect(Rect(0, 0, DestWidth, DestHeight));
+  ResizedBitmap.PixelFormat := pf32bit;
+
+  if ResizedBitmap.Width < SourceBitmap.Width then
+    ShrinkImage32(SourceBitmap, ResizedBitmap, ScaleAmount)
+  else
+    EnlargeImage32(SourceBitmap, ResizedBitmap, ScaleAmount);
+end;
 
 end.

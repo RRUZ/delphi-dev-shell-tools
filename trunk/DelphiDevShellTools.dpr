@@ -45,7 +45,7 @@ TODO
     done - ppudump dumps the contents of a unit in human-readable format. It understands older versions of units and gracefully handles unknown (future) versions.
     ppufiles lists the object files that you need to link in when using a unit file. It lists all libraries and units that are needed.
     ppumove combines several units into one; as such it can be used to create static and dynamic libraries.
-    ptop is a configurable source formatter. It pretty-prints your pascal code, much like indent does for C code.
+    done - ptop is a configurable source formatter. It pretty-prints your pascal code, much like indent does for C code.
     rstconv is a small utility that converts .rst files (files that contain resource strings, as created by the compiler to some other format. (GNU gettext at the moment)
     TP Lex and Yacc, written by Albert Graef. It can be used to create pascal units from a Lex vocabulary and Yacc grammar.
   ------------------------------------------------------------------------------

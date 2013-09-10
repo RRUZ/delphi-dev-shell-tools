@@ -577,16 +577,16 @@ begin
       if CX>=16 then
       begin
         VersionData.FBitmap := Graphics.TBitmap.Create;
-        ExtractBitmapFile(VersionData.FBitmap, Filename, SHGFI_SMALLICON);
+        ExtractBitmapFile32(VersionData.FBitmap, Filename, SHGFI_SMALLICON);
       end
       else
       begin
         TempBitmap:=TBitmap.Create;
         try
           VersionData.FBitmap := Graphics.TBitmap.Create;
-          ExtractBitmapFile(TempBitmap, Filename, SHGFI_SMALLICON);
+          ExtractBitmapFile32(TempBitmap, Filename, SHGFI_SMALLICON);
           Factor:= CX/16;
-          ScaleImage(TempBitmap, VersionData.FBitmap, Factor);
+          ScaleImage32(TempBitmap, VersionData.FBitmap, Factor);
         finally
           TempBitmap.Free;
         end;

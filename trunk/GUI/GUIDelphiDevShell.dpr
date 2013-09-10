@@ -74,7 +74,7 @@ begin
 
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  //TStyleManager.TrySetStyle('Amakrits');
+  TStyleManager.TrySetStyle('Smokey Quartz Kamri');
   if ParamCount>0 then
   begin
    if SameText('-about',ParamStr(1)) then
