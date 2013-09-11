@@ -113,6 +113,7 @@ type
   function GetGroupToolsExtensions(const GroupName : string) : TStringDynArray;
 
   procedure ScaleImage32(const SourceBitmap, ResizedBitmap: TBitmap; const ScaleAmount: Double);
+  function IsVistaOrLater : Boolean;
 
 implementation
 
@@ -171,6 +172,12 @@ const
   'ASSOCSTR_DDEIFEXEC',
   'ASSOCSTR_DDEAPPLICATION',
   'ASSOCSTR_DDETOPIC' );
+
+
+function IsVistaOrLater : Boolean;
+begin
+  Result:= (Win32MajorVersion >= 6);
+end;
 
 function GetGroupToolsExtensions(const GroupName : string) : TStringDynArray;
 var
@@ -313,7 +320,7 @@ end;
 
 function GetDevShellToolsImagesFolder : String;
 begin
- Result:=GetDelphiDevShellToolsFolder+'png\';
+ Result:=GetDelphiDevShellToolsFolder+'ico\';
 end;
 
 

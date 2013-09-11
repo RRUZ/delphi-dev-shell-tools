@@ -559,19 +559,7 @@ begin
       VersionData.FName   :=DelphiVersionsNames[DelphiComp];
       VersionData.FIDEType:=TSupportedIDEs.DelphiIDE;
       VersionData.Icon    :=TIcon.Create;
-
-
-
       ExtractIconFile(VersionData.FIcon, Filename, SHGFI_SMALLICON);
-      {
-      VersionData.FBitmap := Graphics.TBitmap.Create;
-      VersionData.FBitmap.PixelFormat:=pf24bit;
-      VersionData.FBitmap.Width := VersionData.FIcon.Width;
-      VersionData.FBitmap.Height := VersionData.FIcon.Height;
-      VersionData.FBitmap.Canvas.Draw(0, 0, VersionData.FIcon);
-      VersionData.FBitmap13:=TBitmap.Create;
-      ScaleImage( VersionData.FBitmap, VersionData.FBitmap13, 0.81);
-                                            }
 
       CX:=GetSystemMetrics(SM_CXMENUCHECK);
       if CX>=16 then
@@ -590,7 +578,6 @@ begin
         finally
           TempBitmap.Free;
         end;
-
       end;
 
       ColorLeftCorner := VersionData.FBitmap.Canvas.Pixels[0, 0];

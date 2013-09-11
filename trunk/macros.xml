@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Macros>
 <Macro name="$FILENAME$" description="Full File Name"/>
-<Macro name="$NAME$" description="File Name"/>
+<Macro name="$NAME$" description="File Name with extension"/>
+<Macro name="$ONLYNAME$" description="Only File Name Without extension"/>
 <Macro name="$EXT$" description="File Extension"/>
 <Macro name="$PATH$" description="File Path"/>
+<Macro name="$BDSPATH$" description="Rad Studio Path"/>
 <Macro name="$FPCPATH$" description="Free Pascal Path"/>
 </Macros>
