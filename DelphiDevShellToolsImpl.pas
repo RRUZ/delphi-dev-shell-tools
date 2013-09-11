@@ -92,8 +92,14 @@ type
     procedure AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddFPCToolsTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     //-------------------
-    procedure AddMenuSeparator(hMenu : HMENU; var MenuIndex : Integer);
     function ParseMacros(const Data : string;DelphiVersionData  : TDelphiVersionData) : string;
+
+    //Menu helper functions
+    function  InsertMenuDevShell(hMenu: HMENU; uPosition: UINT; uIDNewItem: UINT_PTR; lpNewItem, IconName: LPCWSTR): BOOL;
+    procedure RegisterMenuItemBitmapDevShell(hMenu: HMENU; uPosition, uFlags: UINT; const IconName : String);
+    procedure SetMenuItemBitmapsExternal(hMenu: HMENU; uPosition, uFlags: UINT; const IconName : String);
+    procedure AddMenuSeparatorEx(hMenu : HMENU; var MenuIndex : Integer);
+
   protected
     function IShellExtInit.Initialize = ShellExtInitialize;
     function ShellExtInitialize(pidlFolder: PItemIDList; lpdobj: IDataObject; hKeyProgID: HKEY): HResult; stdcall;
@@ -126,6 +132,7 @@ uses
   ClipBrd,
   Vcl.Graphics,
   Vcl.GraphUtil,
+  Math,
   PngImage,
   Winapi.Messages,
   Datasnap.DBClient,
@@ -142,8 +149,11 @@ uses
 var
   InstalledDelphiVersions : TObjectList<TDelphiVersionData>;
   PAClientProfiles        : TPAClientProfileList;
-  BitmapsDict    : TObjectDictionary<string, TBitmap>;
-  Bitmaps32Dict    : TObjectDictionary<string, TBitmap>;
+  BitmapsDict        : TObjectDictionary<string, TBitmap>;
+  IconsExternals     : TObjectDictionary<string, TIcon>;//TIcon is a instance
+  IconsDictExternal  : TDictionary<Integer, TIcon>;//TIcon is only a refernce
+  IconsDictResources : TDictionary<Integer, string>;
+
   ExeNameTxt, FriendlyAppNameTxt : string;
   LazarusInstalled : Boolean;
   Settings         : TSettings;
@@ -618,6 +628,94 @@ begin
   Result := E_INVALIDARG;
 end;
 
+function TDelphiDevShellToolsContextMenu.InsertMenuDevShell(hMenu: HMENU; uPosition: UINT; uIDNewItem: UINT_PTR; lpNewItem, IconName: LPCWSTR) : BOOL;
+var
+  LMenuItem : TMenuItemInfo;
+begin
+  ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+  LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+  LMenuItem.fMask  := MIIM_FTYPE or MIIM_ID or MIIM_BITMAP or MIIM_STRING;
+  LMenuItem.fType  := MFT_STRING;
+  LMenuItem.wID    := uIDNewItem;
+  LMenuItem.dwTypeData := lpNewItem;
+  if (IconName<>nil) and (IsVistaOrLater and BitmapsDict.ContainsKey(IconName)) then
+   LMenuItem.hbmpItem   := IfThen(IsVistaOrLater, BitmapsDict[IconName].Handle ,HBMMENU_CALLBACK);
+  //log('InsertMenuEx HBMMENU_CALLBACK '+IntToStr(uIDNewItem));
+  Result:=InsertMenuItem(hMenu, uPosition, True, LMenuItem);
+
+  if not Result then
+   log(SysErrorMessage(GetLastError));
+end;
+
+
+procedure TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapDevShell(hMenu: HMENU;
+  uPosition, uFlags: UINT; const IconName : String);
+var
+  LMenuInfo    : TMenuItemInfo;
+  Buffer       : array [0..79] of char;
+begin
+  if IsVistaOrLater then exit;
+
+  //log('SetMenuItemBitmapsEx GetMenuItemInfo '+IconName);
+  LMenuInfo.cbSize := sizeof(LMenuInfo);
+  LMenuInfo.fMask  := MIIM_ID;
+  LMenuInfo.dwTypeData := Buffer;
+  LMenuInfo.cch := SizeOf(Buffer);
+  if GetMenuItemInfo(hMenu, uPosition, True, LMenuInfo) then
+  begin
+    //log('SetMenuItemBitmapsEx GetMenuItemInfo wID '+IntToStr(LMenuInfo.wID));
+    if not IconsDictResources.ContainsKey(LMenuInfo.wID) then
+     IconsDictResources.Add(LMenuInfo.wID, IconName);
+  end
+  else
+    log(SysErrorMessage(GetLastError));
+end;
+
+procedure  TDelphiDevShellToolsContextMenu.SetMenuItemBitmapsExternal(hMenu: HMENU; uPosition, uFlags: UINT; const IconName : String);
+var
+  LMenuInfo    : TMenuItemInfo;
+  Buffer       : array [0..79] of char;
+begin
+  if IsVistaOrLater then exit;
+
+  LMenuInfo.cbSize := sizeof(LMenuInfo);
+  LMenuInfo.fMask  := MIIM_ID;
+  LMenuInfo.dwTypeData := Buffer;
+  LMenuInfo.cch := SizeOf(Buffer);
+  if GetMenuItemInfo(hMenu, uPosition, True, LMenuInfo) then
+  begin
+    if not IconsDictExternal.ContainsKey(LMenuInfo.wID) then
+     IconsDictExternal.Add(LMenuInfo.wID, IconsExternals[IconName]);
+  end
+  else
+    log(SysErrorMessage(GetLastError));
+end;
+
+
+procedure TDelphiDevShellToolsContextMenu.AddMenuSeparatorEx(hMenu : HMENU; var MenuIndex : Integer);
+var
+  LMenuInfo    : TMenuItemInfo;
+  Buffer       : array [0..79] of char;
+begin
+  LMenuInfo.cbSize := sizeof(LMenuInfo);
+  LMenuInfo.fMask  := MIIM_TYPE;
+  LMenuInfo.dwTypeData := Buffer;
+  LMenuInfo.cch := SizeOf(Buffer);
+  if GetMenuItemInfo(hMenu, MenuIndex-1, True, LMenuInfo) then
+  begin
+    log('GetMenuItemInfo ok '+IntToStr(LMenuInfo.fType));
+    if (LMenuInfo.fType and MFT_SEPARATOR) = MFT_SEPARATOR then
+    else
+    begin
+      log('adding separator');
+      InsertMenu(hMenu, MenuIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil);
+      inc(MenuIndex);
+    end;
+  end
+  else
+    log(SysErrorMessage(GetLastError));
+end;
+
 function TDelphiDevShellToolsContextMenu.InvokeCommand(var lpici: TCMInvokeCommandInfo): HResult;
 var
   LVerb: Word;
@@ -649,15 +747,26 @@ function TDelphiDevShellToolsContextMenu.MenuMessageHandler(uMsg: UINT; wParam: 
 const
   Dx = 20;
   Dy = 4;
+  MinHeight = 16;
 var
   i, Lx,Ly :Integer;
   LCanvas: TCanvas;
   SaveIndex: Integer;
   LIcon : TIcon;
 begin
-log('MenuMessageHandler');
+//log('MenuMessageHandler');
   case uMsg of
+
     WM_MEASUREITEM:
+    begin
+      if PMeasureItemStruct(lParam)^.itemID<>FOwnerDrawId then
+      begin
+         if PMeasureItemStruct(lParam)=nil then Exit(S_OK);
+          PMeasureItemStruct(lParam)^.itemWidth := PMeasureItemStruct(lParam)^.itemWidth+2;
+          if (PMeasureItemStruct(lParam)^.itemHeight < MinHeight) then
+             PMeasureItemStruct(lParam)^.itemHeight := MinHeight;
+      end
+      else
       if PMeasureItemStruct(lParam)^.itemID=FOwnerDrawId then
       begin
         with PMeasureItemStruct(lParam)^ do
@@ -667,213 +776,237 @@ log('MenuMessageHandler');
             if (FMSBuildDProj<>nil) and (FMSBuildDProj.TargetPlatforms.Count>1) then
               itemHeight:= itemHeight+((18+Dy)*UINT(FMSBuildDProj.TargetPlatforms.Count));
         end;
-        log('WM_MEASUREITEM '+IntToStr(PMeasureItemStruct(lParam)^.itemID));
+        //log('WM_MEASUREITEM '+IntToStr(PMeasureItemStruct(lParam)^.itemID));
       end;
+    end;
+
     WM_DRAWITEM:
-      if PDrawItemStruct(lParam)^.itemID=FOwnerDrawId then
-      begin
+    begin
+        if PDrawItemStruct(lParam)^.itemID<>FOwnerDrawId then
         with PDrawItemStruct(lParam)^ do
         begin
-          LCanvas := TCanvas.Create;
-          try
-            SaveIndex := SaveDC(hDC);
-            try
-              LCanvas.Handle := hDC;
-
-              if itemState = ODS_SELECTED then
-              begin
-                LCanvas.Brush.Color := clHighlight;
-                LCanvas.Font.Color := clHighlightText;
-              end
-              else
-              begin
-                LCanvas.Brush.Color := clMenu;
-                LCanvas.Font.Color := clMenuText;
-              end;
-
-              Ly:=rcItem.Top  + Dy;
-              Lx:=rcItem.Left + Dx;
-
-              LCanvas.TextOut(Lx, Ly, 'Delphi Version (Detected)');
-              LCanvas.TextOut(Lx+140, Ly, DelphiVersionsNames[FMSBuildDProj.DelphiVersion]);
-              //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['delphi2']);
+           //log('**** '+IntToStr(PDrawItemStruct(lParam)^.itemID));
+            if IconsDictResources.ContainsKey(PDrawItemStruct(lParam)^.itemID) then
+            begin
               LIcon:=TIcon.Create;
               try
-               LIcon.LoadFromResourceName(HInstance,'delphi_ico');
-               DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+               LIcon.LoadFromResourceName(HInstance,IconsDictResources[PDrawItemStruct(lParam)^.itemID]);
+               DrawIconEx(hDC,rcItem.Left-16, rcItem.Top + (rcItem.Bottom - rcItem.Top - 16) div 2,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
               finally
                LIcon.Free;
               end;
+            end
+            else
+            if IconsDictExternal.ContainsKey(PDrawItemStruct(lParam)^.itemID) then
+               DrawIconEx(hDC,rcItem.Left-16, rcItem.Top + (rcItem.Bottom - rcItem.Top - 16) div 2,  IconsDictExternal[PDrawItemStruct(lParam)^.itemID].Handle, 16, 16,  0, 0, DI_NORMAL);
+        end
+        else
+        if PDrawItemStruct(lParam)^.itemID=FOwnerDrawId then
+        begin
+          with PDrawItemStruct(lParam)^ do
+          begin
+            LCanvas := TCanvas.Create;
+            try
+              SaveIndex := SaveDC(hDC);
+              try
+                LCanvas.Handle := hDC;
 
-
-              //BitBlt(hDC, rcItem.Left +1, Ly, BitmapsDict.Items['delphi2'].Width, BitmapsDict.Items['delphi2'].Height, BitmapsDict.Items['delphi2'].Canvas.Handle, 0, 0, SRCCOPY);
-
-
-              Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-              LCanvas.TextOut(Lx, Ly, 'Application Type');
-              LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.AppType);
-
-              Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-              LCanvas.TextOut(Lx, Ly, 'Framework Type');
-              LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.FrameworkType);
-              if SameText(FMSBuildDProj.FrameworkType,'FMX') then
-                //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['firemonkey'])
-                //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['firemonkey2'].Width, BitmapsDict.Items['firemonkey2'].Height, BitmapsDict.Items['firemonkey2'].Canvas.Handle, 0, 0, SRCCOPY)
-              begin
-                LIcon:=TIcon.Create;
-                try
-                 LIcon.LoadFromResourceName(HInstance,'firemonkey_ico');
-                 DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                finally
-                 LIcon.Free;
+                if itemState = ODS_SELECTED then
+                begin
+                  LCanvas.Brush.Color := clHighlight;
+                  LCanvas.Font.Color := clHighlightText;
+                end
+                else
+                begin
+                  LCanvas.Brush.Color := clMenu;
+                  LCanvas.Font.Color := clMenuText;
                 end;
-              end
-              else
-                //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['vcl2'].Width, BitmapsDict.Items['vcl2'].Height, BitmapsDict.Items['vcl2'].Canvas.Handle, 0, 0, SRCCOPY);
-                //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['vcl']);
-              begin
+
+                Ly:=rcItem.Top  + Dy;
+                Lx:=rcItem.Left + Dx;
+
+                LCanvas.TextOut(Lx, Ly, 'Delphi Version (Detected)');
+                LCanvas.TextOut(Lx+140, Ly, DelphiVersionsNames[FMSBuildDProj.DelphiVersion]);
+                //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['delphi2']);
                 LIcon:=TIcon.Create;
                 try
-                 LIcon.LoadFromResourceName(HInstance,'vcl_ico');
-                 DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                finally
-                 LIcon.Free;
-                end;
-              end;
-
-
-              Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-              LCanvas.TextOut(Lx, Ly, 'GUID');
-              LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.GUID);
-
-              Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-              LCanvas.TextOut(Lx, Ly, 'Current Build Configuration');
-              LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.DefaultConfiguration);
-              //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['buildconf']);
-              //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['buildconf2'].Width, BitmapsDict.Items['buildconf2'].Height, BitmapsDict.Items['buildconf2'].Canvas.Handle, 0, 0, SRCCOPY);
-                LIcon:=TIcon.Create;
-                try
-                 LIcon.LoadFromResourceName(HInstance,'buildconf_ico');
+                 LIcon.LoadFromResourceName(HInstance,'delphi_ico');
                  DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
                 finally
                  LIcon.Free;
                 end;
 
-              Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-              LCanvas.TextOut(Lx, Ly, 'Current Target Platform');
-              LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.DefaultPlatForm);
 
-             if StartsText('Win', FMSBuildDProj.DefaultPlatForm) then
-               //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['win'])
-               //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['win2'].Width, BitmapsDict.Items['win2'].Height, BitmapsDict.Items['win2'].Canvas.Handle, 0, 0, SRCCOPY)
-              begin
-                LIcon:=TIcon.Create;
-                try
-                 LIcon.LoadFromResourceName(HInstance,'win_ico');
-                 DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                finally
-                 LIcon.Free;
-                end;
-              end
-             else
-             if StartsText('OSX', FMSBuildDProj.DefaultPlatForm) then
-               //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['osx'])
-               //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['osx2'].Width, BitmapsDict.Items['osx2'].Height, BitmapsDict.Items['osx2'].Canvas.Handle, 0, 0, SRCCOPY)
-              begin
-                LIcon:=TIcon.Create;
-                try
-                 LIcon.LoadFromResourceName(HInstance,'osx_ico');
-                 DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                finally
-                 LIcon.Free;
-                end;
-              end
-             else
-             if StartsText('IOS', FMSBuildDProj.DefaultPlatForm) then
-               //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['ios']);
-               //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['ios2'].Width, BitmapsDict.Items['ios2'].Height, BitmapsDict.Items['ios2'].Canvas.Handle, 0, 0, SRCCOPY);
-              begin
-                LIcon:=TIcon.Create;
-                try
-                 LIcon.LoadFromResourceName(HInstance,'ios_ico');
-                 DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                finally
-                 LIcon.Free;
-                end;
-              end;
+                //BitBlt(hDC, rcItem.Left +1, Ly, BitmapsDict.Items['delphi2'].Width, BitmapsDict.Items['delphi2'].Height, BitmapsDict.Items['delphi2'].Canvas.Handle, 0, 0, SRCCOPY);
 
-              if (FMSBuildDProj<>nil) and (FMSBuildDProj.TargetPlatforms.Count>1) then
-              begin
+
                 Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                LCanvas.TextOut(Lx, Ly, 'Target Platforms');
-                //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['platforms2']);
+                LCanvas.TextOut(Lx, Ly, 'Application Type');
+                LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.AppType);
 
-                LIcon:=TIcon.Create;
-                try
-                 LIcon.LoadFromResourceName(HInstance,'platforms_ico');
-                 DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                finally
-                 LIcon.Free;
+                Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
+                LCanvas.TextOut(Lx, Ly, 'Framework Type');
+                LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.FrameworkType);
+                if SameText(FMSBuildDProj.FrameworkType,'FMX') then
+                  //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['firemonkey'])
+                  //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['firemonkey2'].Width, BitmapsDict.Items['firemonkey2'].Height, BitmapsDict.Items['firemonkey2'].Canvas.Handle, 0, 0, SRCCOPY)
+                begin
+                  LIcon:=TIcon.Create;
+                  try
+                   LIcon.LoadFromResourceName(HInstance,'firemonkey_ico');
+                   DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                  finally
+                   LIcon.Free;
+                  end;
+                end
+                else
+                  //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['vcl2'].Width, BitmapsDict.Items['vcl2'].Height, BitmapsDict.Items['vcl2'].Canvas.Handle, 0, 0, SRCCOPY);
+                  //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['vcl']);
+                begin
+                  LIcon:=TIcon.Create;
+                  try
+                   LIcon.LoadFromResourceName(HInstance,'vcl_ico');
+                   DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                  finally
+                   LIcon.Free;
+                  end;
                 end;
 
-                 for i := 0 to FMSBuildDProj.TargetPlatforms.Count-1 do
-                 begin
-                    Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                    LCanvas.TextOut(Lx+25, Ly, FMSBuildDProj.TargetPlatforms[i]);
-                    if StartsText('Win', FMSBuildDProj.TargetPlatforms[i]) then
-                      //LCanvas.Draw(Lx+5, Ly, BitmapsDict.Items['win'])
-                      //BitBlt(LCanvas.Handle, Lx+5, Ly, BitmapsDict.Items['win2'].Width, BitmapsDict.Items['win2'].Height, BitmapsDict.Items['win2'].Canvas.Handle, 0, 0, SRCCOPY)
-                    begin
-                      LIcon:=TIcon.Create;
-                      try
-                       LIcon.LoadFromResourceName(HInstance,'win_ico');
-                       DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                      finally
-                       LIcon.Free;
-                      end;
-                    end
-                    else
-                    if StartsText('OSX', FMSBuildDProj.TargetPlatforms[i]) then
-                      //LCanvas.Draw(Lx+5, Ly, BitmapsDict.Items['osx'])
-                      //BitBlt(LCanvas.Handle, Lx+5, Ly, BitmapsDict.Items['osx2'].Width, BitmapsDict.Items['osx2'].Height, BitmapsDict.Items['osx2'].Canvas.Handle, 0, 0, SRCCOPY)
-                    begin
-                      LIcon:=TIcon.Create;
-                      try
-                       LIcon.LoadFromResourceName(HInstance,'osx_ico');
-                       DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                      finally
-                       LIcon.Free;
-                      end;
-                    end
-                    else
-                    if StartsText('IOS', FMSBuildDProj.TargetPlatforms[i]) then
-                     //LCanvas.Draw(Lx+5, Ly, BitmapsDict.Items['ios']);
-                     //BitBlt(LCanvas.Handle, Lx+5, Ly, BitmapsDict.Items['ios2'].Width, BitmapsDict.Items['ios2'].Height, BitmapsDict.Items['ios2'].Canvas.Handle, 0, 0, SRCCOPY);
-                    begin
-                      LIcon:=TIcon.Create;
-                      try
-                       LIcon.LoadFromResourceName(HInstance,'ios_ico');
-                       DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                      finally
-                       LIcon.Free;
-                      end;
-                    end;
 
-                 end;
+                Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
+                LCanvas.TextOut(Lx, Ly, 'GUID');
+                LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.GUID);
+
+                Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
+                LCanvas.TextOut(Lx, Ly, 'Current Build Configuration');
+                LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.DefaultConfiguration);
+                //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['buildconf']);
+                //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['buildconf2'].Width, BitmapsDict.Items['buildconf2'].Height, BitmapsDict.Items['buildconf2'].Canvas.Handle, 0, 0, SRCCOPY);
+                  LIcon:=TIcon.Create;
+                  try
+                   LIcon.LoadFromResourceName(HInstance,'buildconf_ico');
+                   DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                  finally
+                   LIcon.Free;
+                  end;
+
+                Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
+                LCanvas.TextOut(Lx, Ly, 'Current Target Platform');
+                LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.DefaultPlatForm);
+
+               if StartsText('Win', FMSBuildDProj.DefaultPlatForm) then
+                 //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['win'])
+                 //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['win2'].Width, BitmapsDict.Items['win2'].Height, BitmapsDict.Items['win2'].Canvas.Handle, 0, 0, SRCCOPY)
+                begin
+                  LIcon:=TIcon.Create;
+                  try
+                   LIcon.LoadFromResourceName(HInstance,'win_ico');
+                   DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                  finally
+                   LIcon.Free;
+                  end;
+                end
+               else
+               if StartsText('OSX', FMSBuildDProj.DefaultPlatForm) then
+                 //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['osx'])
+                 //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['osx2'].Width, BitmapsDict.Items['osx2'].Height, BitmapsDict.Items['osx2'].Canvas.Handle, 0, 0, SRCCOPY)
+                begin
+                  LIcon:=TIcon.Create;
+                  try
+                   LIcon.LoadFromResourceName(HInstance,'osx_ico');
+                   DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                  finally
+                   LIcon.Free;
+                  end;
+                end
+               else
+               if StartsText('IOS', FMSBuildDProj.DefaultPlatForm) then
+                 //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['ios']);
+                 //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['ios2'].Width, BitmapsDict.Items['ios2'].Height, BitmapsDict.Items['ios2'].Canvas.Handle, 0, 0, SRCCOPY);
+                begin
+                  LIcon:=TIcon.Create;
+                  try
+                   LIcon.LoadFromResourceName(HInstance,'ios_ico');
+                   DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                  finally
+                   LIcon.Free;
+                  end;
+                end;
+
+                if (FMSBuildDProj<>nil) and (FMSBuildDProj.TargetPlatforms.Count>1) then
+                begin
+                  Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
+                  LCanvas.TextOut(Lx, Ly, 'Target Platforms');
+                  //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['platforms2']);
+
+                  LIcon:=TIcon.Create;
+                  try
+                   LIcon.LoadFromResourceName(HInstance,'platforms_ico');
+                   DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                  finally
+                   LIcon.Free;
+                  end;
+
+                   for i := 0 to FMSBuildDProj.TargetPlatforms.Count-1 do
+                   begin
+                      Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
+                      LCanvas.TextOut(Lx+25, Ly, FMSBuildDProj.TargetPlatforms[i]);
+                      if StartsText('Win', FMSBuildDProj.TargetPlatforms[i]) then
+                        //LCanvas.Draw(Lx+5, Ly, BitmapsDict.Items['win'])
+                        //BitBlt(LCanvas.Handle, Lx+5, Ly, BitmapsDict.Items['win2'].Width, BitmapsDict.Items['win2'].Height, BitmapsDict.Items['win2'].Canvas.Handle, 0, 0, SRCCOPY)
+                      begin
+                        LIcon:=TIcon.Create;
+                        try
+                         LIcon.LoadFromResourceName(HInstance,'win_ico');
+                         DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                        finally
+                         LIcon.Free;
+                        end;
+                      end
+                      else
+                      if StartsText('OSX', FMSBuildDProj.TargetPlatforms[i]) then
+                        //LCanvas.Draw(Lx+5, Ly, BitmapsDict.Items['osx'])
+                        //BitBlt(LCanvas.Handle, Lx+5, Ly, BitmapsDict.Items['osx2'].Width, BitmapsDict.Items['osx2'].Height, BitmapsDict.Items['osx2'].Canvas.Handle, 0, 0, SRCCOPY)
+                      begin
+                        LIcon:=TIcon.Create;
+                        try
+                         LIcon.LoadFromResourceName(HInstance,'osx_ico');
+                         DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                        finally
+                         LIcon.Free;
+                        end;
+                      end
+                      else
+                      if StartsText('IOS', FMSBuildDProj.TargetPlatforms[i]) then
+                       //LCanvas.Draw(Lx+5, Ly, BitmapsDict.Items['ios']);
+                       //BitBlt(LCanvas.Handle, Lx+5, Ly, BitmapsDict.Items['ios2'].Width, BitmapsDict.Items['ios2'].Height, BitmapsDict.Items['ios2'].Canvas.Handle, 0, 0, SRCCOPY);
+                      begin
+                        LIcon:=TIcon.Create;
+                        try
+                         LIcon.LoadFromResourceName(HInstance,'ios_ico');
+                         DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                        finally
+                         LIcon.Free;
+                        end;
+                      end;
+
+                   end;
+                end;
+
+              finally
+                LCanvas.Handle := 0;
+                RestoreDC(hDC, SaveIndex);
               end;
-
             finally
-              LCanvas.Handle := 0;
-              RestoreDC(hDC, SaveIndex);
+              LCanvas.Free;
             end;
-          finally
-            LCanvas.Free;
+
           end;
+          //log('WM_DRAWITEM '+IntToStr(PDrawItemStruct(lParam)^.itemID));
 
         end;
-        log('WM_DRAWITEM '+IntToStr(PDrawItemStruct(lParam)^.itemID));
+    end;
 
-      end;
   end;
   Result:=S_OK;
 end;
@@ -883,14 +1016,14 @@ function TDelphiDevShellToolsContextMenu.HandleMenuMsg(uMsg: UINT; WParam: WPARA
 var
  res : Winapi.Windows.LPARAM;
 begin
- log('HandleMenuMsg');
+ //log('HandleMenuMsg');
  Result:=MenuMessageHandler ( uMsg, wParam, lParam, res);
 end;
 
 //IContextMenu3
 function TDelphiDevShellToolsContextMenu.HandleMenuMsg2(uMsg: UINT; wParam: WPARAM; lParam: LPARAM; var lpResult: LRESULT): HResult; stdcall;
 begin
-  log('HandleMenuMsg2');
+  //log('HandleMenuMsg2');
   Result:= MenuMessageHandler( uMsg, wParam, lParam, lpResult);
 end;
 
@@ -916,14 +1049,19 @@ begin
 
         ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
         LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_FTYPE or  MIIM_ID or MIIM_BITMAP or MIIM_STRING;
         LMenuItem.fType := MFT_STRING;
         LMenuItem.wID := FMenuItemIndex;
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['checksum'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := BitmapsDict['checksum'].Handle;
+        LMenuItem.hbmpUnchecked := BitmapsDict['checksum'].Handle;
+
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['checksum'].Handle, BitmapsDict.Items['checksum'].Handle);
+        if not IsVistaOrLater then
+        RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'checksum_ico');
         Inc(uIDNewItem);
         Inc(MenuIndex);
       end
@@ -934,7 +1072,8 @@ begin
       end;
 
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate CRC32'));
+
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate CRC32'), nil);
      //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenGUICheckSum;
@@ -944,7 +1083,7 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate MD4'));
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate MD4'), nil);
      //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenGUICheckSum;
@@ -954,7 +1093,7 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate MD5'));
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate MD5'), nil);
      //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenGUICheckSum;
@@ -964,7 +1103,7 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate SHA1'));
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA1'), nil);
      //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenGUICheckSum;
@@ -974,7 +1113,7 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate SHA-256'));
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA-256'), nil);
      //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenGUICheckSum;
@@ -984,7 +1123,7 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate SHA-384'));
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA-384'), nil);
      //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenGUICheckSum;
@@ -994,7 +1133,7 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Calculate SHA-512'));
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA-512'), nil);
      //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenGUICheckSum;
@@ -1032,14 +1171,19 @@ begin
 
         ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
         LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
         LMenuItem.fType := MFT_STRING;
         LMenuItem.wID := FMenuItemIndex;
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['common'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := BitmapsDict['common'].Handle;
+        LMenuItem.hbmpUnchecked := BitmapsDict['common'].Handle;
+
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['common'].Handle, BitmapsDict.Items['common'].Handle);
+        if not IsVistaOrLater then
+          RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'common_ico');
         Inc(uIDNewItem);
         Inc(MenuIndex);
       end
@@ -1050,40 +1194,40 @@ begin
       end;
 
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy File Path to clipboard'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy_path'].Handle, BitmapsDict.Items['copy_path'].Handle);
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy File Path to clipboard'), 'copy_path');
+     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'copy_path_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyPathClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy full FileName (Path + FileName) to clipboard'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy full FileName (Path + FileName) to clipboard'),'copy');
+     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'copy_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyFileNameClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy FileName using URL format (file://...) to clipboard'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy_url'].Handle, BitmapsDict.Items['copy_url'].Handle);
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy FileName using URL format (file://...) to clipboard'),'copy_url');
+     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'copy_url_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyFileNameUrlClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy FileName using UNC format (\\server-name\Shared...) to clipboard'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy_unc'].Handle, BitmapsDict.Items['copy_unc'].Handle);
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy FileName using UNC format (\\server-name\Shared...) to clipboard'),'copy_unc');
+     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'copy_unc_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyFileNameUNCClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Copy File content to the clipboard'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy_content'].Handle, BitmapsDict.Items['copy_content'].Handle);
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy File content to the clipboard'), 'copy_content');
+     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'copy_content_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=CopyFileContentClipboard;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
@@ -1091,8 +1235,8 @@ begin
      Inc(LSubMenuIndex);
 
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open In Notepad'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['notepad'].Handle, BitmapsDict.Items['notepad'].Handle);
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Open In Notepad'), 'notepad');
+     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'notepad_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenWithNotepad;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
@@ -1103,8 +1247,8 @@ begin
        if (ExeNameTxt<>'') and (not SameText('notepad.exe', ExtractFileName(ExeNameTxt))) then
        begin
            log(ExtractFileName(ExeNameTxt));
-           InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open In '+FriendlyAppNameTxt));
-           SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['txt'].Handle, BitmapsDict.Items['txt'].Handle);
+           InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Open In '+FriendlyAppNameTxt), 'txt');
+           SetMenuItemBitmapsExternal(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'txt');
            LMethodInfo:=TMethodInfo.Create;
            LMethodInfo.Method:=OpenWithApp;
            LMethodInfo.Value1:=ExeNameTxt;
@@ -1118,8 +1262,8 @@ begin
        log('GetAssocAppByExt '+E.Message);
      end;
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open Command Line here'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['cmd'].Handle, BitmapsDict.Items['cmd'].Handle);
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Open Command Line here'), 'cmd');
+     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'cmd_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenCmdHere;
      LMethodInfo.Value1:=False;
@@ -1127,15 +1271,14 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open Command Line here as Administrator'));
-     SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['shield'].Handle, BitmapsDict.Items['shield'].Handle);
+     InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Open Command Line here as Administrator'), 'shield');
+     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'shield_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=OpenCmdHere;
      LMethodInfo.Value1:=True;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
-
 
       if not Settings.SubMenuCommonTasks then
        MenuIndex:=LSubMenuIndex;
@@ -1178,14 +1321,19 @@ begin
 
         ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
         LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
         LMenuItem.fType := MFT_STRING;
         LMenuItem.wID := FMenuItemIndex;
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['radcmd'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := BitmapsDict['radcmd'].Handle;
+        LMenuItem.hbmpUnchecked := BitmapsDict['radcmd'].Handle;
+
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['radcmd'].Handle, BitmapsDict.Items['radcmd'].Handle);
+        if not IsVistaOrLater then
+          RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'radcmd_ico');
         Inc(uIDNewItem);
         Inc(MenuIndex);
       end
@@ -1198,8 +1346,10 @@ begin
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
        if LCurrentDelphiVersionData.Version>=Delphi2007 then
        begin
-        InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(LCurrentDelphiVersionData.Name+' Command Prompt'));
-        SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
+        InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(LCurrentDelphiVersionData.Name+' Command Prompt'), PWideChar(LCurrentDelphiVersionData.Name));
+        if not IconsDictExternal.ContainsKey(uIDNewItem) then
+          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+        //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
         LMethodInfo:=TMethodInfo.Create;
         LMethodInfo.Method:=OpenRADCmd;
         LMethodInfo.Value1:=LCurrentDelphiVersionData;
@@ -1243,14 +1393,20 @@ begin
 
         ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
         LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
         LMenuItem.fType := MFT_STRING;
         LMenuItem.wID := FMenuItemIndex;
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['fpc_tools'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := BitmapsDict['fpc_tools'].Handle;
+        LMenuItem.hbmpUnchecked := BitmapsDict['fpc_tools'].Handle;
+
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['fpc_tools'].Handle, BitmapsDict.Items['fpc_tools'].Handle);
+
+        if not IsVistaOrLater then
+          RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'fpc_tools_ico');
         Inc(uIDNewItem);
         Inc(MenuIndex);
       end
@@ -1273,15 +1429,17 @@ begin
              LArray:= SplitString(LClientDataSet.FieldByName('Extensions').AsString, ',');
              if MatchText(FFileExt, LArray) then
              begin
-              InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(ParseMacros(LClientDataSet.FieldByName('Menu').AsString, nil)));
 
-              if not LClientDataSet.FieldByName('Image').IsNull then
+              if (LClientDataSet.FieldByName('Image').IsNull) or (not FileExists(GetDevShellToolsImagesFolder+LClientDataSet.FieldByName('Image').AsString)) then
+               InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(ParseMacros(LClientDataSet.FieldByName('Menu').AsString, nil)), nil)
+              else
               begin
                 s:=LClientDataSet.FieldByName('Image').AsString;
-                log(GetDevShellToolsImagesFolder+s);
+
                 RegisterBitmap32(s);
-                if Bitmaps32Dict.ContainsKey(s) then
-                  SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, Bitmaps32Dict.Items[s].Handle, Bitmaps32Dict.Items[s].Handle);
+                InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(ParseMacros(LClientDataSet.FieldByName('Menu').AsString, nil)), PWideChar(s));
+                if not IsVistaOrLater then
+                  SetMenuItemBitmapsExternal(LSubMenu, LSubMenuIndex, MF_BYPOSITION, s);
               end;
 
               LMethodInfo:=TMethodInfo.Create;
@@ -1348,14 +1506,19 @@ begin
 
           ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
           LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-          LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+          LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
           LMenuItem.fType := MFT_STRING;
           LMenuItem.wID := FMenuItemIndex;
           LMenuItem.hSubMenu := LSubMenu;
           LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
           LMenuItem.cch := Length(sSubMenuCaption);
+          LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
+          LMenuItem.hbmpChecked   := BitmapsDict['delphi'].Handle;
+          LMenuItem.hbmpUnchecked := BitmapsDict['delphi'].Handle;
           InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-          SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['delphi'].Handle, BitmapsDict.Items['delphi'].Handle);
+
+          if not IsVistaOrLater then
+            RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'delphi_ico');
 
           Inc(uIDNewItem);
           Inc(MenuIndex);
@@ -1382,17 +1545,29 @@ begin
              else
                sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' ('+sPlatform+' - '+sBuildConfiguration+')';
 
-             InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
-             log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
 
              if StartsText('Win', sPlatform) then
-               SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['win'].Handle, BitmapsDict.Items['win'].Handle)
+              InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'win')
              else
              if StartsText('OSX', sPlatform) then
-               SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['osx'].Handle, BitmapsDict.Items['osx'].Handle)
+              InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'osx')
              else
              if StartsText('IOS', sPlatform) then
-               SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['ios'].Handle, BitmapsDict.Items['ios'].Handle);
+              InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'ios');
+
+
+             if not IsVistaOrLater then
+             begin
+               if StartsText('Win', sPlatform) then
+                 RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'win_ico')
+               else
+               if StartsText('OSX', sPlatform) then
+                 RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'osx_ico')
+               else
+               if StartsText('IOS', sPlatform) then
+                 RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'ios_ico');
+             end;
+
 
              LMethodInfo:=TMethodInfo.Create;
              LMethodInfo.Method:=MSBuildWithDelphi;
@@ -1455,14 +1630,19 @@ begin
 
           ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
           LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-          LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+          LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
           LMenuItem.fType := MFT_STRING;
           LMenuItem.wID := FMenuItemIndex;
           LMenuItem.hSubMenu := LSubMenu;
           LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
           LMenuItem.cch := Length(sSubMenuCaption);
+          LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
+          LMenuItem.hbmpChecked   := BitmapsDict['delphi'].Handle;
+          LMenuItem.hbmpUnchecked := BitmapsDict['delphi'].Handle;
           InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-          SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['delphi'].Handle, BitmapsDict.Items['delphi'].Handle);
+
+          if not IsVistaOrLater then
+            RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'delphi_ico');
 
           Inc(uIDNewItem);
           Inc(MenuIndex);
@@ -1483,17 +1663,28 @@ begin
                LPAClientProfile:=PAClientProfiles.Profiles[i];
                sSubMenuCaption:='Test Profile '+LPAClientProfile.Name+Format(' (Platform : %s - Host : %s - Port : %d)',[LPAClientProfile.Platform, LPAClientProfile.Host, LPAClientProfile.Port]);
 
-                 InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
-                 log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
-
                  if StartsText('Win', LPAClientProfile.Platform) then
-                   SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['win'].Handle, BitmapsDict.Items['win'].Handle)
+                   InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'win')
                  else
                  if StartsText('OSX', LPAClientProfile.Platform) then
-                   SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['osx'].Handle, BitmapsDict.Items['osx'].Handle)
+                   InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'osx')
                  else
                  if StartsText('IOS', LPAClientProfile.Platform) then
-                   SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['ios'].Handle, BitmapsDict.Items['ios'].Handle);
+                   InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'ios');
+
+                 //log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
+
+                 if not IsVistaOrLater then
+                 begin
+                   if StartsText('Win', LPAClientProfile.Platform) then
+                     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'win_ico')
+                   else
+                   if StartsText('OSX', LPAClientProfile.Platform) then
+                     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'osx_ico')
+                   else
+                   if StartsText('IOS', LPAClientProfile.Platform) then
+                     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'ios_ico');
+                 end;
 
                  LMethodInfo:=TMethodInfo.Create;
                  LMethodInfo.Method:=PAClientTest;
@@ -1549,14 +1740,19 @@ begin
 
         ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
         LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
         LMenuItem.fType := MFT_STRING;
         LMenuItem.wID := FMenuItemIndex;
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['msbuild'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := BitmapsDict['msbuild'].Handle;
+        LMenuItem.hbmpUnchecked := BitmapsDict['msbuild'].Handle;
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['msbuild'].Handle, BitmapsDict.Items['msbuild'].Handle);
+
+        if not IsVistaOrLater then
+          RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'msbuild_ico');
 
         Inc(uIDNewItem);
         Inc(MenuIndex);
@@ -1570,8 +1766,13 @@ begin
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
        if (LCurrentDelphiVersionData.Version>=Delphi2007) and (((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or MatchText(FFileExt,['.groupproj','.proj'])) then
        begin
-        InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('MSBuild with '+LCurrentDelphiVersionData.Name));
-        SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
+        InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('MSBuild with '+LCurrentDelphiVersionData.Name), PWideChar(LCurrentDelphiVersionData.Name));
+
+        if not IsVistaOrLater then
+        if not IconsDictExternal.ContainsKey(uIDNewItem) then
+          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+
+        //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
         LMethodInfo:=TMethodInfo.Create;
         LMethodInfo.Method:=MSBuildWithDelphi_Default;
         LMethodInfo.Value1:=LCurrentDelphiVersionData;
@@ -1630,14 +1831,19 @@ begin
 
         ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
         LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
         LMenuItem.fType := MFT_STRING;
         LMenuItem.wID := FMenuItemIndex;
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['vcl'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := BitmapsDict['vcl'].Handle;
+        LMenuItem.hbmpUnchecked := BitmapsDict['vcl'].Handle;
+
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['vcl'].Handle, BitmapsDict.Items['vcl'].Handle);
+        if not IsVistaOrLater then
+         RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'vcl_ico');
 
         Inc(uIDNewItem);
         Inc(MenuIndex);
@@ -1651,8 +1857,13 @@ begin
       for LCurrentDelphiVersionData in InstalledDelphiVersions do
        if LCurrentDelphiVersionData.Version>=DelphiXE2 then
        begin
-        InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Use Viewer of '+LCurrentDelphiVersionData.Name));
-        SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
+        InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Use Viewer of '+LCurrentDelphiVersionData.Name), PWideChar(LCurrentDelphiVersionData.Name));
+
+        if not IsVistaOrLater then
+        if not IconsDictExternal.ContainsKey(uIDNewItem) then
+          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+
+        //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
         LMethodInfo:=TMethodInfo.Create;
         LMethodInfo.Method:=OpenVclStyle;
         LMethodInfo.Value1:=LCurrentDelphiVersionData;
@@ -1682,7 +1893,6 @@ begin
   try
     if not MatchText(FFileExt, SupportedExts) then exit;
 
-
       if Settings.SubMenuLazarus then
       begin
         LSubMenuIndex :=0;
@@ -1691,14 +1901,20 @@ begin
 
         ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
         LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
         LMenuItem.fType := MFT_STRING;
         LMenuItem.wID := FMenuItemIndex;
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['lazarusmenu'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := BitmapsDict['lazarusmenu'].Handle;
+        LMenuItem.hbmpUnchecked := BitmapsDict['lazarusmenu'].Handle;
+
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazarusmenu'].Handle, BitmapsDict.Items['lazarusmenu'].Handle);
+
+        if not IsVistaOrLater then
+          RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'lazarusmenu_ico');
         Inc(uIDNewItem);
         Inc(MenuIndex);
       end
@@ -1708,8 +1924,10 @@ begin
          LSubMenu:=hMenu;
       end;
 
-      InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Open with Lazarus IDE'));
-      SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazarus'].Handle, BitmapsDict.Items['lazarus'].Handle);
+      InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Open with Lazarus IDE'), 'lazarus');
+      if not IsVistaOrLater then
+        SetMenuItemBitmapsExternal(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'lazarus');
+
       LMethodInfo:=TMethodInfo.Create;
       LMethodInfo.Method:=OpenWithLazarus;
       LMethodInfo.Value1:=GetLazarusIDEFileName;
@@ -1720,8 +1938,9 @@ begin
 
       if MatchText(FFileExt, ['.lpi', '.lpk']) then
       begin
-        InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Build with lazbuild'));
-        SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['lazbuild'].Handle, BitmapsDict.Items['lazbuild'].Handle);
+        InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Build with lazbuild'), 'lazbuild');
+        if not IsVistaOrLater then
+          RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'lazbuild_ico');
         LMethodInfo:=TMethodInfo.Create;
         LMethodInfo.Method:=BuildWithLazBuild;
         LMethodInfo.Value1:=GetLazarusIDEFolder;
@@ -1762,14 +1981,18 @@ begin
 
       ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
       LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
       LMenuItem.fType := MFT_STRING;
       LMenuItem.wID := FMenuItemIndex;
       LMenuItem.hSubMenu := LSubMenu;
       LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
       LMenuItem.cch := Length(sSubMenuCaption);
+      LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
+      LMenuItem.hbmpChecked   := BitmapsDict['delphi'].Handle;
+      LMenuItem.hbmpUnchecked := BitmapsDict['delphi'].Handle;
       InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-      SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['delphi'].Handle, BitmapsDict.Items['delphi'].Handle);
+      if not IsVistaOrLater then
+      RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'delphi_ico');
       Inc(uIDNewItem);
       Inc(MenuIndex);
      end
@@ -1790,8 +2013,8 @@ begin
          if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
          begin
            sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name+' (Detected)';
-           InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
-           log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
+           InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), PWideChar(LCurrentDelphiVersionData.Name));
+           //log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
            Found:=True;
            Break;
          end;
@@ -1799,11 +2022,14 @@ begin
          if not Found then
          begin
            sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name;
-           InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
-           log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
+           InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), PWideChar(LCurrentDelphiVersionData.Name));
+           //log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
          end;
 
-         SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
+        if not IsVistaOrLater then
+        if not IconsDictExternal.ContainsKey(uIDNewItem) then
+          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+         //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
          LMethodInfo:=TMethodInfo.Create;
          LMethodInfo.Method:=OpenRADStudio;
          LMethodInfo.Value1:=LCurrentDelphiVersionData;
@@ -1827,9 +2053,13 @@ begin
      for LCurrentDelphiVersionData in InstalledDelphiVersions do
      begin
        sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name;
-       InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(sSubMenuCaption));
-       log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
-       SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
+       InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), PWideChar(LCurrentDelphiVersionData.Name));
+       //log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
+
+        if not IsVistaOrLater then
+        if not IconsDictExternal.ContainsKey(uIDNewItem) then
+          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+       //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
        LMethodInfo:=TMethodInfo.Create;
        LMethodInfo.Method:=OpenWithDelphi;
        LMethodInfo.Value1:=LCurrentDelphiVersionData;
@@ -1876,14 +2106,20 @@ begin
 
         ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
         LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
         LMenuItem.fType := MFT_STRING;
         LMenuItem.wID := FMenuItemIndex;
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := BitmapsDict['delphi'].Handle;
+        LMenuItem.hbmpUnchecked := BitmapsDict['delphi'].Handle;
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
-        SetMenuItemBitmaps(hMenu, MenuIndex, MF_BYPOSITION, BitmapsDict.Items['delphi'].Handle, BitmapsDict.Items['delphi'].Handle);
+
+        if not IsVistaOrLater then
+          RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'delphi_ico');
+
         Inc(uIDNewItem);
         Inc(MenuIndex);
       end
@@ -1913,16 +2149,17 @@ begin
                LArray:= SplitString(LClientDataSet.FieldByName('Extensions').AsString, ',');
                if MatchText(FFileExt, LArray) then
                begin
-                InsertMenu(LSubMenu, LSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar(LCurrentDelphiVersionData.Name+' - '+ParseMacros(LClientDataSet.FieldByName('Menu').AsString, LCurrentDelphiVersionData)));
+                if (LClientDataSet.FieldByName('Image').IsNull) or (not FileExists(GetDevShellToolsImagesFolder+LClientDataSet.FieldByName('Image').AsString)) then
+                  InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(LCurrentDelphiVersionData.Name+' - '+ParseMacros(LClientDataSet.FieldByName('Menu').AsString, LCurrentDelphiVersionData)), nil)
+                else
+                begin
+                  s:=LClientDataSet.FieldByName('Image').AsString;
 
-                  if not LClientDataSet.FieldByName('Image').IsNull then
-                  begin
-                    s:=LClientDataSet.FieldByName('Image').AsString;
-                    log(GetDevShellToolsImagesFolder+s);
-                    RegisterBitmap32(s);
-                    if Bitmaps32Dict.ContainsKey(s) then
-                      SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, Bitmaps32Dict.Items[s].Handle, Bitmaps32Dict.Items[s].Handle);
-                  end;
+                  RegisterBitmap32(s);
+                  InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(LCurrentDelphiVersionData.Name+' - '+ParseMacros(LClientDataSet.FieldByName('Menu').AsString, LCurrentDelphiVersionData)), PWideChar(s));
+                  if not IsVistaOrLater then
+                    SetMenuItemBitmapsExternal(LSubMenu, LSubMenuIndex, MF_BYPOSITION, s);
+                end;
 
                 LMethodInfo:=TMethodInfo.Create;
                 LMethodInfo.Method:=RADTools;
@@ -1935,7 +2172,7 @@ begin
              LClientDataSet.Next;
             end;
 
-            AddMenuSeparator(LSubMenu, LSubMenuIndex);
+            AddMenuSeparatorEx(LSubMenu, LSubMenuIndex);
            end;
 
        finally
@@ -1952,29 +2189,7 @@ begin
   end;
 end;
 
-procedure TDelphiDevShellToolsContextMenu.AddMenuSeparator(hMenu : HMENU; var MenuIndex : Integer);
-var
-  LMenuInfo    : TMenuItemInfo;
-  Buffer       : array [0..79] of char;
-begin
-  LMenuInfo.cbSize := sizeof(LMenuInfo);
-  LMenuInfo.fMask  := MIIM_TYPE;
-  LMenuInfo.dwTypeData := Buffer;
-  LMenuInfo.cch := SizeOf(Buffer);
-  if GetMenuItemInfo(hMenu, MenuIndex-1, True, LMenuInfo) then
-  begin
-    log('GetMenuItemInfo ok '+IntToStr(LMenuInfo.fType));
-    if (LMenuInfo.fType and MFT_SEPARATOR) = MFT_SEPARATOR then
-    else
-    begin
-      log('adding separator');
-      InsertMenu(hMenu, MenuIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil);
-      inc(MenuIndex);
-    end;
-  end
-  else
-    log(SysErrorMessage(GetLastError));
-end;
+
 
 function TDelphiDevShellToolsContextMenu.QueryContextMenu(Menu: HMENU;
   indexMenu, idCmdFirst, idCmdLast, uFlags: UINT): HResult;
@@ -1988,6 +2203,7 @@ var
   hSubMenuIndex  : Integer;
   Found : Boolean;
   LMethodInfo : TMethodInfo;
+  LMenuInfo    : TMenuInfo;
 begin
  ReadSettings(Settings);
  FMenuItemIndex := indexMenu;
@@ -2046,24 +2262,24 @@ begin
         log(SysErrorMessage(GetLastError));
        Inc(uIDNewItem);
        Inc(hSubMenuIndex);
-       AddMenuSeparator(hSubMenu, hSubMenuIndex);
+       AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
      end;
 
 
     //AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj','.bdsproj','.dpk','.groupproj','.rc','.lfm','.dfm','.fmx','.lpi','.lpr','.lpk']);
     AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.CommonTaskExt,','));
-    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     AddCheckSumTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.CheckSumExt,','));
-    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     AddOpenRADCmdTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj','.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style']);
-    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     //AddFormatCodeRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp']);
     //AddFormatCodeRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.FormatPascalExt,','));
     //AddMenuSeparator(hSubMenu, hSubMenuIndex);
     //AddCompileRCTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.rc']);
     //AddMenuSeparator(hSubMenu, hSubMenuIndex);
     AddOpenVclStyleTask(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.vsf']);
-    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     //AddOpenFmxStyleTask(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.style']);
     //AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
@@ -2087,54 +2303,53 @@ begin
          if not Found then
          begin
              sSubMenuCaption:='Project Type '+DelphiVersionsNames[LCurrentDelphiVersion]+' Detected but not installed';
-             InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION or MF_GRAYED, uIDNewItem, PWideChar(sSubMenuCaption));
-             if (TOSVersion.Major=5) and (TOSVersion.Minor=1) then
-               SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['delphig13'].Handle, BitmapsDict.Items['delphig13'].Handle)
-             else
-               SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['delphig'].Handle, BitmapsDict.Items['delphig'].Handle);
-             log(Format('%s %d',[sSubMenuCaption, hSubMenuIndex]));
+             InsertMenuDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption),'delphig');
+             if not IsVistaOrLater then
+               SetMenuItemBitmapsExternal(hSubMenu, hSubMenuIndex, MF_BYPOSITION, 'delphig_ico');
+             //log(Format('%s %d',[sSubMenuCaption, hSubMenuIndex]));
              Inc(uIDNewItem);
              Inc(hSubMenuIndex);
          end;
        end;
      end;
 
-    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
     AddMSBuildRAD_SpecificTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
-    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     //AddAuditsCLITasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
     //AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
 
     AddMSBuildRAD_AllTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.groupproj','.dpr','.proj']);
-    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     AddMSBuildPAClientTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
-    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
     //AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj','.dpr','.pas','.inc','.pp','.dpk']);
     AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.OpenDelphiExt,','));
-    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
     AddRADStudioToolsTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, DelphiToolsExts);
-    AddMenuSeparator(hSubMenu, hSubMenuIndex);
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
     if Settings.ActivateLazarus and LazarusInstalled then
     begin
       //AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.lpi','.pp','.inc','.pas','.lpk']);
       AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.OpenLazarusExt,','));
-      AddMenuSeparator(hSubMenu, hSubMenuIndex);
+      AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
       AddFPCToolsTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, FPCToolsExts);
-      AddMenuSeparator(hSubMenu, hSubMenuIndex);
+      AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     end;
 
     //AddTouchRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj']);
     //AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
 
-    InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Settings'));
-    SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['settings'].Handle, BitmapsDict.Items['settings'].Handle);
+    InsertMenuDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, PWideChar('Settings'), 'settings');
+    if not IsVistaOrLater then
+    RegisterMenuItemBitmapDevShell(hSubMenu, hSubMenuIndex, MF_BYPOSITION, 'settings_ico');
     LMethodInfo:=TMethodInfo.Create;
     LMethodInfo.Method:=OpenGUI;
     LMethodInfo.Value1:='-settings';
@@ -2142,8 +2357,13 @@ begin
     Inc(uIDNewItem);
     Inc(hSubMenuIndex);
 
-    InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Check for updates'));
-    SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['updates'].Handle, BitmapsDict.Items['updates'].Handle);
+
+    //InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Check for updates'));
+    InsertMenuDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, PWideChar('Check for updates'), 'updates');
+    //SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['updates'].Handle, BitmapsDict.Items['updates'].Handle);
+    //log('Check for updates uIDNewItem '+IntToStr(uIDNewItem));
+    if not IsVistaOrLater then
+    RegisterMenuItemBitmapDevShell(hSubMenu, hSubMenuIndex, MF_BYPOSITION, 'updates_ico');
     LMethodInfo:=TMethodInfo.Create;
     LMethodInfo.Method:=OpenGUI;
     LMethodInfo.Value1:='-update';
@@ -2152,8 +2372,9 @@ begin
     Inc(hSubMenuIndex);
 
 
-    InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('About'));
-    SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['logo'].Handle, BitmapsDict.Items['logo'].Handle);
+    InsertMenuDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, PWideChar('About'), 'logo');
+    if not IsVistaOrLater then
+    RegisterMenuItemBitmapDevShell(hSubMenu, hSubMenuIndex, MF_BYPOSITION, 'logo_ico');
     LMethodInfo:=TMethodInfo.Create;
     LMethodInfo.Method:=OpenGUI;
     LMethodInfo.Value1:='-about';
@@ -2163,16 +2384,32 @@ begin
 
     ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
     LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-    LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID;
+    LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
     LMenuItem.fType := MFT_STRING;
     LMenuItem.wID := FMenuItemIndex;
     LMenuItem.hSubMenu := hSubMenu;
     LMenuItem.dwTypeData := PWideChar(LMenuCaption);
     LMenuItem.cch := Length(LMenuCaption);
-    InsertMenuItem(Menu, indexMenu, True, LMenuItem);
-    SetMenuItemBitmaps(Menu, indexMenu, MF_BYPOSITION, BitmapsDict.Items['logo'].Handle, BitmapsDict.Items['logo'].Handle);
+    LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['logo'].Handle, HBMMENU_CALLBACK);
+    LMenuItem.hbmpChecked   := BitmapsDict['logo'].Handle;
+    LMenuItem.hbmpUnchecked := BitmapsDict['logo'].Handle;
 
-    log('uIDNewItem-idCmdFirst '+IntToStr(uIDNewItem-idCmdFirst));
+    InsertMenuItem(Menu, indexMenu, True, LMenuItem);
+
+    if not IsVistaOrLater then
+      RegisterMenuItemBitmapDevShell(Menu, indexMenu, MF_BYPOSITION, 'logo_ico');
+
+    if IsVistaOrLater then
+    begin
+      ZeroMemory(@LMenuInfo, SizeOf(LMenuInfo));
+      LMenuInfo.cbSize  := sizeof(LMenuInfo);
+      LMenuInfo.fMask   := MIM_STYLE or MIM_APPLYTOSUBMENUS;
+      LMenuInfo.dwStyle := MNS_CHECKORBMP;
+      SetMenuInfo(Menu, LMenuInfo);
+    end;
+
+
+    //log('uIDNewItem-idCmdFirst '+IntToStr(uIDNewItem-idCmdFirst));
     Result := MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, uIDNewItem-idCmdFirst);
 end;
 
@@ -2335,39 +2572,49 @@ var
 begin
   CX:=GetSystemMetrics(SM_CXMENUCHECK);
   s:=GetDevShellToolsImagesFolder+ResourceName;
-  if (not Bitmaps32Dict.ContainsKey(ResourceName)) and FileExists(s) then
+  if IsVistaOrLater then
   begin
-    LPicture := TPicture.Create;
-    try
-       LPicture.LoadFromFile(s);
+      if (not BitmapsDict.ContainsKey(ResourceName)) and FileExists(s) then
+      begin
+        LPicture := TPicture.Create;
+        try
+           LPicture.LoadFromFile(s);
 
-       if CX>=16 then
-       begin
-        Bitmaps32Dict.Add(ResourceName, TBitmap.Create);
-        Bitmaps32Dict.Items[ResourceName].Assign(LPicture.Graphic);
-       end
-       else
-       begin
-          Factor:= CX/16;
-          TempBitmap:=TBitmap.Create;
-          try
-            Bitmaps32Dict.Add(ResourceName,TBitmap.Create);
-            Bitmaps32Dict.Items[ResourceName].PixelFormat:=pf32bit;
-            TempBitmap.Assign(LPicture.Graphic);
-            ScaleImage32(TempBitmap, Bitmaps32Dict.Items[ResourceName], Factor);
-          finally
-            TempBitmap.Free;
-          end;
-       end;
-    finally
-      LPicture.Free;
-    end;
+           if CX>=16 then
+           begin
+            BitmapsDict.Add(ResourceName, TBitmap.Create);
+            BitmapsDict.Items[ResourceName].Assign(LPicture.Graphic);
+           end
+           else
+           begin
+              Factor:= CX/16;
+              TempBitmap:=TBitmap.Create;
+              try
+                BitmapsDict.Add(ResourceName,TBitmap.Create);
+                BitmapsDict.Items[ResourceName].PixelFormat:=pf32bit;
+                TempBitmap.Assign(LPicture.Graphic);
+                ScaleImage32(TempBitmap, BitmapsDict.Items[ResourceName], Factor);
+              finally
+                TempBitmap.Free;
+              end;
+           end;
+        finally
+          LPicture.Free;
+        end;
+      end;
+  end
+  else
+  if (not IconsExternals.ContainsKey(ResourceName)) and FileExists(s) then
+  begin
+      IconsExternals.Add(ResourceName, TIcon.Create);
+      IconsExternals.Items[ResourceName].LoadFromFile(s);
   end;
 end;
 
 var
  CX     : Integer;
  Factor : Double;
+ LCurrentDelphiVersionData  : TDelphiVersionData;
 initialization
   CX:=GetSystemMetrics(SM_CXMENUCHECK);
   log('initialization');
@@ -2377,8 +2624,10 @@ initialization
   FillListDelphiVersions(InstalledDelphiVersions);
   PAClientProfiles:=TPAClientProfileList.Create(InstalledDelphiVersions);
 
-  BitmapsDict:=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
-  Bitmaps32Dict:=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
+  BitmapsDict        :=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
+  IconsExternals     :=TObjectDictionary<string, TIcon>.Create([doOwnsValues]);
+  IconsDictExternal  :=TDictionary<Integer, TIcon>.Create;
+  IconsDictResources := TDictionary<Integer, string>.Create;
 
   RegisterBitmap('logo');
   RegisterBitmap('notepad');
@@ -2394,10 +2643,7 @@ initialization
   RegisterBitmap('delphi', 'delphi2');
   RegisterBitmap('delphig');
   RegisterBitmap('radcmd');
-  //RegisterBitmap('format');
-  //RegisterBitmap('touch');
   RegisterBitmap('msbuild');
-  //RegisterBitmap('brcc32');
   RegisterBitmap('firemonkey');
   RegisterBitmap('firemonkey', 'firemonkey2');
   RegisterBitmap('vcl', 'vcl2');
@@ -2416,24 +2662,37 @@ initialization
   RegisterBitmap('copy_content');
   RegisterBitmap('copy_path');
   RegisterBitmap('shield');
-  //RegisterBitmap('audits');
-  //RegisterBitmap('metrics');
   RegisterBitmap('fpc_tools');
+
+  for LCurrentDelphiVersionData in InstalledDelphiVersions do
+     if not BitmapsDict.ContainsKey(LCurrentDelphiVersionData.Name) then
+     begin
+       BitmapsDict.Add(LCurrentDelphiVersionData.Name, TBitmap.Create);
+       BitmapsDict.Items[LCurrentDelphiVersionData.Name].Assign(LCurrentDelphiVersionData.Bitmap);
+     end;
 
    try
      BitmapsDict.Add('txt',TBitmap.Create);
      GetAssocAppByExt('foo.txt', ExeNameTxt, FriendlyAppNameTxt);
      if (ExeNameTxt<>'') and TFile.Exists(ExeNameTxt)  then
      begin
-       if CX<16 then
+       if IsVistaOrLater then
        begin
-         BitmapsDict.Add('txt2',TBitmap.Create);
-         ExtractBitmapFile32(BitmapsDict.Items['txt2'], ExeNameTxt, SHGFI_SMALLICON);
-         Factor:= CX/16;
-         ScaleImage32( BitmapsDict.Items['txt2'], BitmapsDict.Items['txt'], Factor);
+         if CX<16 then
+         begin
+           BitmapsDict.Add('txt2',TBitmap.Create);
+           ExtractBitmapFile32(BitmapsDict.Items['txt2'], ExeNameTxt, SHGFI_SMALLICON);
+           Factor:= CX/16;
+           ScaleImage32( BitmapsDict.Items['txt2'], BitmapsDict.Items['txt'], Factor);
+         end
+         else
+           ExtractBitmapFile32(BitmapsDict.Items['txt'], GetLazarusIDEFileName, SHGFI_SMALLICON);
        end
        else
-         ExtractBitmapFile32(BitmapsDict.Items['txt'], GetLazarusIDEFileName, SHGFI_SMALLICON);
+       begin
+         IconsExternals.Add('txt', TIcon.Create);
+         ExtractIconFile( IconsExternals['txt'] , ExeNameTxt, SHGFI_SMALLICON);
+       end;
      end;
    except
      on  E : Exception do
@@ -2454,19 +2713,25 @@ initialization
    begin
      try
        FPCToolsExts:=GetGroupToolsExtensions('FPC Tools');
-
        BitmapsDict.Add('lazarus',TBitmap.Create);
        //MakeBitmapMenuTransparent(BitmapsDict.Items['lazarus']);
-       if CX<16 then
+       if IsVistaOrLater then
        begin
-         BitmapsDict.Add('lazarus2',TBitmap.Create);
-         ExtractBitmapFile32(BitmapsDict.Items['lazarus2'], GetLazarusIDEFileName, SHGFI_SMALLICON);
-         Factor:= CX/16;
-         ScaleImage32( BitmapsDict.Items['lazarus2'], BitmapsDict.Items['lazarus'], Factor);
+         if CX<16 then
+         begin
+           BitmapsDict.Add('lazarus2',TBitmap.Create);
+           ExtractBitmapFile32(BitmapsDict.Items['lazarus2'], GetLazarusIDEFileName, SHGFI_SMALLICON);
+           Factor:= CX/16;
+           ScaleImage32( BitmapsDict.Items['lazarus2'], BitmapsDict.Items['lazarus'], Factor);
+         end
+         else
+           ExtractBitmapFile32(BitmapsDict.Items['lazarus'], GetLazarusIDEFileName, SHGFI_SMALLICON);
        end
        else
-         ExtractBitmapFile32(BitmapsDict.Items['lazarus'], GetLazarusIDEFileName, SHGFI_SMALLICON);
-
+       begin
+         IconsExternals.Add('lazarus', TIcon.Create);
+         ExtractIconFile(IconsExternals['lazarus'], GetLazarusIDEFileName, SHGFI_SMALLICON);
+       end;
      except
        on  E : Exception do
        log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -2480,8 +2745,9 @@ initialization
 finalization
   Settings.Free;
   BitmapsDict.Free;
-  Bitmaps32Dict.Free;
   InstalledDelphiVersions.Free;
   PAClientProfiles.Free;
+  IconsDictResources.Free;
+  IconsDictExternal.Free;
   log('finalization');
 end.

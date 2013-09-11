@@ -211,28 +211,24 @@ end;
 procedure TFrmSettings.DBComboBoxImageDrawItem(Control: TWinControl;
   Index: Integer; Rect: TRect; State: TOwnerDrawState);
 var
-  Png : TPngImage;
-  PngFile : string;
-  LRect : TRect;  
+  LIcon : TIcon;
+  IconFile : string;
 begin
   with TDBComboBox(Control).Canvas do
   begin
     FillRect(Rect);
     TextRect(Rect, Rect.Left+22, Rect.Top+1,  ChangeFileExt(TDBComboBox(Control).Items[Index],''));
-    Png:=TPngImage.Create;
+    LIcon:=TIcon.Create;
     try
-      PngFile:=GetDevShellToolsImagesFolder+TDBComboBox(Control).Items[Index];
-      if FileExists(PngFile) then
+      IconFile:=GetDevShellToolsImagesFolder+TDBComboBox(Control).Items[Index];
+      if FileExists(IconFile) then
       begin
-        Png.LoadFromFile(PngFile);
-        LRect:=Rect;
-        LRect.Width:=16;
-        LRect.Height:=16;
-        LRect.SetLocation(Rect.Location.X+3, Rect.Location.Y);
-        Png.Draw((Control as TDBComboBox).Canvas, LRect);
+        LIcon.LoadFromFile(IconFile);
+        //DrawIconEx(hDC,rcItem.Left-16, rcItem.Top + (rcItem.Bottom - rcItem.Top - 16) div 2,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+        DrawIconEx(TDBComboBox(Control).Canvas.Handle,Rect.Location.X+3, Rect.Location.Y, LIcon.Handle, 16, 16, 0, 0, DI_NORMAL);
       end;
     finally
-      Png.Free;
+      LIcon.Free;
     end;
   end;
 end;
@@ -277,7 +273,7 @@ begin
   ClientDataSet1.Open;
   ClientDataSet1.LogChanges:=False;
 
-  for s in TDirectory.GetFiles(GetDevShellToolsImagesFolder,'*.png') do
+  for s in TDirectory.GetFiles(GetDevShellToolsImagesFolder,'*.ico') do
     DBComboBoxImage.Items.Add(ExtractFileName(s));
 
 
