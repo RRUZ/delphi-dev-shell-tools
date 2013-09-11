@@ -72,6 +72,7 @@ type
     procedure OpenVclStyle(Info : TMethodInfo);
     procedure PAClientTest(Info : TMethodInfo);
     procedure RADTools(Info : TMethodInfo);
+    procedure ExternalTools(Info : TMethodInfo);
 
     //Lazarus & FPC
     procedure OpenWithLazarus(Info : TMethodInfo);
@@ -93,6 +94,9 @@ type
     procedure AddFPCToolsTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     //-------------------
     function ParseMacros(const Data : string;DelphiVersionData  : TDelphiVersionData) : string;
+
+    procedure AddExternalToolsTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+
 
     //Menu helper functions
     function  InsertMenuDevShell(hMenu: HMENU; uPosition: UINT; uIDNewItem: UINT_PTR; lpNewItem, IconName: LPCWSTR): BOOL;
@@ -157,8 +161,7 @@ var
   ExeNameTxt, FriendlyAppNameTxt : string;
   LazarusInstalled : Boolean;
   Settings         : TSettings;
-  FPCToolsExts     : TStringDynArray;
-  DelphiToolsExts     : TStringDynArray;
+  DelphiToolsExts, ExternalToolsExts, FPCToolsExts     : TStringDynArray;
 
   procedure RegisterBitmap32(const ResourceName: string); forward;
 
@@ -568,8 +571,11 @@ begin
       BatchFile.Text:=Info.Value1.AsString;
       BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
       BatchFile.SaveToFile(BatchFileName);
-      Params:='/K "'+BatchFileName+'"';
-      ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+      Params:='/C "'+BatchFileName+'"';
+      if Info.Value2.AsBoolean then
+        ShellExecute(Info.hwnd, 'runas', PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL)
+      else
+        ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
     finally
       BatchFile.Free;
     end;
@@ -591,14 +597,43 @@ begin
       BatchFile.Text:=Info.Value1.AsString;
       BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
       BatchFile.SaveToFile(BatchFileName);
-      Params:='/K "'+BatchFileName+'"';
-      ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+      Params:='/C "'+BatchFileName+'"';
+      if Info.Value2.AsBoolean then
+        ShellExecute(Info.hwnd, 'runas', PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL)
+      else
+        ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
     finally
       BatchFile.Free;
     end;
   except
    on  E : Exception do
    log(Format('TDelphiDevShellToolsContextMenu.RADTools Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
+
+procedure TDelphiDevShellToolsContextMenu.ExternalTools(Info: TMethodInfo);
+var
+  BatchFileName, Params : string;
+  BatchFile : TStrings;
+begin
+  try
+    log('ExternalTools');
+    BatchFile:=TStringList.Create;
+    try
+      BatchFile.Text:=Info.Value1.AsString;
+      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
+      BatchFile.SaveToFile(BatchFileName);
+      Params:='/C "'+BatchFileName+'"';
+      if Info.Value2.AsBoolean then
+        ShellExecute(Info.hwnd, 'runas', PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL)
+      else
+        ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
+    finally
+      BatchFile.Free;
+    end;
+  except
+   on  E : Exception do
+   log(Format('TDelphiDevShellToolsContextMenu.FPCTools Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
@@ -1368,6 +1403,110 @@ begin
 
 end;
 
+procedure TDelphiDevShellToolsContextMenu.AddExternalToolsTasks(hMenu: HMENU;
+  var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
+  const SupportedExts: array of string);
+var
+  LClientDataSet : TClientDataSet;
+  LSubMenuIndex : Integer;
+  LSubMenu: Winapi.Windows.HMENU;
+  LMenuItem: TMenuItemInfo;
+  s, sSubMenuCaption : string;
+
+  LMethodInfo : TMethodInfo;
+  LArray : TStringDynArray;
+begin
+  try
+    if not MatchText(FFileExt, SupportedExts) then exit;
+
+
+      if (1=1){Settings.SubMenuLazarus} then
+      begin
+        LSubMenuIndex :=0;
+        LSubMenu   := CreatePopupMenu;
+        sSubMenuCaption:='External Tools';
+
+        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+        LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
+        LMenuItem.fType := MFT_STRING;
+        LMenuItem.wID := FMenuItemIndex;
+        LMenuItem.hSubMenu := LSubMenu;
+        LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+        LMenuItem.cch := Length(sSubMenuCaption);
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['wrench'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := BitmapsDict['wrench'].Handle;
+        LMenuItem.hbmpUnchecked := BitmapsDict['wrench'].Handle;
+
+        InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+
+        if not IsVistaOrLater then
+          RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, MF_BYPOSITION, 'wrench_ico');
+        Inc(uIDNewItem);
+        Inc(MenuIndex);
+      end
+      else
+      begin
+         LSubMenuIndex:=MenuIndex;
+         LSubMenu:=hMenu;
+      end;
+
+       LClientDataSet:= TClientDataSet.Create(nil);
+       try
+           LClientDataSet.ReadOnly:=True;
+           LClientDataSet.LoadFromFile(GetDelphiDevShellToolsFolder+'tools.db');
+           LClientDataSet.Open;
+           LClientDataSet.Filter:='Group = '+QuotedStr('External Tools');
+           LClientDataSet.Filtered:=True;
+
+            while not LClientDataSet.eof do
+            begin
+             LArray:= SplitString(LClientDataSet.FieldByName('Extensions').AsString, ',');
+             if MatchText(FFileExt, LArray) then
+             begin
+
+              if (LClientDataSet.FieldByName('Image').IsNull) or (not FileExists(GetDevShellToolsImagesFolder+LClientDataSet.FieldByName('Image').AsString)) then
+               InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(ParseMacros(LClientDataSet.FieldByName('Menu').AsString, nil)), nil)
+              else
+              begin
+                s:=LClientDataSet.FieldByName('Image').AsString;
+
+                RegisterBitmap32(s);
+                InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(ParseMacros(LClientDataSet.FieldByName('Menu').AsString, nil)), PWideChar(s));
+                if not IsVistaOrLater then
+                  SetMenuItemBitmapsExternal(LSubMenu, LSubMenuIndex, MF_BYPOSITION, s);
+              end;
+
+              LMethodInfo:=TMethodInfo.Create;
+              LMethodInfo.Method:=ExternalTools;
+              LMethodInfo.Value1:=ParseMacros(LClientDataSet.FieldByName('Script').AsString, nil);
+              LMethodInfo.Value2:=False;
+              if (not LClientDataSet.FieldByName('RunAs').IsNull) then
+               LMethodInfo.Value2:=LClientDataSet.FieldByName('RunAs').AsBoolean;
+
+              FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+              Inc(uIDNewItem);
+              Inc(LSubMenuIndex);
+             end;
+             LClientDataSet.Next;
+            end;
+
+       finally
+         LClientDataSet.Free;
+       end;
+
+               {
+      if not Settings.SubMenuLazarus then
+       MenuIndex:=LSubMenuIndex;
+               }
+  except
+    on  E : Exception do
+    log(Format('TDelphiDevShellToolsContextMenu.AddFPCToolsTasks Message %s Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
+
+
+
 procedure TDelphiDevShellToolsContextMenu.AddFPCToolsTasks(hMenu: HMENU;
   var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
   const SupportedExts: array of string);
@@ -1445,6 +1584,10 @@ begin
               LMethodInfo:=TMethodInfo.Create;
               LMethodInfo.Method:=FPCTools;
               LMethodInfo.Value1:=ParseMacros(LClientDataSet.FieldByName('Script').AsString, nil);
+              LMethodInfo.Value2:=False;
+              if (not LClientDataSet.FieldByName('RunAs').IsNull) then
+               LMethodInfo.Value2:=LClientDataSet.FieldByName('RunAs').AsBoolean;
+
               FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
               Inc(uIDNewItem);
               Inc(LSubMenuIndex);
@@ -2164,6 +2307,10 @@ begin
                 LMethodInfo:=TMethodInfo.Create;
                 LMethodInfo.Method:=RADTools;
                 LMethodInfo.Value1:=ParseMacros(LClientDataSet.FieldByName('Script').AsString, LCurrentDelphiVersionData);
+                LMethodInfo.Value2:=False;
+                if (not LClientDataSet.FieldByName('RunAs').IsNull) then
+                 LMethodInfo.Value2:=LClientDataSet.FieldByName('RunAs').AsBoolean;
+
                 FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
                 Inc(uIDNewItem);
                 Inc(LSubMenuIndex);
@@ -2220,6 +2367,7 @@ begin
   if (not MatchText(FFileExt,[
      '.pas','.dpr','.inc','.pp','.proj','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm',
      '.lfm','.fmx','.vsf','.style','.lpi','.lpr','.lpk','.h','.ppu']))
+     and (not MatchText(FFileExt, ExternalToolsExts))
      and (not MatchText(FFileExt, FPCToolsExts))
      and (not MatchText(FFileExt, DelphiToolsExts))
      and (not MatchText(FFileExt, SplitString(Settings.CommonTaskExt,',')))
@@ -2270,6 +2418,8 @@ begin
     AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.CommonTaskExt,','));
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     AddCheckSumTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.CheckSumExt,','));
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
+    AddExternalToolsTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ExternalToolsExts);
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     AddOpenRADCmdTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj','.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style']);
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
@@ -2663,6 +2813,7 @@ initialization
   RegisterBitmap('copy_path');
   RegisterBitmap('shield');
   RegisterBitmap('fpc_tools');
+  RegisterBitmap('wrench');
 
   for LCurrentDelphiVersionData in InstalledDelphiVersions do
      if not BitmapsDict.ContainsKey(LCurrentDelphiVersionData.Name) then
@@ -2706,6 +2857,14 @@ initialization
      on  E : Exception do
      log(Format('GetGroupToolsExtensions Message %s  Trace %s',[E.Message, e.StackTrace]));
    end;
+
+   try
+     ExternalToolsExts:=GetGroupToolsExtensions('External Tools');
+   except
+     on  E : Exception do
+     log(Format('GetGroupToolsExtensions Message %s  Trace %s',[E.Message, e.StackTrace]));
+   end;
+
 
    LazarusInstalled:=IsLazarusInstalled and TFile.Exists(GetLazarusIDEFileName);
 
