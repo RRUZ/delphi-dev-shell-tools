@@ -90,6 +90,8 @@ type
     Image4: TImage;
     DBComboBoxImage: TDBComboBox;
     Label14: TLabel;
+    DBCheckBoxRunAs: TDBCheckBox;
+    Image5: TImage;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ButtonCancelClick(Sender: TObject);
@@ -253,7 +255,7 @@ begin
   DBEditExtensions.DataField:='Extensions';
   DBMemoScript.DataField:='Script';
   DBComboBoxImage.DataField:='Image';
-
+  DBCheckBoxRunAs.DataField:='RunAs';
   DBLookupComboBoxDelphi.DataField:='DelphiVersion';
   DBLookupComboBoxDelphi.ListField:='Name';
   DBLookupComboBoxDelphi.KeyField:='Version';
