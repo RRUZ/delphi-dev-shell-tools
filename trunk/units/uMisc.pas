@@ -114,6 +114,7 @@ type
 
   procedure ScaleImage32(const SourceBitmap, ResizedBitmap: TBitmap; const ScaleAmount: Double);
   function IsVistaOrLater : Boolean;
+  function IconToBitmapPARGB32(hIcon : HICON): HBITMAP;
 
 implementation
 
@@ -135,6 +136,7 @@ uses
   Db,
   Registry,
   TypInfo,
+  UxTheme,
   IniFiles,
   SysUtils;
 
@@ -848,5 +850,163 @@ begin
   else
     EnlargeImage32(SourceBitmap, ResizedBitmap, ScaleAmount);
 end;
+
+function Create32BitHBITMAP(hdc : HDC; psize : TSize ; var ppvBits : Pointer; out  phBmp : HBITMAP) : HRESULT;
+var
+  bmi  : TBitmapInfo;
+  hdcUsed : Windows.HDC;
+begin
+    phBmp := 0;
+    ZeroMemory(@bmi, sizeof(bmi));
+
+    bmi.bmiHeader.biSize := sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biPlanes := 1;
+    bmi.bmiHeader.biCompression := BI_RGB;
+
+    bmi.bmiHeader.biWidth := psize.cx;
+    bmi.bmiHeader.biHeight := psize.cy;
+    bmi.bmiHeader.biBitCount := 32;
+
+    if hdc<>0 then hdcUsed := hdc else hdcUsed := GetDC(0);
+
+    if (hdcUsed<>0) then
+    begin
+        phBmp := CreateDIBSection(hdcUsed, bmi, DIB_RGB_COLORS, ppvBits, 0, 0);
+        if (hdc <> hdcUsed) then
+            ReleaseDC(0, hdcUsed);
+    end;
+
+    if phBmp=0 then
+      Result:= E_OUTOFMEMORY
+    else
+      Result:= S_OK;
+end;
+
+
+function IconToBitmapPARGB32(hIcon : HICON): HBITMAP;
+var
+  sizIcon : TSize;
+  rcIcon  : TRect;
+  hbmpOld, hBmp    : HBITMAP;
+  hdcBuffer, hdcDest : HDC;
+  bfAlpha : TBlendFunction;
+  paintParams : TBPPaintParams;
+  hPaintBuffer : UxTheme.HPAINTBUFFER;
+  ppvBits : Pointer;
+begin
+    if (hIcon=0) then Exit(0);
+
+    sizIcon.cx := GetSystemMetrics(SM_CXSMICON);
+    sizIcon.cy := GetSystemMetrics(SM_CYSMICON);
+
+    SetRect(rcIcon, 0, 0, sizIcon.cx, sizIcon.cy);
+    hBmp := 0;
+    ppvBits:=nil;
+
+    hdcDest := CreateCompatibleDC(0);
+    if (hdcDest<>0) then
+    begin
+        if (Succeeded(Create32BitHBITMAP(hdcDest, sizIcon, ppvBits, hBmp))) then
+        begin
+            hbmpOld := HBITMAP(SelectObject(hdcDest, hBmp));
+            if (hbmpOld<>0) then
+            begin
+                bfAlpha.BlendOp := AC_SRC_OVER;
+                bfAlpha.BlendFlags := 0;
+                bfAlpha.SourceConstantAlpha := 255;
+                bfAlpha.AlphaFormat := AC_SRC_ALPHA;
+                paintParams.cbSize := sizeof(paintParams);
+                paintParams.dwFlags := BPPF_ERASE;
+                paintParams.pBlendFunction := @bfAlpha;
+                hPaintBuffer := BeginBufferedPaint(hdcDest, rcIcon, BPBF_DIB, @paintParams, hdcBuffer);
+                if (hPaintBuffer<>0) then
+                begin
+                    if (DrawIconEx(hdcBuffer, 0, 0, hIcon, sizIcon.cx, sizIcon.cy, 0, 0, DI_NORMAL)) then
+                        // If icon did not have an alpha channel we need to convert buffer to PARGB
+                        // always use icons with alpha
+                        //ConvertBufferToPARGB32(hPaintBuffer, hdcDest, hIcon, sizIcon);
+
+                    // This will write the buffer contents to the destination bitmap
+                    EndBufferedPaint(hPaintBuffer, TRUE);
+                end;
+                SelectObject(hdcDest, hbmpOld);
+            end;
+        end;
+        DeleteDC(hdcDest);
+    end;
+
+    Exit(hBmp);
+end;
+
+//function IconToBitmap(hIcon : HICON) : HBITMAP;
+//begin
+//
+//    RECT rect;
+//
+//    rect.right = ::GetSystemMetrics(SM_CXMENUCHECK);
+//    rect.bottom = ::GetSystemMetrics(SM_CYMENUCHECK);
+//
+//    rect.left = rect.top = 0;
+//
+//    HWND desktop = ::GetDesktopWindow();
+//    if (desktop == NULL)
+//    {
+//        DestroyIcon(hIcon);
+//        return NULL;
+//    }
+//
+//    HDC screen_dev = ::GetDC(desktop);
+//    if (screen_dev == NULL)
+//    {
+//        DestroyIcon(hIcon);
+//        return NULL;
+//    }
+//
+//    // Create a compatible DC
+//    HDC dst_hdc = ::CreateCompatibleDC(screen_dev);
+//    if (dst_hdc == NULL)
+//    {
+//        DestroyIcon(hIcon);
+//        ::ReleaseDC(desktop, screen_dev);
+//        return NULL;
+//    }
+//
+//    // Create a new bitmap of icon size
+//    HBITMAP bmp = ::CreateCompatibleBitmap(screen_dev, rect.right, rect.bottom);
+//    if (bmp == NULL)
+//    {
+//        DestroyIcon(hIcon);
+//        ::DeleteDC(dst_hdc);
+//        ::ReleaseDC(desktop, screen_dev);
+//        return NULL;
+//    }
+//
+//    // Select it into the compatible DC
+//    HBITMAP old_dst_bmp = (HBITMAP)::SelectObject(dst_hdc, bmp);
+//    if (old_dst_bmp == NULL)
+//    {
+//        DestroyIcon(hIcon);
+//        ::DeleteDC(dst_hdc);
+//        ::ReleaseDC(desktop, screen_dev);
+//        return NULL;
+//    }
+//
+//    // Fill the background of the compatible DC with the white color
+//    // that is taken by menu routines as transparent
+//    ::SetBkColor(dst_hdc, RGB(255, 255, 255));
+//    ::ExtTextOut(dst_hdc, 0, 0, ETO_OPAQUE, &rect, NULL, 0, NULL);
+//
+//    // Draw the icon into the compatible DC
+//    ::DrawIconEx(dst_hdc, 0, 0, hIcon, rect.right, rect.bottom, 0, NULL, DI_NORMAL);
+//
+//    // Restore settings
+//    ::SelectObject(dst_hdc, old_dst_bmp);
+//    ::DeleteDC(dst_hdc);
+//    ::ReleaseDC(desktop, screen_dev);
+//    DestroyIcon(hIcon);
+//    if (bmp)
+//        bitmaps.insert(bitmap_it, std::make_pair(uIcon, bmp));
+//    return bmp;
+//end;
 
 end.

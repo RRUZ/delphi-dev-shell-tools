@@ -82,7 +82,7 @@ type
     Label12: TLabel;
     BtnInsertMacro: TButton;
     DBComboBoxGroup: TDBComboBox;
-    Label13: TLabel;
+    LabelDelphi: TLabel;
     DBLookupComboBoxDelphi: TDBLookupComboBox;
     ClientDataSet2: TClientDataSet;
     DataSource2: TDataSource;
@@ -98,9 +98,9 @@ type
     procedure ButtonApplyClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnInsertMacroClick(Sender: TObject);
-    procedure DBComboBoxGroupChange(Sender: TObject);
     procedure DBComboBoxImageDrawItem(Control: TWinControl; Index: Integer;
       Rect: TRect; State: TOwnerDrawState);
+    procedure ClientDataSet1AfterScroll(DataSet: TDataSet);
   private
     FSettings: TSettings;
     procedure CreateStructure;
@@ -181,6 +181,23 @@ begin
  Close();
 end;
 
+procedure TFrmSettings.ClientDataSet1AfterScroll(DataSet: TDataSet);
+begin
+ if ClientDataSet1.Active then
+  if not StartsText('Delphi', ClientDataSet1.FieldByName('Group').AsString) then
+  begin
+    DBLookupComboBoxDelphi.Visible:=False;
+    LabelDelphi.Visible:=False;
+    DBComboBoxGroup.Width:=DBEditMenu.Width;
+  end
+  else
+  begin
+    DBLookupComboBoxDelphi.Visible:=True;
+    LabelDelphi.Visible:=True;
+    DBComboBoxGroup.Width:=110;
+  end;
+end;
+
 procedure TFrmSettings.CreateStructure;
 begin
   if ClientDataSet1.Active then ClientDataSet1.Close;
@@ -195,19 +212,6 @@ begin
   ClientDataSet1.IndexName:='Name';
   ClientDataSet1.CreateDataSet;
 end;
-
-
-procedure TFrmSettings.DBComboBoxGroupChange(Sender: TObject);
-begin
-{
- if ClientDataSet1.Active then
-  if not StartsText('Delphi', ClientDataSet1.FieldByName('Group').AsString) then
-    DBLookupComboBoxDelphi.Enabled:=False
-  else
-    DBLookupComboBoxDelphi.Enabled:=True;
-}
-end;
-
 
 
 procedure TFrmSettings.DBComboBoxImageDrawItem(Control: TWinControl;
