@@ -966,6 +966,19 @@ begin
                   finally
                    LIcon.Free;
                   end;
+                end
+               else
+               if StartsText('Android', FMSBuildDProj.DefaultPlatForm) then
+                 //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['ios']);
+                 //BitBlt(LCanvas.Handle, rcItem.Left +1, Ly, BitmapsDict.Items['ios2'].Width, BitmapsDict.Items['ios2'].Height, BitmapsDict.Items['ios2'].Canvas.Handle, 0, 0, SRCCOPY);
+                begin
+                  LIcon:=TIcon.Create;
+                  try
+                   LIcon.LoadFromResourceName(HInstance,'android_ico');
+                   DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                  finally
+                   LIcon.Free;
+                  end;
                 end;
 
                 if (FMSBuildDProj<>nil) and (FMSBuildDProj.TargetPlatforms.Count>1) then
@@ -1023,8 +1036,20 @@ begin
                         finally
                          LIcon.Free;
                         end;
+                      end
+                      else
+                      if StartsText('Android', FMSBuildDProj.TargetPlatforms[i]) then
+                       //LCanvas.Draw(Lx+5, Ly, BitmapsDict.Items['ios']);
+                       //BitBlt(LCanvas.Handle, Lx+5, Ly, BitmapsDict.Items['ios2'].Width, BitmapsDict.Items['ios2'].Height, BitmapsDict.Items['ios2'].Canvas.Handle, 0, 0, SRCCOPY);
+                      begin
+                        LIcon:=TIcon.Create;
+                        try
+                         LIcon.LoadFromResourceName(HInstance,'android_ico');
+                         DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                        finally
+                         LIcon.Free;
+                        end;
                       end;
-
                    end;
                 end;
 
@@ -1678,13 +1703,16 @@ begin
          for LCurrentDelphiVersion in DProjectVersion do
          for sPlatform in FMSBuildDProj.TargetPlatforms do
          begin
-           Found:=False;
+
 
            for sBuildConfiguration in FMSBuildDProj.BuildConfigurations do
            begin
-
+             Found:=False;
              if SameText(sPlatform, FMSBuildDProj.DefaultPlatForm) and (SameText(sBuildConfiguration, FMSBuildDProj.DefaultConfiguration)) then
-               sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' ('+sPlatform+' - '+sBuildConfiguration+') - Default Configuration'
+             begin
+               sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' ('+sPlatform+' - '+sBuildConfiguration+') - Default Configuration';
+               Found:=True;
+             end
              else
                sSubMenuCaption:='Run MSBuild with '+LCurrentDelphiVersionData.Name+' ('+sPlatform+' - '+sBuildConfiguration+')';
 
@@ -1696,7 +1724,11 @@ begin
               InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'osx')
              else
              if StartsText('IOS', sPlatform) then
-              InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'ios');
+              InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'ios')
+             else
+             if StartsText('Android', sPlatform) then
+              InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'android');
+
 
 
              if not IsVistaOrLater then
@@ -1708,8 +1740,14 @@ begin
                  RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'osx_ico')
                else
                if StartsText('IOS', sPlatform) then
-                 RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'ios_ico');
+                 RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'ios_ico')
+               else
+               if StartsText('android', sPlatform) then
+                 RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'android_ico');
              end;
+
+             if Found then
+             SetMenuDefaultItem(LSubMenu, LSubMenuIndex, 1);
 
 
              LMethodInfo:=TMethodInfo.Create;
@@ -1813,7 +1851,10 @@ begin
                    InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'osx')
                  else
                  if StartsText('IOS', LPAClientProfile.Platform) then
-                   InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'ios');
+                   InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'ios')
+                 else
+                 if StartsText('Android', LPAClientProfile.Platform) then
+                   InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'android');
 
                  //log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
 
@@ -1826,7 +1867,10 @@ begin
                      RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'osx_ico')
                    else
                    if StartsText('IOS', LPAClientProfile.Platform) then
-                     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'ios_ico');
+                     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'ios_ico')
+                   else
+                   if StartsText('Android', LPAClientProfile.Platform) then
+                     RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, MF_BYPOSITION, 'android_ico');
                  end;
 
                  LMethodInfo:=TMethodInfo.Create;
@@ -2157,6 +2201,7 @@ begin
          begin
            sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name+' (Detected)';
            InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), PWideChar(LCurrentDelphiVersionData.Name));
+           SetMenuDefaultItem(LSubMenu, LSubMenuIndex, 1);
            //log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
            Found:=True;
            Break;
@@ -2786,9 +2831,12 @@ initialization
   RegisterBitmap('osx');
   RegisterBitmap('ios');
   RegisterBitmap('win');
+  RegisterBitmap('android');
+  {
   RegisterBitmap('osx', 'osx2');
   RegisterBitmap('ios', 'ios2');
   RegisterBitmap('win', 'win2');
+  }
   RegisterBitmap('delphi');
   RegisterBitmap('delphi', 'delphi2');
   RegisterBitmap('delphig');
