@@ -53,7 +53,8 @@ type
     DelphiXE,
     DelphiXE2,
     DelphiXE3,
-    DelphiXE4
+    DelphiXE4,
+    DelphiXE5
 );
 
   SetDelphiVersions= TArray<TDelphiVersions>;
@@ -157,7 +158,8 @@ const
     'RAD Studio XE',
     'RAD Studio XE2',
     'RAD Studio XE3',
-    'RAD Studio XE4'
+    'RAD Studio XE4',
+    'RAD Studio XE5'
     );
 
   DelphiVersionNumbers: array[TDelphiVersions] of double =
@@ -176,7 +178,8 @@ const
     22,      // 'RAD Studio XE'
     23,      // 'RAD Studio XE2'
     24,      // 'RAD Studio XE3'
-    25       // 'RAD Studio XE4'
+    25,      // 'RAD Studio XE4'
+    26       // 'RAD Studio XE5'
     );
 
 
@@ -196,7 +199,8 @@ const
     '\Software\Embarcadero\BDS\8.0',
     '\Software\Embarcadero\BDS\9.0',
     '\Software\Embarcadero\BDS\10.0',
-    '\Software\Embarcadero\BDS\11.0'
+    '\Software\Embarcadero\BDS\11.0',
+    '\Software\Embarcadero\BDS\12.0'
     );
 
  PAClientProfilesPaths: array[TDelphiVersions] of string = (
@@ -214,7 +218,8 @@ const
     '',
     '\Embarcadero\BDS\9.0',
     '\Embarcadero\BDS\10.0',
-    '\Embarcadero\BDS\11.0'
+    '\Embarcadero\BDS\11.0',
+    '\Embarcadero\BDS\12.0'
     );
 
   procedure FillListDelphiVersions(AList:TList<TDelphiVersionData>);
@@ -433,6 +438,9 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
+            if sVersion='15.1' then
+             Exit(TArray<TDelphiVersions>.Create(DelphiXE5))
+            else
             if sVersion='14.6' then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE4))
             else

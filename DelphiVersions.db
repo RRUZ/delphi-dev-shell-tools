@@ -21,5 +21,6 @@
     <ROW Version="10" Name="RAD Studio XE2"/>
     <ROW Version="11" Name="RAD Studio XE3"/>
     <ROW Version="12" Name="RAD Studio XE4"/>	
+    <ROW Version="13" Name="RAD Studio XE5"/>		
   </ROWDATA>
 </DATAPACKET>
