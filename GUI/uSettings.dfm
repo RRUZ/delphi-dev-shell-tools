@@ -572,25 +572,23 @@ object FrmSettings: TFrmSettings
       object TabSheet3: TTabSheet
         Caption = 'Custom Tools'
         ImageIndex = 2
-        ExplicitLeft = 1
-        ExplicitTop = 27
         object Label7: TLabel
           Left = 139
-          Top = 34
+          Top = 39
           Width = 29
           Height = 13
           Caption = 'Group'
         end
         object Label8: TLabel
           Left = 392
-          Top = 34
+          Top = 39
           Width = 27
           Height = 13
           Caption = 'Name'
         end
         object Label9: TLabel
           Left = 139
-          Top = 82
+          Top = 85
           Width = 54
           Height = 13
           Caption = 'Menu Label'
@@ -616,16 +614,16 @@ object FrmSettings: TFrmSettings
           Height = 13
           Caption = 'Macros'
         end
-        object Label13: TLabel
+        object LabelDelphi: TLabel
           Left = 255
-          Top = 34
+          Top = 39
           Width = 113
           Height = 13
           Caption = 'Minimum  Delphi Version'
         end
         object Label14: TLabel
           Left = 392
-          Top = 82
+          Top = 85
           Width = 30
           Height = 13
           Caption = 'Image'
@@ -688,7 +686,7 @@ object FrmSettings: TFrmSettings
         end
         object DBEditName: TDBEdit
           Left = 392
-          Top = 53
+          Top = 55
           Width = 127
           Height = 21
           DataField = 'Name'
@@ -758,11 +756,10 @@ object FrmSettings: TFrmSettings
             'Delphi Tools'
             'External Tools')
           TabOrder = 1
-          OnChange = DBComboBoxGroupChange
         end
         object DBLookupComboBoxDelphi: TDBLookupComboBox
           Left = 255
-          Top = 53
+          Top = 55
           Width = 131
           Height = 21
           DataSource = DataSource1
@@ -822,6 +819,7 @@ object FrmSettings: TFrmSettings
   object ClientDataSet1: TClientDataSet
     Aggregates = <>
     Params = <>
+    AfterScroll = ClientDataSet1AfterScroll
     Left = 40
     Top = 136
   end
