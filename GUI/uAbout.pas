@@ -117,10 +117,12 @@ begin
   uMisc.GetFileVersion(ExtractFilePath(ParamStr(0))+'DelphiDevShellTools.dll')]);
 
   LabelWindowsVersion.Caption    := Format('%s', [TOSVersion.ToString]);
+  MemoCopyRights.Lines.Add('Shell Extension for Delphi Developers ');
   MemoCopyRights.Lines.Add('Author Rodrigo Ruz rodrigo.ruz.v@gmail.com - © 2013 all rights reserved.');
   MemoCopyRights.Lines.Add('http://code.google.com/p/delphi-dev-shell-tools/');
   MemoCopyRights.Lines.Add('');
-  MemoCopyRights.Lines.Add('Shell Extension for Delphi Developers ');
+  MemoCopyRights.Lines.Add('This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/)');
+  MemoCopyRights.Lines.Add('');
   MemoCopyRights.Lines.Add('Go Delphi Go');
 end;
 

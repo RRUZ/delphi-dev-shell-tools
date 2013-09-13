@@ -438,7 +438,7 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
-            if sVersion='15.1' then
+            if MatchText(sVersion,['15.1','15.0']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE5))
             else
             if sVersion='14.6' then

@@ -22,7 +22,7 @@
 unit DelphiDevShellToolsImpl;
 
 {$WARN SYMBOL_PLATFORM OFF}
-{$DEFINE ENABLELOG}
+{.$DEFINE ENABLELOG}
 
 interface
 
@@ -100,7 +100,7 @@ type
     //Menu helper functions
     function  InsertMenuDevShell(hMenu: HMENU; uPosition: UINT; uIDNewItem: UINT_PTR; lpNewItem, IconName: LPCWSTR): BOOL;
     procedure RegisterMenuItemBitmapDevShell(hMenu: HMENU; uPosition, wID: UINT; const IconName : String);
-    procedure RegisterMenuItemBitmapExternal(hMenu: HMENU; uPosition, uFlags: UINT; const IconName : String);
+    procedure RegisterMenuItemBitmapExternal(hMenu: HMENU; uPosition, wID: UINT; const IconName : String);
     procedure AddMenuSeparatorEx(hMenu : HMENU; var MenuIndex : Integer);
 
   protected
@@ -687,7 +687,10 @@ begin
      log(SysErrorMessage(GetLastError));
   except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.InsertMenuDevShell Message %s  Trace %s',[E.Message, e.StackTrace]));
+   begin
+     Result:=False;
+     log(Format('TDelphiDevShellToolsContextMenu.InsertMenuDevShell Message %s  Trace %s',[E.Message, e.StackTrace]));
+   end;
   end;
 end;
 
@@ -731,12 +734,24 @@ begin
 //    log(SysErrorMessage(GetLastError));
 end;
 
-procedure  TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapExternal(hMenu: HMENU; uPosition, uFlags: UINT; const IconName : String);
+procedure  TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapExternal(hMenu: HMENU; uPosition, wID: UINT; const IconName : String);
+{
 var
   LMenuInfo    : TMenuItemInfo;
   Buffer       : array [0..79] of char;
+}
 begin
   if IsVistaOrLater then exit;
+
+  try
+    if not IconsDictExternal.ContainsKey(wID) then
+     IconsDictExternal.Add(wID, IconsExternals[IconName]);
+  except
+   on  E : Exception do
+   log(Format('TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapDevShell Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+
+{
   try
     LMenuInfo.cbSize := sizeof(LMenuInfo);
     LMenuInfo.fMask  := MIIM_ID;
@@ -753,7 +768,7 @@ begin
    on  E : Exception do
    log(Format('TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapExternal Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
-
+}
 end;
 
 
@@ -837,9 +852,12 @@ begin
 
       WM_MEASUREITEM:
       begin
+        if PMeasureItemStruct(lParam)=nil then Exit(S_OK);
+
+        log('All WM_MEASUREITEM **** '+IntToStr(PDrawItemStruct(lParam)^.itemID));
+
         if PMeasureItemStruct(lParam)^.itemID<>FOwnerDrawId then
         begin
-           if PMeasureItemStruct(lParam)=nil then Exit(S_OK);
             PMeasureItemStruct(lParam)^.itemWidth := PMeasureItemStruct(lParam)^.itemWidth+2;
             if (PMeasureItemStruct(lParam)^.itemHeight < MinHeight) then
                PMeasureItemStruct(lParam)^.itemHeight := MinHeight;
@@ -860,6 +878,8 @@ begin
 
       WM_DRAWITEM:
       begin
+          log('All WM_DRAWITEM **** '+IntToStr(PDrawItemStruct(lParam)^.itemID));
+
           if PDrawItemStruct(lParam)^.itemID<>FOwnerDrawId then
           with PDrawItemStruct(lParam)^ do
           begin
@@ -883,6 +903,7 @@ begin
           begin
             with PDrawItemStruct(lParam)^ do
             begin
+
               LCanvas := TCanvas.Create;
               try
                 SaveIndex := SaveDC(hDC);
@@ -2628,13 +2649,17 @@ begin
 
     ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
     LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-    LMenuItem.fMask  := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
+    LMenuItem.fMask  := MIIM_FTYPE or MIIM_ID or MIIM_SUBMENU or MIIM_DATA or MIIM_BITMAP or  MIIM_STRING;
     LMenuItem.fType  := MFT_STRING;
     LMenuItem.wID    := uIDNewItem;
+    log('Main Logo uIDNewItem '+IntToStr(uIDNewItem));
     LMenuItem.hSubMenu := hSubMenu;
     LMenuItem.dwTypeData := PWideChar(LMenuCaption);
     LMenuItem.cch := Length(LMenuCaption);
-    LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['logo'].Handle, HBMMENU_CALLBACK);
+    //LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['logo'].Handle, HBMMENU_CALLBACK);
+    LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['logo'].Handle, BitmapsDict['logo24'].Handle);
+    LMenuItem.hbmpChecked   := 0;
+    LMenuItem.hbmpUnchecked := 0;
     if IsVistaOrLater then
     begin
       LMenuItem.hbmpChecked   := BitmapsDict['logo'].Handle;
@@ -2659,7 +2684,7 @@ begin
     Result := MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, uIDNewItem-idCmdFirst);
  except on  E : Exception do
     begin
-     log(Format('TDelphiDevShellToolsContextMenu.QueryContextMenu Message %s  Trace %s',[E.Message, e.StackTrace]));
+     log(Format('TDelphiDevShellToolsContextMenu.QueryContextMenu Message %s  Trace %s',[E.Message, E.StackTrace]));
      Result := E_FAIL;
     end;
  end;
@@ -2878,6 +2903,7 @@ var
  CX     : Integer;
  Factor : Double;
  LCurrentDelphiVersionData  : TDelphiVersionData;
+ TempBitmap : TBitmap;
 initialization
   CX:=GetSystemMetrics(SM_CXMENUCHECK);
   log('initialization');
@@ -2930,6 +2956,26 @@ initialization
   RegisterBitmap('shield');
   RegisterBitmap('fpc_tools');
   RegisterBitmap('wrench');
+
+
+   if CX>=16 then
+   begin
+     BitmapsDict.Add('logo24',TBitmap.Create);
+     BitmapsDict.Items['logo24'].LoadFromResourceName(HInstance,'logo24');
+   end
+   else
+   begin
+      Factor:= CX/16;
+      TempBitmap:=TBitmap.Create;
+      try
+        BitmapsDict.Add('logo24',TBitmap.Create);
+        TempBitmap.LoadFromResourceName(HInstance,'logo24');
+        ScaleImage(TempBitmap, BitmapsDict.Items['logo24'], Factor);
+      finally
+        TempBitmap.Free;
+      end;
+   end;
+  MakeBitmapMenuTransparent(BitmapsDict.Items['logo24']);
 
   for LCurrentDelphiVersionData in InstalledDelphiVersions do
      if not BitmapsDict.ContainsKey(LCurrentDelphiVersionData.Name) then
