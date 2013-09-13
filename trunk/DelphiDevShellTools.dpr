@@ -33,6 +33,9 @@ exports
 
 {
 TODO
+  Add Property sheet handler for Delphi projects
+  Add Property sheet handler for Lazarus projects
+
   FPC
   ------------------------------------------------------------------------------
   Tools that come with Free Pascal - http://www.freepascal.org/tools/tools.var
@@ -49,7 +52,6 @@ TODO
     rstconv is a small utility that converts .rst files (files that contain resource strings, as created by the compiler to some other format. (GNU gettext at the moment)
     TP Lex and Yacc, written by Albert Graef. It can be used to create pascal units from a Lex vocabulary and Yacc grammar.
   ------------------------------------------------------------------------------
-
 
   add project to RAD Studio favorites
 
