@@ -526,7 +526,7 @@ end;
 procedure TDelphiDevShellToolsContextMenu.MSBuildWithDelphi(Info : TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
-  LFileName, RsvarsPath, CompilerPath, Params, BatchFileName, sPlatform, sConfig : string;
+  LFileName, RsvarsPath, Params, BatchFileName, sPlatform, sConfig : string;
   BatchFile : TStrings;
 begin
  try
@@ -537,7 +537,6 @@ begin
   LFileName:=Info.Value4.AsString;
 
   RsvarsPath  :=ExtractFilePath(LDelphiVersion.Path)+'rsvars.bat';
-  CompilerPath:=ExtractFilePath(LDelphiVersion.Path)+'DCC32.exe';
   BatchFile:=TStringList.Create;
   try
     BatchFile.Add(Format('call "%s"',[RsvarsPath]));
@@ -1767,7 +1766,7 @@ begin
           LSubMenuIndex:=MenuIndex;
         end;
 
-          LFileName:=FFileName;
+          LFileName:=ChangeFileExt(FFileName,'.dproj');
 
          if  (FMSBuildDProj<>nil) and (FMSBuildDProj.ValidData) then
          for LCurrentDelphiVersion in DProjectVersion do
