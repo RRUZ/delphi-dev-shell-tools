@@ -56,10 +56,11 @@ TODO
   add project to RAD Studio favorites
 
   add binary files tasks
-    Add support for tdump.exe, tdump64.exe
+   done - Add support for tdump.exe, tdump64.exe
 
   add register extensions by task      done
-  Add options to register external tools
+  Add options to register external tools  done
+  use Sqlite to store data
 
   Add paclient.exe options
     deploy

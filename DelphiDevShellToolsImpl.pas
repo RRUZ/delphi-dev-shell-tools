@@ -2262,9 +2262,10 @@ begin
      if  MatchText(FFileExt, ['.dproj', '.dpr']) then
      begin
        for LCurrentDelphiVersionData in InstalledDelphiVersions do
-       if LCurrentDelphiVersionData.Version>=Delphi2007 then
+       //if LCurrentDelphiVersionData.Version>=Delphi2007 then
        begin
          Found:=False;
+         if LCurrentDelphiVersionData.Version>=Delphi2007 then
          for LCurrentDelphiVersion in DProjectVersion do
          if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
          begin
@@ -2291,6 +2292,8 @@ begin
          LMethodInfo.Method:=OpenRADStudio;
          LMethodInfo.Value1:=LCurrentDelphiVersionData;
          LMethodInfo.Value2:=EmptyStr;
+         LMethodInfo.Value3:=EmptyStr;
+         if LCurrentDelphiVersionData.Version>=Delphi2007 then
          LMethodInfo.Value3:='-pDelphi';
 
          if SameText(FFileExt, '.dpr') then
