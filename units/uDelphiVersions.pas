@@ -105,9 +105,28 @@ type
     property DefaultConfiguration : string read  FDefaultConfiguration; //Release, Debug
     property DefaultPlatForm : string read  FDefaultPlatForm; //Win32, OSX
     property ValidData : Boolean read FValidData;
-    constructor Create(const ProjectFile : string);
+    property ProjectFile : string read FProjectFile;
+    constructor Create(const _ProjectFile : string);
     Destructor  Destroy; override;
   end;
+
+  TMSBuildGroupProj=class
+  private
+    FGroupProjectFile : string;
+    FGUID: string;
+    FDelphiVersion : TDelphiVersions;
+    FValidData : Boolean;
+    FProjects  : TObjectList<TMSBuildDProj>;
+    procedure LoadInfo;
+  public
+    property Projects : TObjectList<TMSBuildDProj> read FProjects;
+    property GUID : string read FGUID;
+    property DelphiVersion : TDelphiVersions read FDelphiVersion;
+    property ValidData : Boolean read FValidData;
+    constructor Create(const GroupProjectFile : string);
+    Destructor  Destroy; override;
+  end;
+
 
   TPAClientProfile=class
   private
@@ -251,10 +270,10 @@ uses
   System.Types,
   Registry;
 
-constructor TMSBuildDProj.Create(const ProjectFile : string);
+constructor TMSBuildDProj.Create(const _ProjectFile : string);
 begin
  inherited Create;
- FProjectFile:=ProjectFile;
+ FProjectFile:=_ProjectFile;
  FTargetPlatforms  :=TStringList.Create;
  FBuildConfigurations :=TStringList.Create;
  FValidData  := False;
@@ -692,5 +711,88 @@ begin
   end;
 
 end;
+
+{ TMSBuildGroupProj }
+
+constructor TMSBuildGroupProj.Create(const GroupProjectFile: string);
+begin
+ inherited Create;
+ FGroupProjectFile:=GroupProjectFile;
+ FProjects   := TObjectList<TMSBuildDProj>.Create(True);
+ FValidData  := False;
+ if FileExists(FGroupProjectFile) then
+   LoadInfo;
+
+end;
+
+destructor TMSBuildGroupProj.Destroy;
+begin
+  FProjects.Free;
+  inherited;
+end;
+
+
+function PathCanonicalize(lpszDst: PChar; lpszSrc: PChar): LongBool; stdcall;  external 'shlwapi.dll' name 'PathCanonicalizeW';
+
+function GetAbsolutePath(const RelativePath, BasePath: string): string;
+var
+  lpszDst : array[0..MAX_PATH-1] of char;
+begin
+  PathCanonicalize(@lpszDst[0], PChar(IncludeTrailingPathDelimiter(BasePath) + RelativePath));
+  Result := lpszDst;
+end;
+
+
+procedure TMSBuildGroupProj.LoadInfo;
+var
+  ns: string;
+  XmlDoc: OleVariant;
+  Nodes, Node: OleVariant;
+  i, lNodes : Integer;
+  DProjectFileName  : string;
+begin
+    CoInitialize(nil);
+    try
+      XmlDoc := CreateOleObject('Msxml2.DOMDocument.6.0');
+      try
+        XmlDoc.Async := False;
+        XmlDoc.Load(FGroupProjectFile);
+
+        if (XmlDoc.parseError.errorCode <> 0) then
+        begin
+          FValidData:=False;
+          Exit;
+        end
+        else
+          FValidData:=True;
+
+        XmlDoc.SetProperty('SelectionLanguage', 'XPath');
+         ns := Format('xmlns:a=%s',[QuotedStr('http://schemas.microsoft.com/developer/msbuild/2003')]);
+         XmlDoc.setProperty('SelectionNamespaces', ns);
+
+        Node := XmlDoc.selectSingleNode('/a:Project/a:PropertyGroup/a:ProjectGuid');
+        if not VarIsClear(Node) then
+          FGUID := Node.Text;
+
+        Nodes := XmlDoc.selectNodes('//a:Project/a:ItemGroup/a:Projects');
+        lNodes:= Nodes.Length;
+        for i:= 0 to lNodes-1 do
+        begin
+           DProjectFileName:=GetAbsolutePath(Nodes.Item(i).getAttribute('Include'), ExtractFilePath(FGroupProjectFile));
+           FProjects.Add(TMSBuildDProj.Create(DProjectFileName));
+           if (i=0) and (FProjects[0].ValidData) then
+             FDelphiVersion:=FProjects[0].DelphiVersion;
+        end;
+
+      finally
+        XmlDoc := Unassigned;
+      end;
+    finally
+      CoUninitialize;
+    end;
+
+end;
+
+
 
 end.

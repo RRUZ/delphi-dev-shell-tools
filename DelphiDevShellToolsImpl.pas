@@ -47,6 +47,7 @@ type
     FFileName, FFileExt: string;
     DProjectVersion : SetDelphiVersions;
     FMSBuildDProj : TMSBuildDProj;
+    FMSBuildGroupDProj : TMSBuildGroupProj;
     FMethodsDict : TObjectDictionary<Integer, TMethodInfo>;
     FOwnerDrawId : UINT;
 
@@ -84,6 +85,8 @@ type
     procedure AddMSBuildRAD_SpecificTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddMSBuildRAD_AllTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenWithDelphi(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddOpenWithDelphi_GroupProject(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+
     procedure AddMSBuildPAClientTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenVclStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddCheckSumTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
@@ -810,6 +813,13 @@ begin
       FMSBuildDProj.Free;
       FMSBuildDProj:=nil;
     end;
+
+    if FMSBuildGroupDProj<>nil then
+    begin
+      FMSBuildGroupDProj.Free;
+      FMSBuildGroupDProj:=nil;
+    end;
+
 
     Result := E_FAIL;
     log('InvokeCommand lpVerb '+IntToStr(Integer(lpici.lpVerb)));
@@ -2341,6 +2351,103 @@ begin
   end;
 end;
 
+procedure TDelphiDevShellToolsContextMenu.AddOpenWithDelphi_GroupProject(
+  hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
+  const SupportedExts: array of string);
+var
+  LSubMenuIndex : Integer;
+  LSubMenu: Winapi.Windows.HMENU;
+  LMenuItem: TMenuItemInfo;
+  Found : Boolean;
+  LCurrentDelphiVersionData  : TDelphiVersionData;
+  LCurrentDelphiVersion      : TDelphiVersions;
+  sSubMenuCaption : string;
+  LMethodInfo : TMethodInfo;
+begin
+  try
+     if (InstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
+
+
+     if Settings.SubMenuOpenDelphi then
+     begin
+      LSubMenuIndex :=0;
+      LSubMenu   := CreatePopupMenu;
+      sSubMenuCaption:='Open Project Group with Delphi';
+
+      ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
+      LMenuItem.cbSize := SizeOf(TMenuItemInfo);
+      LMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or MIIM_BITMAP;
+      LMenuItem.fType := MFT_STRING;
+      LMenuItem.wID := uIDNewItem;
+      LMenuItem.hSubMenu := LSubMenu;
+      LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
+      LMenuItem.cch := Length(sSubMenuCaption);
+      LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
+      LMenuItem.hbmpChecked   := BitmapsDict['delphi'].Handle;
+      LMenuItem.hbmpUnchecked := BitmapsDict['delphi'].Handle;
+      InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
+      if not IsVistaOrLater then
+      RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, uIDNewItem, 'delphi_ico');
+      Inc(uIDNewItem);
+      Inc(MenuIndex);
+     end
+     else
+     begin
+      LSubMenuIndex:=MenuIndex;
+      LSubMenu:=hMenu;
+     end;
+
+
+     if  MatchText(FFileExt, ['.groupproj']) then
+     begin
+       for LCurrentDelphiVersionData in InstalledDelphiVersions do
+       if LCurrentDelphiVersionData.Version>=Delphi2007 then
+       begin
+         Found:=False;
+         for LCurrentDelphiVersion in DProjectVersion do
+         if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
+         begin
+           sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name+' (Detected)';
+           InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), PWideChar(LCurrentDelphiVersionData.Name));
+           SetMenuDefaultItem(LSubMenu, LSubMenuIndex, 1);
+           //log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
+           Found:=True;
+           Break;
+         end;
+
+         if not Found then
+         begin
+           sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name;
+           InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), PWideChar(LCurrentDelphiVersionData.Name));
+           //log(Format('%s %d',[sSubMenuCaption, LSubMenuIndex]));
+         end;
+
+        if not IsVistaOrLater then
+        if not IconsDictExternal.ContainsKey(uIDNewItem) then
+          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+         //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
+         LMethodInfo:=TMethodInfo.Create;
+         LMethodInfo.Method:=OpenRADStudio;
+         LMethodInfo.Value1:=LCurrentDelphiVersionData;
+         LMethodInfo.Value2:=FFileName;
+         LMethodInfo.Value3:=EmptyStr;
+         if LCurrentDelphiVersionData.Version>=Delphi2007 then
+         LMethodInfo.Value3:='-pDelphi';
+
+         FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
+         Inc(uIDNewItem);
+         Inc(LSubMenuIndex);
+       end
+     end;
+
+     if not Settings.SubMenuOpenDelphi then
+      MenuIndex:=LSubMenuIndex;
+  except
+    on  E : Exception do
+    log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+  end;
+end;
+
 procedure TDelphiDevShellToolsContextMenu.AddRADStudioToolsTasks(hMenu: HMENU;
   var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
   const SupportedExts: array of string);
@@ -2507,6 +2614,14 @@ begin
      DProjectVersion:=GetDelphiVersions(FFileName)
    end
    else
+   if MatchText(FFileExt ,['.groupproj']) then
+   begin
+     if (FMSBuildGroupDProj<>nil) and (FMSBuildGroupDProj.ValidData) and (FMSBuildGroupDProj.Projects.Count>0) and (FMSBuildGroupDProj.Projects[0].ValidData) then
+       DProjectVersion:=GetDelphiVersions(FMSBuildGroupDProj.Projects[0].ProjectFile)
+     else
+       SetLength(DProjectVersion, 0);
+   end
+   else
      SetLength(DProjectVersion, 0);
 
 
@@ -2595,6 +2710,9 @@ begin
 
     //AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj','.dpr','.pas','.inc','.pp','.dpk']);
     AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.OpenDelphiExt,','));
+    AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
+
+    AddOpenWithDelphi_GroupProject(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.groupproj']);
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
     AddRADStudioToolsTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, DelphiToolsExts);
@@ -2722,11 +2840,19 @@ begin
       DragQueryFile(medium.hGlobal, 0, @LFileName, SizeOf(LFileName));
       FFileName := LFileName;
       FFileExt:=ExtractFileExt(FFileName);
+
       if FMSBuildDProj<>nil then
       begin
         FMSBuildDProj.Free;
         FMSBuildDProj:=nil;
       end;
+
+      if FMSBuildGroupDProj<>nil then
+      begin
+        FMSBuildGroupDProj.Free;
+        FMSBuildGroupDProj:=nil;
+      end;
+
 
       LProjName:=FFileName;
       if SameText(FFileExt, '.dpr') then
@@ -2738,15 +2864,27 @@ begin
 
       if MatchText(FFileExt,['.dproj','.dpr']) and TFile.Exists(LProjName) then
         FMSBuildDProj:=TMSBuildDProj.Create(LProjName);
+
+      if MatchText(FFileExt,['.groupproj']) and TFile.Exists(FFileName) then
+        FMSBuildGroupDProj:=TMSBuildGroupProj.Create(FFileName);
+
       Result := NOERROR;
     end
     else
     begin
+
       if FMSBuildDProj<>nil then
       begin
         FMSBuildDProj.Free;
         FMSBuildDProj:=nil;
       end;
+
+      if FMSBuildGroupDProj<>nil then
+      begin
+        FMSBuildGroupDProj.Free;
+        FMSBuildGroupDProj:=nil;
+      end;
+
       FFileName := EmptyStr;
       FFileExt  := EmptyStr;
       Result := E_FAIL;
