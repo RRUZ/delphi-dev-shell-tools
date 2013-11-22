@@ -318,7 +318,7 @@ begin
   XmlDoc.Async := False;
   try
     SetMsg('Getting version info');
-    FXmlVersionInfo:=WinInet_HttpGet(FRemoteVersionFile,DownloadCallBack);
+    FXmlVersionInfo:=WinInet_HttpGet(FRemoteVersionFile, DownloadCallBack);
     XmlDoc.LoadXml(XmlVersionInfo);
     XmlDoc.SetProperty('SelectionLanguage','XPath');
     if (XmlDoc.parseError.errorCode <> 0) then
@@ -374,7 +374,6 @@ begin
    if DebugHook<>0 then
      Result:=True
    else
-
      Result:=(FRemoteVersion>FLocalVersion);
  except on E : Exception do
    begin
