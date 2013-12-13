@@ -82,6 +82,8 @@ Source: ico\system_monitor.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
 Source: ico\touch.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
 Source: ico\vcl.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
 Source: ico\win.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
+Source: Installer\VclStylesInno.dll; DestDir: {app}; Flags: dontcopy
+Source: Installer\Amakrits.vsf; DestDir: {app}; Flags: dontcopy
 [Run]
 Filename: regsvr32.exe; Parameters: "/s ""{app}\DelphiDevShellTools.dll"""; StatusMsg: Registering plugin
 [UninstallRun]
@@ -105,15 +107,14 @@ AppendDefaultDirName=true
 PrivilegesRequired=admin
 WindowVisible=false
 ArchitecturesInstallIn64BitMode=x64
-;WizardSmallImageFile=compiler:WizModernSmallImage-IS.bmp
-;WizardSmallImageFile=Extras\SmallImage-IS.bmp
-;WizardImageFile=Extras\LeftBackground.bmp
+WizardSmallImageFile=Installer\WizModernSmallImage-IS_BW.bmp
+WizardImageFile=Installer\WizModernImage-IS_BW.bmp
 AppContact=theroadtodelphi@gmail.com
 DisableProgramGroupPage=false
 AppID=DelphiDevShellTools
 SetupIconFile=Icons\Logo.ico
 DefaultGroupName=Delphi Dev Shell Tools
-;MinVersion=
+
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl
 Name: basque; MessagesFile: compiler:Languages\Basque.isl
@@ -138,6 +139,11 @@ Name: slovenian; MessagesFile: compiler:Languages\Slovenian.isl
 Name: spanish; MessagesFile: compiler:Languages\Spanish.isl
 
 [Code]
+// Import the LoadVCLStyle function from VclStylesInno.DLL
+procedure LoadVCLStyle(VClStyleFile: String); external 'LoadVCLStyleW@files:VclStylesInno.dll stdcall';
+// Import the UnLoadVCLStyles function from VclStylesInno.DLL
+procedure UnLoadVCLStyles; external 'UnLoadVCLStyles@files:VclStylesInno.dll stdcall';
+
 
 function GetUninstallString(): String;
 var
@@ -177,12 +183,14 @@ end;
 
 function InitializeSetup(): Boolean;
 begin
+	ExtractTemporaryFile('Amakrits.vsf');
+	LoadVCLStyle(ExpandConstant('{tmp}\Amakrits.vsf'));
    Result:=True;
 end;
 
 procedure DeinitializeSetup();
 begin
- //ShowWindow(StrToInt(ExpandConstant('{wizardhwnd}')), 0);
+	UnLoadVCLStyles;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
