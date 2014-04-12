@@ -1,24 +1,24 @@
-﻿{**************************************************************************************************}
-{                                                                                                  }
-{ Unit uDelphiVersions                                                                             }
-{ unit for the Delphi Dev Shell Tools                                                              }
-{ http://code.google.com/p/delphi-dev-shell-tools/                                                 }
-{                                                                                                  }
-{ The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License"); }
-{ you may not use this file except in compliance with the License. You may obtain a copy of the    }
-{ License at http://www.mozilla.org/MPL/                                                           }
-{                                                                                                  }
-{ Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF   }
-{ ANY KIND, either express or implied. See the License for the specific language governing rights  }
-{ and limitations under the License.                                                               }
-{                                                                                                  }
-{ The Original Code is uDelphiVersions.pas.                                                        }
-{                                                                                                  }
-{ The Initial Developer of the Original Code is Rodrigo Ruz V.                                     }
-{ Portions created by Rodrigo Ruz V. are Copyright (C) 2013 Rodrigo Ruz V.                         }
-{ All Rights Reserved.                                                                             }
-{                                                                                                  }
-{**************************************************************************************************}
+﻿//**************************************************************************************************
+//
+// Unit uDelphiVersions
+// unit for the Delphi Dev Shell Tools
+// http://code.google.com/p/delphi-dev-shell-tools/
+//
+// The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
+// you may not use this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.mozilla.org/MPL/
+//
+// Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF
+// ANY KIND, either express or implied. See the License for the specific language governing rights
+// and limitations under the License.
+//
+// The Original Code is uDelphiVersions.pas.
+//
+// The Initial Developer of the Original Code is Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2014 Rodrigo Ruz V.
+// All Rights Reserved.
+//
+//**************************************************************************************************
 
 
 unit uDelphiVersions;
@@ -54,7 +54,8 @@ type
     DelphiXE2,
     DelphiXE3,
     DelphiXE4,
-    DelphiXE5
+    DelphiXE5,
+    Appmethod113
 );
 
   SetDelphiVersions= TArray<TDelphiVersions>;
@@ -178,7 +179,8 @@ const
     'RAD Studio XE2',
     'RAD Studio XE3',
     'RAD Studio XE4',
-    'RAD Studio XE5'
+    'RAD Studio XE5',
+    'Appmethod 1.13'
     );
 
   DelphiVersionNumbers: array[TDelphiVersions] of double =
@@ -198,7 +200,8 @@ const
     23,      // 'RAD Studio XE2'
     24,      // 'RAD Studio XE3'
     25,      // 'RAD Studio XE4'
-    26       // 'RAD Studio XE5'
+    26,      // 'RAD Studio XE5'
+    27       // 'Appmethod 1.13'
     );
 
 
@@ -219,7 +222,8 @@ const
     '\Software\Embarcadero\BDS\9.0',
     '\Software\Embarcadero\BDS\10.0',
     '\Software\Embarcadero\BDS\11.0',
-    '\Software\Embarcadero\BDS\12.0'
+    '\Software\Embarcadero\BDS\12.0',
+    '\Software\Embarcadero\BDS\13.0'
     );
 
  PAClientProfilesPaths: array[TDelphiVersions] of string = (
@@ -238,7 +242,8 @@ const
     '\Embarcadero\BDS\9.0',
     '\Embarcadero\BDS\10.0',
     '\Embarcadero\BDS\11.0',
-    '\Embarcadero\BDS\12.0'
+    '\Embarcadero\BDS\12.0',
+    '\Embarcadero\BDS\13.0'
     );
 
   procedure FillListDelphiVersions(AList:TList<TDelphiVersionData>);
@@ -457,7 +462,10 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
-            if MatchText(sVersion,['15.1','15.0']) then
+            if sVersion='15.2' then
+             Exit(TArray<TDelphiVersions>.Create(Appmethod113))
+            else
+             if MatchText(sVersion,['15.1','15.0']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE5))
             else
             if sVersion='14.6' then
