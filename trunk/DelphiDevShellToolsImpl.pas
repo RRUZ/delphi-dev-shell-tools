@@ -1,24 +1,24 @@
-{**************************************************************************************************}
-{                                                                                                  }
-{ Unit DelphiDevShellToolsImpl                                                                     }
-{ unit for the Delphi Dev Shell Tools                                                              }
-{ http://code.google.com/p/delphi-dev-shell-tools/                                                 }
-{                                                                                                  }
-{ The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License"); }
-{ you may not use this file except in compliance with the License. You may obtain a copy of the    }
-{ License at http://www.mozilla.org/MPL/                                                           }
-{                                                                                                  }
-{ Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF   }
-{ ANY KIND, either express or implied. See the License for the specific language governing rights  }
-{ and limitations under the License.                                                               }
-{                                                                                                  }
-{ The Original Code is DelphiDevShellToolsImpl.pas.                                                }
-{                                                                                                  }
-{ The Initial Developer of the Original Code is Rodrigo Ruz V.                                     }
-{ Portions created by Rodrigo Ruz V. are Copyright (C) 2013 Rodrigo Ruz V.                         }
-{ All Rights Reserved.                                                                             }
-{                                                                                                  }
-{**************************************************************************************************}
+//**************************************************************************************************
+//
+// Unit DelphiDevShellToolsImpl
+// unit for the Delphi Dev Shell Tools
+// http://code.google.com/p/delphi-dev-shell-tools/
+//
+// The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
+// you may not use this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.mozilla.org/MPL/
+//
+// Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF
+// ANY KIND, either express or implied. See the License for the specific language governing rights
+// and limitations under the License.
+//
+// The Original Code is DelphiDevShellToolsImpl.pas.
+//
+// The Initial Developer of the Original Code is Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2014 Rodrigo Ruz V.
+// All Rights Reserved.
+//
+//**************************************************************************************************
 unit DelphiDevShellToolsImpl;
 
 {$WARN SYMBOL_PLATFORM OFF}
@@ -876,7 +876,7 @@ begin
         begin
           with PMeasureItemStruct(lParam)^ do
           begin
-            itemWidth :=250;
+            itemWidth :=400;
             itemHeight:=110;
               if (FMSBuildDProj<>nil) and (FMSBuildDProj.TargetPlatforms.Count>1) then
                 itemHeight:= itemHeight+((18+Dy)*UINT(FMSBuildDProj.TargetPlatforms.Count));
@@ -938,7 +938,11 @@ begin
                   //LCanvas.Draw(rcItem.Left +1, Ly, BitmapsDict.Items['delphi2']);
                   LIcon:=TIcon.Create;
                   try
-                   LIcon.LoadFromResourceName(HInstance,'delphi_ico');
+                   if  FMSBuildDProj.DelphiVersion=Appmethod113 then
+                     LIcon.LoadFromResourceName(HInstance,'appmethod_ico')
+                   else
+                     LIcon.LoadFromResourceName(HInstance,'delphi_ico');
+
                    DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
                   finally
                    LIcon.Free;
@@ -2628,6 +2632,8 @@ begin
     hSubMenu   := CreatePopupMenu;
     uIDNewItem := idCmdFirst;
     hSubMenuIndex := 0;
+
+
 
      if Settings.ShowInfoDProj and  MatchText(FFileExt,['.dproj','.dpr']) and (FMSBuildDProj<>nil) and (FMSBuildDProj.ValidData) then
      begin
