@@ -23,6 +23,13 @@
 program GUIDelphiDevShell;
 
 uses
+{$IFDEF DEBUG}
+  madExcept,
+  madLinkDisAsm,
+  madListHardware,
+  madListProcesses,
+  madListModules,
+{$ENDIF}
   Vcl.Forms,
   Vcl.Dialogs,
   SysUtils,

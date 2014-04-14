@@ -2286,7 +2286,6 @@ begin
       SetMenuInfo(Menu, LMenuInfo);
     end;
 
-
     //log('uIDNewItem-idCmdFirst '+IntToStr(uIDNewItem-idCmdFirst));
     Result := MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, uIDNewItem-idCmdFirst);
  except on  E : Exception do
@@ -2296,7 +2295,6 @@ begin
     end;
  end;
 end;
-
 
 
 function TDelphiDevShellToolsContextMenu.ShellExtInitialize(pidlFolder: PItemIDList;

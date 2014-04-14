@@ -1,7 +1,7 @@
 #define MyAppName 'Delphi Dev. Shell Tools'
 #define MyAppVersion GetFileVersion('Win64\Debug\DelphiDevShellTools.dll')
 [Types]
-Name: Debug; Description: Install Shell Extension with debug info (EurekaLog)
+Name: Debug; Description: Install Shell Extension with debug info (MadExcept)
 Name: Release; Description: Install Shell Extension
 
 [Components]
@@ -9,16 +9,18 @@ Name: program; Description: GUI for Shell Extension; Types: Debug Release; Flags
 Name: Debug; Description: Shell Extension with Debug info (MadExcept); Types: Debug; Flags: exclusive
 Name: Release; Description: Shell Extension; Types: Release; Flags: exclusive
 [Files]
-Source: Win64\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Debug
-Source: Win32\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Debug
-Source: Win64\Release\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Release
-Source: Win32\Release\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Release
+Source: Win64\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace; Components: Debug
+Source: Win32\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace; Components: Debug
+Source: Win64\Release\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace; Components: Release
+Source: Win32\Release\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace; Components: Release
 Source: GUI\GUIDelphiDevShell.exe; DestDir: {app}; Components: program
-Source: OpenSSL\openssl-1.0.1g-i386-win32\ssleay32.dll; DestDir: {app}; Check: not Is64BitInstallMode; Components: program
-Source: OpenSSL\openssl-1.0.1g-i386-win32\libeay32.dll; DestDir: {app}; Check: not Is64BitInstallMode; Components: program
-Source: OpenSSL\openssl-1.0.1g-x64_86-win64\ssleay32.dll; DestDir: {app}; Check: Is64BitInstallMode; Components: program
-Source: OpenSSL\openssl-1.0.1g-x64_86-win64\libeay32.dll; DestDir: {app}; Check: Is64BitInstallMode; Components: program
+;Source: OpenSSL\openssl-1.0.1g-i386-win32\ssleay32.dll; DestDir: {app}; Check: not Is64BitInstallMode; Components: program
+;Source: OpenSSL\openssl-1.0.1g-i386-win32\libeay32.dll; DestDir: {app}; Check: not Is64BitInstallMode; Components: program
+;Source: OpenSSL\openssl-1.0.1g-x64_86-win64\ssleay32.dll; DestDir: {app}; Check: Is64BitInstallMode; Components: program
+;Source: OpenSSL\openssl-1.0.1g-x64_86-win64\libeay32.dll; DestDir: {app}; Check: Is64BitInstallMode; Components: program
 Source: OpenSSL\openssl-1.0.1g-i386-win32\OpenSSL License.txt; DestDir: {app}; Components: program
+Source: OpenSSL\openssl-1.0.1g-i386-win32\ssleay32.dll; DestDir: {app}; Components: program
+Source: OpenSSL\openssl-1.0.1g-i386-win32\libeay32.dll; DestDir: {app}; Components: program
 Source: Settings.ini; DestDir: {userappdata}\DelphiDevShellTools
 Source: Tools.db; DestDir: {userappdata}\DelphiDevShellTools
 Source: macros.xml; DestDir: {userappdata}\DelphiDevShellTools
@@ -84,6 +86,8 @@ Source: ico\vcl.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
 Source: ico\win.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
 Source: Installer\VclStylesInno.dll; DestDir: {app}; Flags: dontcopy
 Source: Installer\Amakrits.vsf; DestDir: {app}; Flags: dontcopy
+Source: Installer\background.bmp; Flags: dontcopy
+
 [Run]
 Filename: regsvr32.exe; Parameters: "/s ""{app}\DelphiDevShellTools.dll"""; StatusMsg: Registering plugin
 [UninstallRun]
@@ -180,6 +184,43 @@ begin
     Result := 1;
 end;
 
+
+procedure BitmapImageOnClick(Sender: TObject);
+var
+  ErrorCode : Integer;
+begin
+  ShellExec('open', 'http://code.google.com/p/delphi-dev-shell-tools/', '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
+end;
+
+procedure CreateWizardPages;
+var
+  Page: TWizardPage;
+  BitmapImage: TBitmapImage;
+  BitmapFileName: String;
+begin
+  BitmapFileName := ExpandConstant('{tmp}\background.bmp');
+  ExtractTemporaryFile(ExtractFileName(BitmapFileName));
+
+  { TBitmapImage }
+  Page := CreateCustomPage(wpInstalling, 'Contributions',
+  'If you want show your appreciation for this project. Go to the code google page, login with you google account and star the project.');
+
+  BitmapImage := TBitmapImage.Create(Page);
+  BitmapImage.AutoSize := True;
+  BitmapImage.Left := 0;
+  BitmapImage.Top  := 0;
+  BitmapImage.Bitmap.LoadFromFile(BitmapFileName);
+  BitmapImage.Cursor := crHand;
+  BitmapImage.OnClick := @BitmapImageOnClick;
+  BitmapImage.Parent := Page.Surface;
+  BitmapImage.Align:=alCLient;
+  BitmapImage.Stretch:=True;
+end;
+
+procedure InitializeWizard();
+begin
+  CreateWizardPages;
+end;
 
 function InitializeSetup(): Boolean;
 begin
