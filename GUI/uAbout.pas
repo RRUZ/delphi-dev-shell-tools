@@ -1,24 +1,24 @@
-{**************************************************************************************************}
-{                                                                                                  }
-{ Unit uAbout                                                                                      }
-{ unit for the Delphi Dev Shell Tools                                                              }
-{ http://code.google.com/p/delphi-dev-shell-tools/                                                 }
-{                                                                                                  }
-{ The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License"); }
-{ you may not use this file except in compliance with the License. You may obtain a copy of the    }
-{ License at http://www.mozilla.org/MPL/                                                           }
-{                                                                                                  }
-{ Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF   }
-{ ANY KIND, either express or implied. See the License for the specific language governing rights  }
-{ and limitations under the License.                                                               }
-{                                                                                                  }
-{ The Original Code is uAbout.pas.                                                                 }
-{                                                                                                  }
-{ The Initial Developer of the Original Code is Rodrigo Ruz V.                                     }
-{ Portions created by Rodrigo Ruz V. are Copyright (C) 2013 Rodrigo Ruz V.                         }
-{ All Rights Reserved.                                                                             }
-{                                                                                                  }
-{**************************************************************************************************}
+//**************************************************************************************************
+//
+// Unit uAbout
+// unit for the Delphi Dev Shell Tools
+// http://code.google.com/p/delphi-dev-shell-tools/
+//
+// The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
+// you may not use this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.mozilla.org/MPL/
+//
+// Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF
+// ANY KIND, either express or implied. See the License for the specific language governing rights
+// and limitations under the License.
+//
+// The Original Code is uAbout.pas.
+//
+// The Initial Developer of the Original Code is Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2014 Rodrigo Ruz V.
+// All Rights Reserved.
+//
+//**************************************************************************************************
 
 unit uAbout;
 
@@ -118,7 +118,7 @@ begin
 
   LabelWindowsVersion.Caption    := Format('%s', [TOSVersion.ToString]);
   MemoCopyRights.Lines.Add('Shell Extension for Delphi Developers ');
-  MemoCopyRights.Lines.Add('Author Rodrigo Ruz rodrigo.ruz.v@gmail.com - © 2013 all rights reserved.');
+  MemoCopyRights.Lines.Add('Author Rodrigo Ruz rodrigo.ruz.v@gmail.com - © 2013-2014 all rights reserved.');
   MemoCopyRights.Lines.Add('http://code.google.com/p/delphi-dev-shell-tools/');
   MemoCopyRights.Lines.Add('');
   MemoCopyRights.Lines.Add('This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/)');

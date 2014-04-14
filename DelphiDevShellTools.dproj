@@ -5,8 +5,8 @@
         <FrameworkType>VCL</FrameworkType>
         <MainSource>DelphiDevShellTools.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <Config Condition="'$(Config)'==''">Release</Config>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Library</AppType>
         <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
@@ -116,7 +116,7 @@
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.4;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
-        <DCC_Define>EL;EUREKALOG;EUREKALOG_VER7;$(DCC_Define)</DCC_Define>
+        <DCC_Define>EL;madExcept;$(DCC_Define)</DCC_Define>
         <VerInfo_MinorVer>0</VerInfo_MinorVer>
         <VerInfo_MajorVer>1</VerInfo_MajorVer>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
@@ -133,7 +133,8 @@
         <DCC_DebugInformation>false</DCC_DebugInformation>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
-        <DCC_Define>EUREKALOG;EUREKALOG_VER7;$(DCC_Define)</DCC_Define>
+        <DCC_LocalDebugSymbols>true</DCC_LocalDebugSymbols>
+        <DCC_Define>madExcept;$(DCC_Define)</DCC_Define>
         <VerInfo_MinorVer>0</VerInfo_MinorVer>
         <VerInfo_Release>0</VerInfo_Release>
         <VerInfo_MajorVer>1</VerInfo_MajorVer>
@@ -145,6 +146,10 @@
         <DCC_DebugInformation>true</DCC_DebugInformation>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
+        <DCC_DebugInformation>true</DCC_DebugInformation>
+        <DCC_LocalDebugSymbols>true</DCC_LocalDebugSymbols>
+        <DCC_Define>madExcept;$(DCC_Define)</DCC_Define>
+        <DCC_MapFile>3</DCC_MapFile>
         <VerInfo_Release>0</VerInfo_Release>
         <VerInfo_MinorVer>0</VerInfo_MinorVer>
         <VerInfo_MajorVer>1</VerInfo_MajorVer>
@@ -163,6 +168,7 @@
         <DCCReference Include="units\uRegistry.pas"/>
         <DCCReference Include="units\uSupportedIDEs.pas"/>
         <DCCReference Include="units\uLazarusVersions.pas"/>
+        <DCCReference Include="units\uTasks.pas"/>
         <RidlCompile Include="DelphiDevShellTools.ridl"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
@@ -236,17 +242,7 @@
 <!-- EurekaLog First Line
 [Exception Log]
 EurekaLog Version=7001
-Activate=1
+Activate=0
 DeleteMapAfterCompile=1
 Encrypt Password=""
-idEurekaLog=1
-idEurekaLogDetailed=1
-idMSClassic=1
-idStepsToReproduce=1
-InjectCode=1
-InjectInfo=1
-InjectOptions=1
-loResCatchLeaks=1
-loResOnlyUnderDebugger=0
-ProjectID="{6A771832-A3B3-4FF9-BF54-91AA06B7325E}"
 EurekaLog Last Line -->

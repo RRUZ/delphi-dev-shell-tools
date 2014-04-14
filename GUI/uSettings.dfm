@@ -232,6 +232,10 @@ object FrmSettings: TFrmSettings
       end
       object TabSheet1: TTabSheet
         Caption = 'Menu'
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object Image1: TImage
           Left = 8
           Top = 21
@@ -572,6 +576,10 @@ object FrmSettings: TFrmSettings
       object TabSheet3: TTabSheet
         Caption = 'Custom Tools'
         ImageIndex = 2
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object Label7: TLabel
           Left = 139
           Top = 39

@@ -1,14 +1,12 @@
 library DelphiDevShellTools;
 
 uses
-  {$IFDEF EL}
-  EMemLeaks,
-  EResLeaks,
-  EDialogWinAPIMSClassic,
-  EDialogWinAPIEurekaLogDetailed,
-  EDialogWinAPIStepsToReproduce,
-  EDebugExports,
-  ExceptionLog7,
+  madLinkDisAsm,
+  madListHardware,
+  madListProcesses,
+  madListModules,
+  {$IFDEF DEBUG}
+  madExcept,
   {$ENDIF }
   System.Win.ComServ,
   DelphiDevShellTools_TLB in 'DelphiDevShellTools_TLB.pas',
@@ -17,7 +15,8 @@ uses
   uMisc in 'units\uMisc.pas',
   uRegistry in 'units\uRegistry.pas',
   uSupportedIDEs in 'units\uSupportedIDEs.pas',
-  uLazarusVersions in 'units\uLazarusVersions.pas';
+  uLazarusVersions in 'units\uLazarusVersions.pas',
+  uTasks in 'units\uTasks.pas';
 
 exports
   DllGetClassObject,

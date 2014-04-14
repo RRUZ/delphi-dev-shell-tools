@@ -6,7 +6,7 @@ Name: Release; Description: Install Shell Extension
 
 [Components]
 Name: program; Description: GUI for Shell Extension; Types: Debug Release; Flags: fixed
-Name: Debug; Description: Shell Extension with Debug info (EurekaLog); Types: Debug; Flags: exclusive
+Name: Debug; Description: Shell Extension with Debug info (MadExcept); Types: Debug; Flags: exclusive
 Name: Release; Description: Shell Extension; Types: Release; Flags: exclusive
 [Files]
 Source: Win64\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Debug
@@ -14,12 +14,12 @@ Source: Win32\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitI
 Source: Win64\Release\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Release
 Source: Win32\Release\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace regtypelib; Components: Release
 Source: GUI\GUIDelphiDevShell.exe; DestDir: {app}; Components: program
-Source: OpenSSL\openssl-1.0.1e-i386-win32\ssleay32.dll; DestDir: {app}; Check: not Is64BitInstallMode; Components: program
-Source: OpenSSL\openssl-1.0.1e-i386-win32\libeay32.dll; DestDir: {app}; Check: not Is64BitInstallMode; Components: program
-Source: OpenSSL\openssl-1.0.1e-x64_86-win64\ssleay32.dll; DestDir: {app}; Check: Is64BitInstallMode; Components: program
-Source: OpenSSL\openssl-1.0.1e-x64_86-win64\libeay32.dll; DestDir: {app}; Check: Is64BitInstallMode; Components: program
+Source: OpenSSL\openssl-1.0.1g-i386-win32\ssleay32.dll; DestDir: {app}; Check: not Is64BitInstallMode; Components: program
+Source: OpenSSL\openssl-1.0.1g-i386-win32\libeay32.dll; DestDir: {app}; Check: not Is64BitInstallMode; Components: program
+Source: OpenSSL\openssl-1.0.1g-x64_86-win64\ssleay32.dll; DestDir: {app}; Check: Is64BitInstallMode; Components: program
+Source: OpenSSL\openssl-1.0.1g-x64_86-win64\libeay32.dll; DestDir: {app}; Check: Is64BitInstallMode; Components: program
+Source: OpenSSL\openssl-1.0.1g-i386-win32\OpenSSL License.txt; DestDir: {app}; Components: program
 Source: Settings.ini; DestDir: {userappdata}\DelphiDevShellTools
-Source: OpenSSL\openssl-1.0.1e-i386-win32\OpenSSL License.txt; DestDir: {app}; Components: program
 Source: Tools.db; DestDir: {userappdata}\DelphiDevShellTools
 Source: macros.xml; DestDir: {userappdata}\DelphiDevShellTools
 Source: DelphiVersions.db; DestDir: {userappdata}\DelphiDevShellTools
@@ -117,7 +117,7 @@ DefaultGroupName=Delphi Dev Shell Tools
 
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl
-Name: basque; MessagesFile: compiler:Languages\Basque.isl
+;Name: basque; MessagesFile: compiler:Languages\Basque.isl
 Name: brazilianportuguese; MessagesFile: compiler:Languages\BrazilianPortuguese.isl
 Name: catalan; MessagesFile: compiler:Languages\Catalan.isl
 Name: czech; MessagesFile: compiler:Languages\Czech.isl
@@ -134,7 +134,7 @@ Name: norwegian; MessagesFile: compiler:Languages\Norwegian.isl
 Name: polish; MessagesFile: compiler:Languages\Polish.isl
 Name: portuguese; MessagesFile: compiler:Languages\Portuguese.isl
 Name: russian; MessagesFile: compiler:Languages\Russian.isl
-Name: slovak; MessagesFile: compiler:Languages\Slovak.isl
+;Name: slovak; MessagesFile: compiler:Languages\Slovak.isl
 Name: slovenian; MessagesFile: compiler:Languages\Slovenian.isl
 Name: spanish; MessagesFile: compiler:Languages\Spanish.isl
 
