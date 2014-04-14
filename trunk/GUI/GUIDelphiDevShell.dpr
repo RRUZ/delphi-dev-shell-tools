@@ -38,7 +38,8 @@ uses
   Vcl.Styles,
   uSettings in 'uSettings.pas' {FrmSettings},
   uMisc in '..\units\uMisc.pas',
-  uCheckSum in 'uCheckSum.pas' {FrmCheckSum};
+  uCheckSum in 'uCheckSum.pas' {FrmCheckSum},
+  Vcl.Styles.Utils.Menus in 'Vcl.Styles.Utils.Menus.pas';
 
 {$R *.res}
 
@@ -74,7 +75,7 @@ begin
 
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  TStyleManager.TrySetStyle('Smokey Quartz Kamri');
+  TStyleManager.TrySetStyle('Amakrits');
   if ParamCount>0 then
   begin
    if SameText('-about',ParamStr(1)) then

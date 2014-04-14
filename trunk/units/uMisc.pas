@@ -23,6 +23,9 @@ unit uMisc;
 
 interface
 
+{.$DEFINE ENABLELOG}
+
+
 uses
  Windows,
  Vcl.Graphics,
@@ -31,6 +34,16 @@ uses
  ImgList;
 
 type
+
+  TMethodInfo=class
+   hwnd   : HWND;
+   Value1 : TValue;
+   Value2 : TValue;
+   Value3 : TValue;
+   Value4 : TValue;
+   Method : procedure (Info : TMethodInfo) of object;
+  end;
+
 
   TSettings =class
   private
@@ -71,14 +84,6 @@ type
     property CheckSumExt : string read FCheckSumExt write FCheckSumExt;
   end;
 
-  TMethodInfo=class
-   hwnd   : HWND;
-   Value1 : TValue;
-   Value2 : TValue;
-   Value3 : TValue;
-   Value4 : TValue;
-   Method : procedure (Info : TMethodInfo) of object;
-  end;
 
   procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
   procedure ExtractIconFile(Icon: TIcon; const Filename: string;IconType : Cardinal);
@@ -115,6 +120,7 @@ type
   procedure ScaleImage32(const SourceBitmap, ResizedBitmap: TBitmap; const ScaleAmount: Double);
   function IsVistaOrLater : Boolean;
   function IconToBitmapPARGB32(hIcon : HICON): HBITMAP;
+  procedure log(const msg: string);
 
 implementation
 
@@ -174,6 +180,15 @@ const
   'ASSOCSTR_DDEIFEXEC',
   'ASSOCSTR_DDEAPPLICATION',
   'ASSOCSTR_DDETOPIC' );
+
+
+
+procedure log(const msg: string);
+begin
+ {$IFDEF ENABLELOG}
+  TFile.AppendAllText(IncludeTrailingPathDelimiter(GetTempDirectory)+'shelllog.txt', FormatDateTime('hh:nn:ss.zzz',Now)+' '+msg+sLineBreak);
+ {$ENDIF}
+end;
 
 
 function IsVistaOrLater : Boolean;

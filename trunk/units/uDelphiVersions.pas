@@ -68,7 +68,6 @@ type
     FIcon: TIcon;
     FIDEType: TSupportedIDEs;
     FBitmap: TBitmap;
-    //FBitmap13: TBitmap;
   public
     property Version : TDelphiVersions read FVersion;
     property Path    : string read FPath write FPath;
@@ -76,9 +75,7 @@ type
     property Icon    : TIcon read FIcon write FIcon;
     property IDEType : TSupportedIDEs read FIDEType write FIDEType;
     property Bitmap  : TBitmap read FBitmap write FBitmap;
-    //property Bitmap13: TBitmap read FBitmap13 write FBitmap13;
     constructor Create;
-
     Destructor  Destroy; override;
   end;
 
