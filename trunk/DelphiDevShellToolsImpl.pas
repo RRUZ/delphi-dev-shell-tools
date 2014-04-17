@@ -398,7 +398,7 @@ begin
                  DrawIconEx(hDC,rcItem.Left-16, rcItem.Top + (rcItem.Bottom - rcItem.Top - 16) div 2,  IconsDictExternal[PDrawItemStruct(lParam)^.itemID].Handle, 16, 16,  0, 0, DI_NORMAL);
           end
           else
-          if PDrawItemStruct(lParam)^.itemID=FOwnerDrawId then
+          if (PDrawItemStruct(lParam)^.itemID=FOwnerDrawId)  then
           begin
             with PDrawItemStruct(lParam)^ do
             begin
@@ -409,25 +409,27 @@ begin
                 try
                   LCanvas.Handle := hDC;
 
-                  if itemState = ODS_SELECTED then
-                  begin
-                    LCanvas.Brush.Color := clHighlight;
-                    LCanvas.Font.Color := clHighlightText;
-                  end
-                  else
-                  begin
-                    LCanvas.Brush.Color := clMenu;
-                    LCanvas.Font.Color := clMenuText;
-                  end;
+//                  if itemState = ODS_SELECTED then
+//                  begin
+//                    LCanvas.Brush.Color := clHighlight;
+//                    LCanvas.Font.Color := clHighlightText;
+//                  end
+//                  else
+//                  begin
+//                    LCanvas.Brush.Color := clMenu;
+//                    LCanvas.Font.Color := clMenuText;
+//                  end;
+
+                  LCanvas.Brush.Color := clMenu;
+                  LCanvas.Font.Color  := clMenuText;
+                  LCanvas.FillRect(rcItem);
 
                   Ly:=rcItem.Top  + Dy;
                   Lx:=rcItem.Left + Dx;
 
                   LCanvas.TextOut(Lx, Ly, 'Delphi Version (Detected)');
-                  LCanvas.TextOut(Lx+140, Ly, DelphiVersionsNames[FMSBuildDProj.DelphiVersion]);
                   LIcon:=TIcon.Create;
                   try
-
                     Found:=False;
                     for LCurrentDelphiVersionData in InstalledDelphiVersions do
                      if LCurrentDelphiVersionData.Version=FMSBuildDProj.DelphiVersion then
@@ -436,14 +438,25 @@ begin
                         Found:=True;
                         break;
                      end;
+                     {
+                     if Found then
+                     begin
+                       DrawIconEx(hDC, Lx+140, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                       LCanvas.TextOut(Lx+140+LIcon.Width+3, Ly, DelphiVersionsNames[FMSBuildDProj.DelphiVersion]);
+                     end
+                     else
+                       LCanvas.TextOut(Lx+140, Ly, DelphiVersionsNames[FMSBuildDProj.DelphiVersion]);
+                     }
+                     LCanvas.TextOut(Lx+140, Ly, DelphiVersionsNames[FMSBuildDProj.DelphiVersion]);
+                     if Found then
+                       DrawIconEx(hDC, Lx+140+LCanvas.TextWidth(DelphiVersionsNames[FMSBuildDProj.DelphiVersion])+3, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
+                  finally
+                   LIcon.Free;
+                  end;
 
-                    if not Found then
-                    begin
-                      if  FMSBuildDProj.DelphiVersion=Appmethod113 then
-                        LIcon.LoadFromResourceName(HInstance,'appmethod_ico')
-                      else
-                        LIcon.LoadFromResourceName(HInstance,'delphi_ico');
-                    end;
+                  LIcon:=TIcon.Create;
+                  try
+                   LIcon.LoadFromResourceName(HInstance,'delphi_ico');
                    DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
                   finally
                    LIcon.Free;
@@ -451,7 +464,7 @@ begin
 
 
                   Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                  LCanvas.TextOut(Lx, Ly, 'Application Type');
+                  LCanvas.TextOut(Lx, Ly, 'Project Type');
                   LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.AppType);
 
                   Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
