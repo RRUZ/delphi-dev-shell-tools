@@ -1810,8 +1810,8 @@ begin
          LMethodInfo:=TMethodInfo.Create;
          LMethodInfo.Method:=DelphiDevShellTasks.OpenRADStudio;
          LMethodInfo.Value1:=LCurrentDelphiVersionData;
-         LMethodInfo.Value2:=EmptyStr;
-         LMethodInfo.Value3:=FFileName;
+         LMethodInfo.Value2:=FFileName;
+         LMethodInfo.Value3:=EmptyStr;
          if LCurrentDelphiVersionData.Version>=Delphi2007 then
          LMethodInfo.Value3:='-pDelphi';
 
@@ -1937,7 +1937,7 @@ begin
          LMethodInfo.Method:=DelphiDevShellTasks.OpenRADStudio;
          LMethodInfo.Value1:=LCurrentDelphiVersionData;
          LMethodInfo.Value2:=FFileName;
-         LMethodInfo.Value3:=FFileName;
+         LMethodInfo.Value3:=EmptyStr;
          if LCurrentDelphiVersionData.Version>=Delphi2007 then
          LMethodInfo.Value3:='-pDelphi';
 
