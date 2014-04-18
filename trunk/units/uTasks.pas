@@ -418,11 +418,7 @@ var
 begin
  try
   LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
-  if Info.Value2.AsString<>'' then
-   LFileName:=Info.Value2.AsString
-  else
-   LFileName:=Info.Value3.AsString;
-
+  LFileName:=Info.Value2.AsString;
   //log('OpenRADStudio '+LDelphiVersion.Path+' '+Format(' "%s" "%s"',[LFileName, Info.Value3.AsString]));
   ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('"%s" "%s"',[LFileName, Info.Value3.AsString])) , nil , SW_SHOWNORMAL);
  except
