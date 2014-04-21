@@ -122,7 +122,7 @@ uses
 {$R images.res}
 
 var
-  InstalledDelphiVersions : TObjectList<TDelphiVersionData>;
+  InstalledDelphiVersions : TInstalledDelphiVerions;
   PAClientProfiles        : TPAClientProfileList;
   BitmapsDict        : TObjectDictionary<string, TBitmap>;
   IconsExternals     : TObjectDictionary<string, TIcon>;//TIcon is a instance
@@ -349,7 +349,7 @@ var
   LCanvas: TCanvas;
   SaveIndex: Integer;
   LIcon : TIcon;
-  LCurrentDelphiVersionData : TDelphiVersionData;
+  //LCurrentDelphiVersionData : TDelphiVersionData;
   Found : Boolean;
 begin
   try
@@ -430,14 +430,18 @@ begin
                   LCanvas.TextOut(Lx, Ly, 'Delphi Version (Detected)');
                   LIcon:=TIcon.Create;
                   try
-                    Found:=False;
-                    for LCurrentDelphiVersionData in InstalledDelphiVersions do
-                     if LCurrentDelphiVersionData.Version=FMSBuildDProj.DelphiVersion then
-                     begin
-                        LIcon.Assign(LCurrentDelphiVersionData.Icon);
-                        Found:=True;
-                        break;
-                     end;
+                    Found:=InstalledDelphiVersions.ContainsKey(FMSBuildDProj.DelphiVersion);
+                    if Found then
+                      LIcon.Assign(InstalledDelphiVersions[FMSBuildDProj.DelphiVersion].Icon);
+
+//                    for LCurrentDelphiVersionData in InstalledDelphiVersions do
+//                     if LCurrentDelphiVersionData.Version=FMSBuildDProj.DelphiVersion then
+//                     begin
+//                        LIcon.Assign(LCurrentDelphiVersionData.Icon);
+//                        Found:=True;
+//                        break;
+//                     end;
+
                      {
                      if Found then
                      begin
@@ -770,7 +774,7 @@ begin
      LMethodInfo.Value2:=FFileName;
      FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(LSubMenuIndex);
+     //Inc(LSubMenuIndex);
 
      {
       if not Settings.SubMenuCommonTasks then
@@ -947,16 +951,17 @@ var
   LMethodInfo : TMethodInfo;
 begin
  try
-  if not MatchText(FFileExt, SupportedExts) then exit;
+    if not MatchText(FFileExt, SupportedExts) then exit;
 
     //Open RAD Studio Command Prompt Here
-    Found:=false;
-    for LCurrentDelphiVersionData in InstalledDelphiVersions do
+    Found:=False;
+    for LCurrentDelphiVersionData in InstalledDelphiVersions.Values do
      if LCurrentDelphiVersionData.Version>=Delphi2007 then
      begin
       Found:=True;
       Break;
      end;
+
 
     if Found then
     begin
@@ -990,7 +995,7 @@ begin
         LSubMenu      := hMenu;
       end;
 
-      for LCurrentDelphiVersionData in InstalledDelphiVersions do
+      for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
        if LCurrentDelphiVersionData.Version>=Delphi2007 then
        begin
         InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(LCurrentDelphiVersionData.Name+' Command Prompt'), PWideChar(LCurrentDelphiVersionData.Name));
@@ -1239,17 +1244,19 @@ begin
 
      if (Length(DProjectVersion)=0) then exit;
 
-     Found:=False;
 
      LCurrentDelphiVersion:=DProjectVersion[0];
+     LCurrentDelphiVersionData:=InstalledDelphiVersions.Values.ToArray[0];
+     Found:=InstalledDelphiVersions.ContainsKey(LCurrentDelphiVersion);
+     if Found then
+       LCurrentDelphiVersionData:=InstalledDelphiVersions[LCurrentDelphiVersion];
 
-     LCurrentDelphiVersionData:=InstalledDelphiVersions[0];
-     for LCurrentDelphiVersionData in InstalledDelphiVersions do
-      if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
-      begin
-       Found:=True;
-       Break;
-      end;
+//     for LCurrentDelphiVersionData in InstalledDelphiVersions do
+//      if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
+//      begin
+//       Found:=True;
+//       Break;
+//      end;
 
      if Found and (InstalledDelphiVersions.Count>0) and (Length(DProjectVersion)>0) then
        begin
@@ -1379,8 +1386,8 @@ begin
 
      Found:=False;
 
-     for LCurrentDelphiVersionData in InstalledDelphiVersions do
-      if (LCurrentDelphiVersionData.Version>=DelphiXE2) and  not Found then
+     for LCurrentDelphiVersionData in InstalledDelphiVersions.Values do
+      if (LCurrentDelphiVersionData.Version>=DelphiXE2) and not Found then
        for i:= 0 to PAClientProfiles.Profiles.Count-1 do
         if PAClientProfiles.Profiles[i].RADStudioVersion=LCurrentDelphiVersionData.Version then
         begin
@@ -1424,7 +1431,7 @@ begin
 
           LFileName:=FFileName;
 
-        for LCurrentDelphiVersionData in InstalledDelphiVersions do
+        for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
           if (LCurrentDelphiVersionData.Version>=DelphiXE2) then
             for i:= 0 to PAClientProfiles.Profiles.Count-1 do
              if PAClientProfiles.Profiles[i].RADStudioVersion=LCurrentDelphiVersionData.Version then
@@ -1497,7 +1504,7 @@ begin
 
 
     Found:=False;
-    for LCurrentDelphiVersionData in InstalledDelphiVersions do
+    for LCurrentDelphiVersionData in InstalledDelphiVersions.Values do
     if (LCurrentDelphiVersionData.Version>=Delphi2007) and (  ((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or MatchText(FFileExt,['.groupproj','.proj'])) then
     begin
       Found:=True;
@@ -1537,7 +1544,7 @@ begin
         LSubMenu:=hMenu;
       end;
 
-      for LCurrentDelphiVersionData in InstalledDelphiVersions do
+      for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
        if (LCurrentDelphiVersionData.Version>=Delphi2007) and (((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or MatchText(FFileExt,['.groupproj','.proj'])) then
        begin
         InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('MSBuild with '+LCurrentDelphiVersionData.Name), PWideChar(LCurrentDelphiVersionData.Name));
@@ -1588,7 +1595,7 @@ begin
     if not MatchText(FFileExt, SupportedExts) then exit;
 
     Found:=False;
-    for LCurrentDelphiVersionData in InstalledDelphiVersions do
+    for LCurrentDelphiVersionData in InstalledDelphiVersions.Values do
     if LCurrentDelphiVersionData.Version>=DelphiXE2 then
     begin
       Found:=True;
@@ -1628,7 +1635,7 @@ begin
         LSubMenuIndex:=MenuIndex;
       end;
 
-      for LCurrentDelphiVersionData in InstalledDelphiVersions do
+      for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
        if LCurrentDelphiVersionData.Version>=DelphiXE2 then
        begin
         InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Use Viewer of '+LCurrentDelphiVersionData.Name), PWideChar(LCurrentDelphiVersionData.Name));
@@ -1782,7 +1789,8 @@ begin
 
      if  MatchText(FFileExt, ['.dproj', '.dpr']) then
      begin
-       for LCurrentDelphiVersionData in InstalledDelphiVersions do
+
+       for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
        //if LCurrentDelphiVersionData.Version>=Delphi2007 then
        begin
          Found:=False;
@@ -1829,7 +1837,7 @@ begin
      end
      else
      //if  MatchText(FFileExt, ['.pas','.inc','.pp','.dpk'])  then
-     for LCurrentDelphiVersionData in InstalledDelphiVersions do
+     for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
      begin
        sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name;
        InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), PWideChar(LCurrentDelphiVersionData.Name));
@@ -1909,7 +1917,7 @@ begin
 
      if  MatchText(FFileExt, ['.groupproj']) then
      begin
-       for LCurrentDelphiVersionData in InstalledDelphiVersions do
+       for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
        if LCurrentDelphiVersionData.Version>=Delphi2007 then
        begin
          Found:=False;
@@ -2012,7 +2020,7 @@ begin
            LClientDataSet.Filter:='Group = '+QuotedStr('Delphi Tools');
            LClientDataSet.Filtered:=True;
 
-           for LCurrentDelphiVersionData in InstalledDelphiVersions do
+           for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
            begin
             LClientDataSet.First;
 
@@ -2071,7 +2079,7 @@ var
   sValue, sSubMenuCaption, LMenuCaption : String;
   hSubMenu : HMENU;
   uIDNewItem: UINT;
-  LCurrentDelphiVersionData  : TDelphiVersionData;
+  //LCurrentDelphiVersionData  : TDelphiVersionData;
   LCurrentDelphiVersion      : TDelphiVersions;
   hSubMenuIndex  : Integer;
   Found : Boolean;
@@ -2174,14 +2182,15 @@ begin
        begin
          LCurrentDelphiVersion:=DProjectVersion[0];
 
-         Found:=False;
-         for LCurrentDelphiVersion in DProjectVersion do
-           for LCurrentDelphiVersionData in InstalledDelphiVersions do
-            if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
-            begin
-             Found:=True;
-             Break;
-            end;
+         Found:=InstalledDelphiVersions.ContainsKey(LCurrentDelphiVersion);
+
+//         for LCurrentDelphiVersion in DProjectVersion do
+//           for LCurrentDelphiVersionData in InstalledDelphiVersions do
+//            if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
+//            begin
+//             Found:=True;
+//             Break;
+//            end;
 
          if not Found then
          begin
@@ -2545,8 +2554,7 @@ initialization
   log('initialization');
   TDelphiDevShellObjectFactory.Create(ComServer, TDelphiDevShellToolsContextMenu, CLASS_DelphiDevShellToolsContextMenu, ciMultiInstance, tmApartment);
   Settings:=TSettings.Create;
-  InstalledDelphiVersions:=TObjectList<TDelphiVersionData>.Create;
-  FillListDelphiVersions(InstalledDelphiVersions);
+  InstalledDelphiVersions:=GetListInstalledDelphiVersions;
   PAClientProfiles:=TPAClientProfileList.Create(InstalledDelphiVersions);
 
   BitmapsDict        :=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
@@ -2612,7 +2620,7 @@ initialization
    end;
   MakeBitmapMenuTransparent(BitmapsDict.Items['logo24']);
 
-  for LCurrentDelphiVersionData in InstalledDelphiVersions do
+  for LCurrentDelphiVersionData in InstalledDelphiVersions.Values do
      if not BitmapsDict.ContainsKey(LCurrentDelphiVersionData.Name) then
      begin
        BitmapsDict.Add(LCurrentDelphiVersionData.Name, TBitmap.Create);
