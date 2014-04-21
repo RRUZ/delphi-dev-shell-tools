@@ -61,6 +61,9 @@ type
 
   SetDelphiVersions= TArray<TDelphiVersions>;
 
+
+
+
   TDelphiVersionData=Class
   private
     FVersion: TDelphiVersions;
@@ -80,7 +83,13 @@ type
     Destructor  Destroy; override;
   end;
 
-type
+  TInstalledDelphiVerions  = class(TDictionary<TDelphiVersions, TDelphiVersionData>)
+  private
+    function GetValuesSorted: TArray<TDelphiVersionData>;
+  public
+    property ValuesSorted : TArray<TDelphiVersionData> read GetValuesSorted;
+  end;
+
   TMSBuildDProj=class
   private
     FFrameworkType: string;
@@ -147,11 +156,11 @@ type
   TPAClientProfileList=class
   private
     FProfiles: TObjectList<TPAClientProfile>;
-    FListDelphiVersions:TList<TDelphiVersionData>;
+    FListDelphiVersions:TDictionary<TDelphiVersions, TDelphiVersionData>;
     procedure LoadData;
   public
     property    Profiles : TObjectList<TPAClientProfile> read FProfiles;
-    constructor Create(ListDelphiVersions:TList<TDelphiVersionData>);
+    constructor Create(ListDelphiVersions:TDictionary<TDelphiVersions, TDelphiVersionData>);
     Destructor  Destroy; override;
   end;
 
@@ -248,7 +257,7 @@ const
     '\Embarcadero\BDS\14.0'
     );
 
-  procedure FillListDelphiVersions(AList:TList<TDelphiVersionData>);
+  function  GetListInstalledDelphiVersions : TInstalledDelphiVerions;
   {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
   function DelphiIsOldVersion(DelphiVersion:TDelphiVersions) : Boolean;
   {$ENDIF}
@@ -470,13 +479,13 @@ begin
             if sVersion='15.2' then
              Exit(TArray<TDelphiVersions>.Create(Appmethod113))
             else
-             if MatchText(sVersion,['15.1','15.0']) then
+            if MatchText(sVersion,['15.1','15.0']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE5))
             else
             if sVersion='14.6' then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE4))
             else
-            if sVersion='14.3' then
+            if MatchText(sVersion,['14.3','14.4']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE3))
             else
             if sVersion='13.4' then
@@ -565,7 +574,7 @@ begin
  ReplaceColor(ABitmap, ColorLeftCorner, ColorBackMenu);
 end;
 
-procedure FillListDelphiVersions(AList:TList<TDelphiVersionData>);
+function  GetListInstalledDelphiVersions : TInstalledDelphiVerions;
 Var
   Factor : Double;
   VersionData : TDelphiVersionData;
@@ -576,6 +585,10 @@ Var
   TempBitmap  : TBitmap;
   CX : Integer;
 begin
+  Result:=TInstalledDelphiVerions.Create;
+  ColorBackMenu := GetSysColor(COLOR_MENU);
+  CX:=GetSystemMetrics(SM_CXMENUCHECK);
+
   for DelphiComp := Low(TDelphiVersions) to High(TDelphiVersions) do
   begin
     Found := RegKeyExists(DelphiRegPaths[DelphiComp], HKEY_CURRENT_USER);
@@ -589,8 +602,6 @@ begin
         Found := RegReadStr(DelphiRegPaths[DelphiComp], 'App', FileName, HKEY_LOCAL_MACHINE) and FileExists(FileName);
     end;
 
-
-    ColorBackMenu := GetSysColor(COLOR_MENU);
     if Found then
     begin
       VersionData:=TDelphiVersionData.Create;
@@ -601,7 +612,6 @@ begin
       VersionData.Icon    :=TIcon.Create;
       ExtractIconFile(VersionData.FIcon, Filename, SHGFI_SMALLICON);
 
-      CX:=GetSystemMetrics(SM_CXMENUCHECK);
       if CX>=16 then
       begin
         VersionData.FBitmap := Graphics.TBitmap.Create;
@@ -622,7 +632,7 @@ begin
 
       ColorLeftCorner := VersionData.FBitmap.Canvas.Pixels[0, 0];
       ReplaceColor(VersionData.FBitmap, ColorLeftCorner, ColorBackMenu);
-      AList.Add(VersionData);
+      Result.Add(VersionData.Version, VersionData);
     end;
   end;
 
@@ -656,7 +666,7 @@ end;
 
 { TPAClientProfileList }
 
-constructor TPAClientProfileList.Create(ListDelphiVersions:TList<TDelphiVersionData>);
+constructor TPAClientProfileList.Create(ListDelphiVersions:TDictionary<TDelphiVersions, TDelphiVersionData>);
 begin
   inherited Create;
   FListDelphiVersions:=ListDelphiVersions;
@@ -679,7 +689,7 @@ var
 begin
   CoInitialize(nil);
   try
-    for LDelphiVersionData in FListDelphiVersions do
+    for LDelphiVersionData in FListDelphiVersions.Values do
     if LDelphiVersionData.Version>=DelphiXE2  then
     begin
       sProfilePath:=IncludeTrailingPathDelimiter(GetSpecialFolder(CSIDL_APPDATA))+PAClientProfilesPaths[LDelphiVersionData.Version];
@@ -807,5 +817,24 @@ begin
 end;
 
 
+
+{ TInstalledDelphiVerions }
+
+function TInstalledDelphiVerions.GetValuesSorted: TArray<TDelphiVersionData>;
+begin
+  Result:=Values.ToArray;
+  TArray.Sort<TDelphiVersionData>(Result, TComparer<TDelphiVersionData>.Construct(
+       function (const L, R: TDelphiVersionData): integer
+       begin
+         if L.Version=R.Version then
+          Result:=0
+         else
+         if L.Version< R.Version then
+          Result:=-1
+         else
+          Result:=1;
+       end
+    ));
+end;
 
 end.
