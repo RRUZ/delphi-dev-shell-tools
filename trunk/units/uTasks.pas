@@ -35,34 +35,34 @@ type
   TDelphiDevShellTasks=class
   private
   public
-    function ParseMacros(const Data: string; DelphiVersionData  : TDelphiVersionData; const  FileName : string): string;
-    procedure OpenWithDelphi(Info : TMethodInfo);
-    procedure OpenRADStudio(Info : TMethodInfo);
-    procedure MSBuildWithDelphi_Default(Info : TMethodInfo);
-    procedure MSBuildWithDelphi(Info : TMethodInfo);
+    class function ParseMacros(const Data: string; DelphiVersionData  : TDelphiVersionData; const  FileName : string): string;
+    class procedure OpenWithDelphi(Info : TMethodInfo);
+    class procedure OpenRADStudio(Info : TMethodInfo);
+    class procedure MSBuildWithDelphi_Default(Info : TMethodInfo);
+    class procedure MSBuildWithDelphi(Info : TMethodInfo);
 
-    procedure OpenWithNotepad(Info : TMethodInfo);
-    procedure OpenWithApp(Info : TMethodInfo);
-    procedure OpenCmdHere(Info : TMethodInfo);
-    procedure CopyPathClipboard(Info : TMethodInfo);
-    procedure CopyFileNameClipboard(Info : TMethodInfo);
-    procedure CopyFileNameUrlClipboard(Info : TMethodInfo);
-    procedure CopyFileNameUNCClipboard(Info : TMethodInfo);
-    procedure CopyFileNameUnixClipboard(Info : TMethodInfo);
-    procedure CopyFileContentClipboard(Info : TMethodInfo);
-    procedure OpenGUI(Info : TMethodInfo);
-    procedure OpenGUICheckSum(Info : TMethodInfo);
-    procedure OpenRADCmd(Info : TMethodInfo);
+    class procedure OpenWithNotepad(Info : TMethodInfo);
+    class procedure OpenWithApp(Info : TMethodInfo);
+    class procedure OpenCmdHere(Info : TMethodInfo);
+    class procedure CopyPathClipboard(Info : TMethodInfo);
+    class procedure CopyFileNameClipboard(Info : TMethodInfo);
+    class procedure CopyFileNameUrlClipboard(Info : TMethodInfo);
+    class procedure CopyFileNameUNCClipboard(Info : TMethodInfo);
+    class procedure CopyFileNameUnixClipboard(Info : TMethodInfo);
+    class procedure CopyFileContentClipboard(Info : TMethodInfo);
+    class procedure OpenGUI(Info : TMethodInfo);
+    class procedure OpenGUICheckSum(Info : TMethodInfo);
+    class procedure OpenRADCmd(Info : TMethodInfo);
 
-    procedure OpenVclStyle(Info : TMethodInfo);
-    procedure PAClientTest(Info : TMethodInfo);
-    procedure RADTools(Info : TMethodInfo);
-    procedure ExternalTools(Info : TMethodInfo);
+    class procedure OpenVclStyle(Info : TMethodInfo);
+    class procedure PAClientTest(Info : TMethodInfo);
+    class procedure RADTools(Info : TMethodInfo);
+    class procedure ExternalTools(Info : TMethodInfo);
 
     //Lazarus & FPC
-    procedure OpenWithLazarus(Info : TMethodInfo);
-    procedure BuildWithLazBuild(Info : TMethodInfo);
-    procedure FPCTools(Info : TMethodInfo);
+    class procedure OpenWithLazarus(Info : TMethodInfo);
+    class procedure BuildWithLazBuild(Info : TMethodInfo);
+    class procedure FPCTools(Info : TMethodInfo);
     //-------------------
 
   end;
@@ -106,7 +106,7 @@ uses
 //  end;
 //end;
 
-procedure TDelphiDevShellTasks.BuildWithLazBuild(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.BuildWithLazBuild(Info: TMethodInfo);
 var
   LazBuild, BatchFileName, Params : string;
   BatchFile : TStrings;
@@ -126,61 +126,61 @@ begin
     end;
   except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.BuildWithLazBuild Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.BuildWithLazBuild Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
-procedure TDelphiDevShellTasks.CopyFileContentClipboard(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.CopyFileContentClipboard(Info: TMethodInfo);
 begin
  try
   Clipboard.AsText := TFile.ReadAllText(Info.Value1.AsString);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.CopyFileContentClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.CopyFileContentClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
-procedure TDelphiDevShellTasks.CopyFileNameClipboard(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.CopyFileNameClipboard(Info: TMethodInfo);
 begin
  try
   Clipboard.AsText := Info.Value1.AsString;
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.CopyFileNameClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.CopyFileNameClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
 
-procedure TDelphiDevShellTasks.CopyFileNameUNCClipboard(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.CopyFileNameUNCClipboard(Info: TMethodInfo);
 begin
  try
   Clipboard.AsText := GetUNCNameEx(Info.Value1.AsString);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.CopyFileNameUNCClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.CopyFileNameUNCClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
-procedure TDelphiDevShellTasks.CopyFileNameUnixClipboard(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.CopyFileNameUnixClipboard(Info: TMethodInfo);
 begin
  try
   Clipboard.AsText := StringReplace(Info.Value1.AsString, '\','/', [rfReplaceAll]);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.CopyFileNameUnixClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.CopyFileNameUnixClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
-procedure TDelphiDevShellTasks.CopyFileNameUrlClipboard(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.CopyFileNameUrlClipboard(Info: TMethodInfo);
 begin
  try
   Clipboard.AsText := LocalPathToFileURL(Info.Value1.AsString);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.CopyFileNameUrlClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.CopyFileNameUrlClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
-procedure TDelphiDevShellTasks.CopyPathClipboard(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.CopyPathClipboard(Info: TMethodInfo);
 var
   FilePath: string;
 begin
@@ -189,11 +189,11 @@ begin
   Clipboard.AsText := FilePath;
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.CopyPathClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.CopyPathClipboard Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
-procedure TDelphiDevShellTasks.ExternalTools(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.ExternalTools(Info: TMethodInfo);
 var
   BatchFileName, Params : string;
   BatchFile : TStrings;
@@ -215,12 +215,12 @@ begin
     end;
   except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.FPCTools Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.FPCTools Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
 
-function TDelphiDevShellTasks.ParseMacros(const Data: string; DelphiVersionData  : TDelphiVersionData;const FileName : string): string;
+class function TDelphiDevShellTasks.ParseMacros(const Data: string; DelphiVersionData  : TDelphiVersionData;const FileName : string): string;
 begin
   Result:=Data;
   if Pos('$', Result)>0 then
@@ -238,7 +238,7 @@ begin
 end;
 
 
-procedure TDelphiDevShellTasks.FPCTools(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.FPCTools(Info: TMethodInfo);
 var
   BatchFileName, Params : string;
   BatchFile : TStrings;
@@ -260,11 +260,11 @@ begin
     end;
   except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.FPCTools Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.FPCTools Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
-procedure TDelphiDevShellTasks.MSBuildWithDelphi(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.MSBuildWithDelphi(Info: TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
   LFileName, RsvarsPath, Params, BatchFileName, sPlatform, sConfig : string;
@@ -292,11 +292,11 @@ begin
   end;
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.MSBuildWithDelphi Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.MSBuildWithDelphi Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
-procedure TDelphiDevShellTasks.MSBuildWithDelphi_Default(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.MSBuildWithDelphi_Default(Info: TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
   LFileName, RsvarsPath, CompilerPath, Params, BatchFileName : string;
@@ -324,12 +324,12 @@ begin
   end;
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.MSBuildWithDelphi_Default Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.MSBuildWithDelphi_Default Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
 
-procedure TDelphiDevShellTasks.OpenCmdHere(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.OpenCmdHere(Info: TMethodInfo);
 var
   FilePath, BatchFileName, Params : string;
   BatchFile : TStrings;
@@ -355,32 +355,32 @@ begin
     end;
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.OpenCmdHere Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.OpenCmdHere Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
 
-procedure TDelphiDevShellTasks.OpenGUI(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.OpenGUI(Info: TMethodInfo);
 begin
  try
   ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(uMisc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.OpenGUI Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.OpenGUI Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
-procedure TDelphiDevShellTasks.OpenGUICheckSum(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.OpenGUICheckSum(Info: TMethodInfo);
 begin
  try
   ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(uMisc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString+' "'+Info.Value2.AsString+'"'), nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.OpenGUI Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.OpenGUI Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
-procedure TDelphiDevShellTasks.OpenRADCmd(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.OpenRADCmd(Info: TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
   RsvarsPath, FilePath, BatchFileName, Params : string;
@@ -406,12 +406,12 @@ begin
   end;
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.OpenRADCmd Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.OpenRADCmd Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
 
-procedure TDelphiDevShellTasks.OpenRADStudio(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.OpenRADStudio(Info: TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
   LFileName       : string;
@@ -423,12 +423,12 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('"%s" "%s"',[LFileName, Info.Value3.AsString])) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.OpenRADStudio Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.OpenRADStudio Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
 
-procedure TDelphiDevShellTasks.OpenVclStyle(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.OpenVclStyle(Info: TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
   LVclStyleEditor : string;
@@ -444,21 +444,21 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(LVclStyleEditor), PChar(Format('"%s"',[Info.Value2.AsString])) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.OpenVclStyle Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.OpenVclStyle Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
-procedure TDelphiDevShellTasks.OpenWithApp(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.OpenWithApp(Info: TMethodInfo);
 begin
  try
    ShellExecute(Info.hwnd, 'open', PChar(Info.Value1.AsString), PChar(Info.Value2.AsString) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.OpenWithApp Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.OpenWithApp Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
-procedure TDelphiDevShellTasks.OpenWithDelphi(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.OpenWithDelphi(Info: TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
 begin
@@ -468,12 +468,12 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('-pDelphi "%s"',[Info.Value1.AsString])) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.OpenWithDelphi Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.OpenWithDelphi Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
 
-procedure TDelphiDevShellTasks.OpenWithLazarus(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.OpenWithLazarus(Info: TMethodInfo);
 var
   LazarusIDE      : string;
 begin
@@ -483,22 +483,22 @@ begin
   ShellExecute(Info.hwnd, 'open', PChar(LazarusIDE), PChar(Format('"%s"',[Info.Value2.AsString])) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.OpenWithLazarus Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.OpenWithLazarus Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
 end;
 
-procedure TDelphiDevShellTasks.OpenWithNotepad(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.OpenWithNotepad(Info: TMethodInfo);
 begin
  try
   ShellExecute(Info.hwnd, 'open', 'C:\Windows\notepad.exe', PChar(Info.Value1.AsString) , nil , SW_SHOWNORMAL);
  except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.OpenWithNotepad Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.OpenWithNotepad Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
-procedure TDelphiDevShellTasks.PAClientTest(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.PAClientTest(Info: TMethodInfo);
 var
   LDelphiVersion  : TDelphiVersionData;
   LPAClientApp, BatchFileName, Params : string;
@@ -521,11 +521,11 @@ begin
     end;
   except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.PAClientTest Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.PAClientTest Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
-procedure TDelphiDevShellTasks.RADTools(Info: TMethodInfo);
+class procedure TDelphiDevShellTasks.RADTools(Info: TMethodInfo);
 var
   BatchFileName, Params : string;
   BatchFile : TStrings;
@@ -547,7 +547,7 @@ begin
     end;
   except
    on  E : Exception do
-   log(Format('TDelphiDevShellToolsContextMenu.RADTools Message %s  Trace %s',[E.Message, e.StackTrace]));
+   log(Format('TDelphiDevShellTasks.RADTools Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
