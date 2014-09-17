@@ -1,1 +1,1 @@
-regsvr32 "C:\Delphi\google-code\dev-shell-tools\Win64\Debug\DelphiDevShellTools.dll"
+regsvr32 "C:\Dephi\google-code\delphi-dev-shell-tools\Win64\Debug\DelphiDevShellTools.dll"

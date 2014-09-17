@@ -24,11 +24,6 @@ program GUIDelphiDevShell;
 
 uses
 {$IFDEF DEBUG}
-  madExcept,
-  madLinkDisAsm,
-  madListHardware,
-  madListProcesses,
-  madListModules,
 {$ENDIF}
   Vcl.Forms,
   Vcl.Dialogs,
@@ -82,7 +77,7 @@ begin
 
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  TStyleManager.TrySetStyle('Jet');
+  //TStyleManager.TrySetStyle('Jet');
   if ParamCount>0 then
   begin
    if SameText('-about',ParamStr(1)) then
