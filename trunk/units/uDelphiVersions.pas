@@ -56,7 +56,8 @@ type
     DelphiXE4,
     DelphiXE5,
     Appmethod113,
-    DelphiXE6
+    DelphiXE6,
+    DelphiXE7
 );
 
   SetDelphiVersions= TArray<TDelphiVersions>;
@@ -188,29 +189,8 @@ const
     'RAD Studio XE4',
     'RAD Studio XE5',
     'Appmethod 1.13',
-    'RAD Studio XE6'
-    );
-
-  DelphiVersionNumbers: array[TDelphiVersions] of double =
-    (
-  {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
-    13,      // 'Delphi 5',
-    14,      // 'Delphi 6',
-  {$ENDIF}
-    15,      // 'Delphi 7',
-    16,      // 'Delphi 8',
-    17,      // 'BDS 2005',
-    18,      // 'BDS 2006',
-    18.5,    // 'RAD Studio 2007',
-    20,      // 'RAD Studio 2009',
-    21,      // 'RAD Studio 2010',
-    22,      // 'RAD Studio XE'
-    23,      // 'RAD Studio XE2'
-    24,      // 'RAD Studio XE3'
-    25,      // 'RAD Studio XE4'
-    26,      // 'RAD Studio XE5'
-    27,      // 'Appmethod 1.13'
-    27       // 'RAD Studio XE6'
+    'RAD Studio XE6',
+    'RAD Studio XE7'
     );
 
 
@@ -233,7 +213,8 @@ const
     '\Software\Embarcadero\BDS\11.0',
     '\Software\Embarcadero\BDS\12.0',
     '\Software\Embarcadero\BDS\13.0',
-    '\Software\Embarcadero\BDS\14.0'
+    '\Software\Embarcadero\BDS\14.0',
+    '\Software\Embarcadero\BDS\15.0'
     );
 
  PAClientProfilesPaths: array[TDelphiVersions] of string = (
@@ -254,7 +235,8 @@ const
     '\Embarcadero\BDS\11.0',
     '\Embarcadero\BDS\12.0',
     '\Embarcadero\BDS\13.0',
-    '\Embarcadero\BDS\14.0'
+    '\Embarcadero\BDS\14.0',
+    '\Embarcadero\BDS\15.0'
     );
 
   function  GetListInstalledDelphiVersions : TInstalledDelphiVerions;
@@ -473,6 +455,9 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
+            if sVersion='16.0' then
+             Exit(TArray<TDelphiVersions>.Create(DelphiXE7))
+            else
             if sVersion='15.4' then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE6))
             else

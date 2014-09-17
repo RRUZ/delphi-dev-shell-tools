@@ -46,7 +46,8 @@
     <Base>true</Base>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Base)'!=''">
-    <VCL_Custom_Styles>"Jet|VCLSTYLE|$(PUBLIC)\Documents\RAD Studio\11.0\Styles\Jet.vsf"</VCL_Custom_Styles>
+    <VCL_Custom_Styles>
+    </VCL_Custom_Styles>
     <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     <Manifest_File>None</Manifest_File>
     <VerInfo_Locale>1033</VerInfo_Locale>
@@ -79,13 +80,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
     <DCC_MapFile>3</DCC_MapFile>
-    <DCC_Define>madExcept;$(DCC_Define)</DCC_Define>
     <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
     <Debugger_RunParams>-Settings</Debugger_RunParams>
-    <VerInfo_Build>51</VerInfo_Build>
+    <VerInfo_Build>54</VerInfo_Build>
     <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
     <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
-    <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.51;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+    <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.54;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     <DCC_RemoteDebug>false</DCC_RemoteDebug>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Cfg_2)'!=''">
