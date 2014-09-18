@@ -21,69 +21,69 @@ Source: GUI\GUIDelphiDevShell.exe; DestDir: {app}; Components: program
 Source: OpenSSL\openssl-1.0.1g-i386-win32\OpenSSL License.txt; DestDir: {app}; Components: program
 Source: OpenSSL\openssl-1.0.1g-i386-win32\ssleay32.dll; DestDir: {app}; Components: program
 Source: OpenSSL\openssl-1.0.1g-i386-win32\libeay32.dll; DestDir: {app}; Components: program
-Source: Settings.ini; DestDir: {userappdata}\DelphiDevShellTools
-Source: Tools.db; DestDir: {userappdata}\DelphiDevShellTools
-Source: macros.xml; DestDir: {userappdata}\DelphiDevShellTools
-Source: DelphiVersions.db; DestDir: {userappdata}\DelphiDevShellTools
-Source: ico\application_osx_terminal.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\application_xp_terminal.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\audits.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_green.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_orange.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_pink.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_purple.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_red.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_white.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_yellow.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\check_boxes.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\check_boxes_series.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\check_box_list.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\cog.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\compile.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\compile_error.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\compile_warning.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\delphi.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\document_properties.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\edit_chain.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\edit_diff.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\firemonkey.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\fpc_tools.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\ftp.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\ftp_accounts.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\ftp_session_control.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\gear_in.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\google_webmaster_tools.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\installer_box.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\interface_preferences.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\investment_menu_quality.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\ios.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\ip.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\ipad.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\iphone.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\lazarus.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\lazbuild.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\legend.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\light_circle_green.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\linechart.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\menu.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\menu_item.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\metrics.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\network_cloud.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\network_clouds.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\network_ethernet.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\network_folder.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\network_hub.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\network_ip.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\network_tools.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\network_wireless.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\osx.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\platforms.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\source_code.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\synchronize_ftp_password.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\system_monitor.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\touch.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\vcl.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
-Source: ico\win.ico; DestDir: {userappdata}\DelphiDevShellTools\Ico\
+Source: Settings.ini; DestDir: {commonappdata}\DelphiDevShellTools
+Source: Tools.db; DestDir: {commonappdata}\DelphiDevShellTools
+Source: macros.xml; DestDir: {commonappdata}\DelphiDevShellTools
+Source: DelphiVersions.db; DestDir: {commonappdata}\DelphiDevShellTools
+Source: ico\application_osx_terminal.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\application_xp_terminal.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\audits.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\bullet_green.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\bullet_orange.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\bullet_pink.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\bullet_purple.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\bullet_red.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\bullet_white.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\bullet_yellow.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\check_boxes.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\check_boxes_series.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\check_box_list.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\cog.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\compile.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\compile_error.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\compile_warning.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\delphi.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\document_properties.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\edit_chain.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\edit_diff.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\firemonkey.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\fpc_tools.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\ftp.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\ftp_accounts.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\ftp_session_control.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\gear_in.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\google_webmaster_tools.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\installer_box.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\interface_preferences.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\investment_menu_quality.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\ios.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\ip.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\ipad.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\iphone.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\lazarus.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\lazbuild.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\legend.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\light_circle_green.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\linechart.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\menu.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\menu_item.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\metrics.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\network_cloud.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\network_clouds.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\network_ethernet.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\network_folder.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\network_hub.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\network_ip.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\network_tools.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\network_wireless.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\osx.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\platforms.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\source_code.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\synchronize_ftp_password.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\system_monitor.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\touch.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\vcl.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
+Source: ico\win.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: Installer\VclStylesInno.dll; DestDir: {app}; Flags: dontcopy
 Source: Installer\Amakrits.vsf; DestDir: {app}; Flags: dontcopy
 Source: Installer\background.bmp; Flags: dontcopy
@@ -141,6 +141,9 @@ Name: russian; MessagesFile: compiler:Languages\Russian.isl
 ;Name: slovak; MessagesFile: compiler:Languages\Slovak.isl
 Name: slovenian; MessagesFile: compiler:Languages\Slovenian.isl
 Name: spanish; MessagesFile: compiler:Languages\Spanish.isl
+[Dirs]
+Name: {commonappdata}\DelphiDevShellTools; Permissions: everyone-full
+Name: {commonappdata}\DelphiDevShellTools\ico; Permissions: everyone-full
 
 [Code]
 // Import the LoadVCLStyle function from VclStylesInno.DLL
@@ -244,5 +247,3 @@ begin
     end;
   end;
 end;
-[Dirs]
-Name: {userappdata}\DelphiDevShellTools\ico
