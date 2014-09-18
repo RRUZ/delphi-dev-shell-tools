@@ -320,8 +320,8 @@ end;
 
 function GetDelphiDevShellToolsFolder : string;
 begin
- Result:=IncludeTrailingPathDelimiter(GetSpecialFolder(CSIDL_APPDATA))+ 'DelphiDevShellTools\';
- //C:\Users\Dexter\AppData\Roaming\DelphiDevShellTools\
+ Result:=IncludeTrailingPathDelimiter(GetSpecialFolder(CSIDL_COMMON_APPDATA))+ 'DelphiDevShellTools\';
+ //C:\ProgramData\DelphiDevShellTools
  ForceDirectories(Result);
 end;
 
