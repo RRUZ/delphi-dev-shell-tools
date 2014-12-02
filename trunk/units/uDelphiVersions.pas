@@ -193,8 +193,6 @@ const
     'RAD Studio XE7'
     );
 
-
-
   DelphiRegPaths: array[TDelphiVersions] of string = (
   {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
     '\Software\Borland\Delphi\5.0',
@@ -455,7 +453,7 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
-            if sVersion='16.0' then
+            if (sVersion='16.0') or (sVersion='16.1') then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE7))
             else
             if sVersion='15.4' then
