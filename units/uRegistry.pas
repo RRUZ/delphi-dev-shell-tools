@@ -99,7 +99,7 @@ var
   Reg: TRegistry;
 begin
   try
-    Reg := TRegistry.Create;
+    Reg := TRegistry.Create(KEY_READ or KEY_WOW64_32KEY);
     try
       Reg.RootKey := RootKey;
       Result      := Reg.OpenKey(RegPath, True);
@@ -139,7 +139,7 @@ var
   Reg: TRegistry;
 begin
   try
-    Reg := TRegistry.Create;
+    Reg := TRegistry.Create(KEY_READ or KEY_WOW64_32KEY);
     try
       Reg.RootKey := RootKey;
       Result      := Reg.OpenKey(RegPath, True);
@@ -153,12 +153,16 @@ begin
   end;
 end;
 
+
+type
+  TRegistryClass= class(TRegistry);
+
 function RegKeyExists(const RegPath: string; const RootKey: HKEY): boolean;
 var
   Reg: TRegistry;
 begin
   try
-    Reg := TRegistry.Create;
+    Reg := TRegistry.Create(KEY_READ or KEY_WOW64_32KEY);
     try
       Reg.RootKey := RootKey;
       Result      := Reg.KeyExists(RegPath);
@@ -168,6 +172,7 @@ begin
   except
     Result := False;
   end;
+
 end;
 
 end.

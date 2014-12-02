@@ -85,7 +85,7 @@ Source: ico\touch.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: ico\vcl.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: ico\win.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: Installer\VclStylesInno.dll; DestDir: {app}; Flags: dontcopy
-Source: Installer\Amakrits.vsf; DestDir: {app}; Flags: dontcopy
+Source: Installer\Auric.vsf; DestDir: {app}; Flags: dontcopy
 Source: Installer\background.bmp; Flags: dontcopy
 
 [Run]
@@ -227,8 +227,8 @@ end;
 
 function InitializeSetup(): Boolean;
 begin
-	ExtractTemporaryFile('Amakrits.vsf');
-	LoadVCLStyle(ExpandConstant('{tmp}\Amakrits.vsf'));
+   ExtractTemporaryFile('Auric.vsf');
+   LoadVCLStyle(ExpandConstant('{tmp}\Auric.vsf'));
    Result:=True;
 end;
 
