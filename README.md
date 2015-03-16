@@ -54,40 +54,45 @@ Please follow the next steps to fix.
  <li><strong>Open Command Line here</strong>  : Open the cmd.exe application in the folder of the selected file.</li>
  <li><strong>Open Command Line here as Administrator</strong>  : Open the cmd.exe application in the folder of the selected file as Administrator.</li>
 </lu>
+
 ---
 
-![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/CmdRAD.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/CmdRAD.png)
+![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/CmdRAD.png)
 > <li><strong>Open RAD Studio Command prompt here</strong>  : Open the RAD Studio Command prompt (of any installed Delphi version) in the folder of the selected file</li>
 
 ---
 
-![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/pas_menu.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/pas_menu.png)
+![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/pas_menu.png)
 > <li><strong>Open with Delphi(N)</strong>  : Open the selected file with any version of Delphi or Rad Studio installed</li>
 
 ---
 
 ## Specific Tasks for .dpr, .dproj files (Rad Studio Projects), .groupproj (Group Projects) ##
-![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/dproj_menu_new.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/dproj_menu_new.png)
+![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/dproj_menu_new.png)
 
-> <li><strong>Run MSBuild (Default Settings)</strong> : Execute MSBuild using the default settings of the selected .dproj file</li>
-> <li><strong>Run MSBuild With .. </strong>: Execute MSBuild using any of the platforms and targets detected in the selected .dproj file</li>
-> <li><strong>MSBuild</strong>: Allow to select and execute the MSBuild tool (associated to any version of the RAD Studio installed) using the default configuration of the project</li>
+<lu>
+ <li><strong>Run MSBuild (Default Settings)</strong> : Execute MSBuild using the default settings of the selected .dproj file</li>
+ <li><strong>Run MSBuild With .. </strong>: Execute MSBuild using any of the platforms and targets detected in the selected .dproj file</li>
+ <li><strong>MSBuild</strong>: Allow to select and execute the MSBuild tool (associated to any version of the RAD Studio installed) using the default configuration of the project</li>
+</lu>
 
 ---
 
 ## Specific Tasks for .lpi, .lpk files (Lazarus Projects and packages) ##
-![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/lazarus_menu.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/lazarus_menu.png)
-> <li><strong>Open with Lazarus IDE</strong>: Allow to open the selected file with the installed Lazarus IDE</li>
-> <li><strong>Build with lazbuild</strong>: Allow to build a project or package using the lazbuild tool</li>
+![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/lazarus_menu.png)
+<lu>
+ <li><strong>Open with Lazarus IDE</strong>: Allow to open the selected file with the installed Lazarus IDE</li>
+ <li><strong>Build with lazbuild</strong>: Allow to build a project or package using the lazbuild tool</li>
+</lu>
 
 ---
 
 ## Calculate CheckSum ##
-![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum_menu.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum_menu.png)
+![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum_menu.png)
 
 This option allow to calculate the checksum for the selected file, this option supports  <strong>CRC32, MD4, MD5, SHA1, SHA256, SHA384, SHA512</strong>
 
-![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum.png)
+![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum.png)
 
 ---
 
@@ -95,10 +100,10 @@ This option allow to calculate the checksum for the selected file, this option s
 
 The shell extension can be customized to support additional  file extensions in some tasks.
 
-![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/settings1.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/settings1.png)
+![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/settings1.png)
 
 ## Support for register customs applications ##
-![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/Custom_Tools.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/Custom_Tools.png)
+![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/Custom_Tools.png)
 
 This option allows you register a script which will be associated  to any specified extension.
 
