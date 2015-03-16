@@ -42,18 +42,18 @@ Please follow the next steps to fix.
 
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/common_tasks.png)
 
-<lu>
- <li><strong>Copy File Path to the clipboard</strong>  : Copy the path of the selected file to the clipboard.</li>
- <li><strong>Copy Full FileName to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard.</li>
- <li><strong>Copy FileName using URL format to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard using the Internet Path format</li>
- <li><strong>Copy FileName using UNC format to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard UNC format</li>
- <li><strong>Copy file content to the clipboard</strong>  : Copy the content of the selected file to the clipboard.</li>
- <li><strong>Open In Notepad</strong>  : Open the selected file in the notepad editor.</li>
- <li><strong>Open In Default text file editor</strong>  : Open the selected file in the default text editor installed.</li>
- <li><strong>Open In associated text editor</strong>  : Open the selected file in the associated text editor.</li>
- <li><strong>Open Command Line here</strong>  : Open the cmd.exe application in the folder of the selected file.</li>
- <li><strong>Open Command Line here as Administrator</strong>  : Open the cmd.exe application in the folder of the selected file as Administrator.</li>
-</lu>
+
+ * <strong>Copy File Path to the clipboard</strong>  : Copy the path of the selected file to the clipboard.
+ * <strong>Copy Full FileName to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard.
+ * <strong>Copy FileName using URL format to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard using the Internet Path format
+ * <strong>Copy FileName using UNC format to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard UNC format.
+ * <strong>Copy file content to the clipboard</strong>  : Copy the content of the selected file to the clipboard.
+ * <strong>Open In Notepad</strong>  : Open the selected file in the notepad editor.
+ * <strong>Open In Default text file editor</strong>  : Open the selected file in the default text editor installed.
+ * <strong>Open In associated text editor</strong>  : Open the selected file in the associated text editor.
+ * <strong>Open Command Line here</strong>  : Open the cmd.exe application in the folder of the selected file.
+ * <strong>Open Command Line here as Administrator</strong>  : Open the cmd.exe application in the folder of the selected file as Administrator.
+
 
 ---
 
@@ -70,20 +70,20 @@ Please follow the next steps to fix.
 ## Specific Tasks for .dpr, .dproj files (Rad Studio Projects), .groupproj (Group Projects) ##
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/dproj_menu_new.png)
 
-<lu>
- <li><strong>Run MSBuild (Default Settings)</strong> : Execute MSBuild using the default settings of the selected .dproj file</li>
- <li><strong>Run MSBuild With .. </strong>: Execute MSBuild using any of the platforms and targets detected in the selected .dproj file</li>
- <li><strong>MSBuild</strong>: Allow to select and execute the MSBuild tool (associated to any version of the RAD Studio installed) using the default configuration of the project</li>
-</lu>
+
+ * <strong>Run MSBuild (Default Settings)</strong> : Execute MSBuild using the default settings of the selected .dproj file.
+ * <strong>Run MSBuild With .. </strong>: Execute MSBuild using any of the platforms and targets detected in the selected .dproj file.
+ * <strong>MSBuild</strong>: Allow to select and execute the MSBuild tool (associated to any version of the RAD Studio installed) using the default configuration of the project.
+
 
 ---
 
 ## Specific Tasks for .lpi, .lpk files (Lazarus Projects and packages) ##
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/lazarus_menu.png)
-<lu>
- <li><strong>Open with Lazarus IDE</strong>: Allow to open the selected file with the installed Lazarus IDE</li>
- <li><strong>Build with lazbuild</strong>: Allow to build a project or package using the lazbuild tool</li>
-</lu>
+
+ * <strong>Open with Lazarus IDE</strong>: Allow to open the selected file with the installed Lazarus IDE.
+ * <strong>Build with lazbuild</strong>: Allow to build a project or package using the lazbuild tool.
+
 
 ---
 
