@@ -1,10 +1,10 @@
 ![](https://dl.dropboxusercontent.com/u/12733424/github/delphi-dev-shell-tools/logo.png)The <strong>Delphi Dev. Shell Tools</strong> is a  Windows shell extension with useful tasks for Object Pascal Developers (Delphi, Free Pascal).
 
 ## Features ##
-<lu>
- <li>Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006 and RAD Studio 2007, 2009, 2010, XE, XE2, XE3, XE4, XE5, XE6, XE7 Appmethod 1.13, Lazarus v1.0.1.3</li>
- <li>Works in Windows 8/7/Vista/XP. (x86 and x64 versions)</li>
-</lu>
+
+* Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006 and RAD Studio 2007, 2009, 2010, XE, XE2, XE3, XE4, XE5, XE6, XE7 Appmethod 1.13, Lazarus v1.0.1.3
+* Works in Windows 8/7/Vista/XP. (x86 and x64 versions)
+
 [![](https://dl.dropboxusercontent.com/u/12733424/Images/followrruz.png)](https://twitter.com/RRUZ)
 
 ---
