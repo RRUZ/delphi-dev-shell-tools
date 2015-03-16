@@ -1,10 +1,10 @@
 ![](https://dl.dropboxusercontent.com/u/12733424/github/delphi-dev-shell-tools/logo.png)The <strong>Delphi Dev. Shell Tools</strong> is a  Windows shell extension with useful tasks for Object Pascal Developers (Delphi, Free Pascal).
 
 ## Features ##
-
-> <li>Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006 and RAD Studio 2007, 2009, 2010, XE, XE2, XE3, XE4, XE5, XE6, XE7 Appmethod 1.13, Lazarus v1.0.1.3</li>
-> <li>Works in Windows 8/7/Vista/XP. (x86 and x64 versions)</li>
-
+<lu>
+ <li>Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006 and RAD Studio 2007, 2009, 2010, XE, XE2, XE3, XE4, XE5, XE6, XE7 Appmethod 1.13, Lazarus v1.0.1.3</li>
+ <li>Works in Windows 8/7/Vista/XP. (x86 and x64 versions)</li>
+</lu>
 [![](https://dl.dropboxusercontent.com/u/12733424/Images/followrruz.png)](https://twitter.com/RRUZ)
 
 ---
@@ -26,8 +26,7 @@ Please follow the next steps to fix.
   1. Now both shell extensions should work normally.
 
 
-> ![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/AVG.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/AVG.png)
-
+![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/AVG.png)
 
 
 ## Installer ##
@@ -37,25 +36,24 @@ Please follow the next steps to fix.
 [Download the installer - Mirror 2](https://docs.google.com/uc?export=download&id=0B7KzPH8HQCZNQmRnWUpxbEtaT3c)
 
 
-
-
 ---
 
 ### Common Tasks for .pas, .dpr, .inc, .pp, .dpk, . dproj, .dfm, .fmx, .rc, .lpk, lpr, .lpi extensions ###
 
-![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/common_tasks.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/common_tasks.png)
+![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/common_tasks.png)
 
-> <li><strong>Copy File Path to the clipboard</strong>  : Copy the path of the selected file to the clipboard.</li>
-> <li><strong>Copy Full FileName to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard.</li>
-> <li><strong>Copy FileName using URL format to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard using the Internet Path format</li>
-> <li><strong>Copy FileName using UNC format to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard UNC format</li>
-> <li><strong>Copy file content to the clipboard</strong>  : Copy the content of the selected file to the clipboard.</li>
-> <li><strong>Open In Notepad</strong>  : Open the selected file in the notepad editor.</li>
-> <li><strong>Open In Default text file editor</strong>  : Open the selected file in the default text editor installed.</li>
-> <li><strong>Open In associated text editor</strong>  : Open the selected file in the associated text editor.</li>
-> <li><strong>Open Command Line here</strong>  : Open the cmd.exe application in the folder of the selected file.</li>
-> <li><strong>Open Command Line here as Administrator</strong>  : Open the cmd.exe application in the folder of the selected file as Administrator.</li>
-
+<lu>
+ <li><strong>Copy File Path to the clipboard</strong>  : Copy the path of the selected file to the clipboard.</li>
+ <li><strong>Copy Full FileName to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard.</li>
+ <li><strong>Copy FileName using URL format to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard using the Internet Path format</li>
+ <li><strong>Copy FileName using UNC format to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard UNC format</li>
+ <li><strong>Copy file content to the clipboard</strong>  : Copy the content of the selected file to the clipboard.</li>
+ <li><strong>Open In Notepad</strong>  : Open the selected file in the notepad editor.</li>
+ <li><strong>Open In Default text file editor</strong>  : Open the selected file in the default text editor installed.</li>
+ <li><strong>Open In associated text editor</strong>  : Open the selected file in the associated text editor.</li>
+ <li><strong>Open Command Line here</strong>  : Open the cmd.exe application in the folder of the selected file.</li>
+ <li><strong>Open Command Line here as Administrator</strong>  : Open the cmd.exe application in the folder of the selected file as Administrator.</li>
+</lu>
 ---
 
 ![https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/CmdRAD.png](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/CmdRAD.png)
