@@ -58,12 +58,12 @@ Please follow the next steps to fix.
 ---
 
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/CmdRAD.png)
-> <li><strong>Open RAD Studio Command prompt here</strong>  : Open the RAD Studio Command prompt (of any installed Delphi version) in the folder of the selected file</li>
+ * <strong>Open RAD Studio Command prompt here</strong>  : Open the RAD Studio Command prompt (of any installed Delphi version) in the folder of the selected file.
 
 ---
 
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/pas_menu.png)
-> <li><strong>Open with Delphi(N)</strong>  : Open the selected file with any version of Delphi or Rad Studio installed</li>
+ * <strong>Open with Delphi(N)</strong>  : Open the selected file with any version of Delphi or Rad Studio installed.
 
 ---
 
