@@ -2,7 +2,7 @@
 //
 // Unit uDelphiVersions
 // unit for the Delphi Dev Shell Tools
-// http://code.google.com/p/delphi-dev-shell-tools/
+// https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
 // you may not use this file except in compliance with the License. You may obtain a copy of the
@@ -15,7 +15,7 @@
 // The Original Code is uDelphiVersions.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2014 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2015 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -462,7 +462,7 @@ begin
             if sVersion='15.2' then
              Exit(TArray<TDelphiVersions>.Create(Appmethod113))
             else
-            if MatchText(sVersion,['15.1','15.0']) then
+            if MatchText(sVersion,['15.3', '15.1', '15.0']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE5))
             else
             if sVersion='14.6' then
