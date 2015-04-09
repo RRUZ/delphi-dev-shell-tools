@@ -1,13 +1,15 @@
 library DelphiDevShellTools;
 
 uses
-  madLinkDisAsm,
-  madListHardware,
-  madListProcesses,
-  madListModules,
-  {$IFDEF DEBUG}
-  madExcept,
-  {$ENDIF }
+  {$IFDEF MADEXCEPTS}
+    madLinkDisAsm,
+    madListHardware,
+    madListProcesses,
+    madListModules,
+    {$IFDEF DEBUG}
+    madExcept,
+    {$ENDIF DEBUG}
+  {$ENDIF MADEXCEPTS}
   System.Win.ComServ,
   DelphiDevShellTools_TLB in 'DelphiDevShellTools_TLB.pas',
   DelphiDevShellToolsImpl in 'DelphiDevShellToolsImpl.pas',
