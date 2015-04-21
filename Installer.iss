@@ -222,7 +222,7 @@ end;
 
 procedure InitializeWizard();
 begin
-  CreateWizardPages;
+  //CreateWizardPages;
 end;
 
 function InitializeSetup(): Boolean;

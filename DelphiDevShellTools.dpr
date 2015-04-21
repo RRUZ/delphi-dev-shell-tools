@@ -2,12 +2,7 @@ library DelphiDevShellTools;
 
 uses
   {$IFDEF MADEXCEPTS}
-    madLinkDisAsm,
-    madListHardware,
-    madListProcesses,
-    madListModules,
     {$IFDEF DEBUG}
-    madExcept,
     {$ENDIF DEBUG}
   {$ENDIF MADEXCEPTS}
   System.Win.ComServ,

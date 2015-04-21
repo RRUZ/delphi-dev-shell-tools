@@ -457,28 +457,28 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
-            if (sVersion='17.0') then
+            if  MatchText(sVersion,['17.0', '17.1', '17.2']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE8))
             else
-            if (sVersion='16.0') or (sVersion='16.1') then
+            if  MatchText(sVersion,['16.0', '16.1']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE7))
             else
-            if sVersion='15.4' then
+            if MatchText(sVersion,['15.4']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE6))
             else
-            if sVersion='15.2' then
+            if MatchText(sVersion,['15.2']) then
              Exit(TArray<TDelphiVersions>.Create(Appmethod113))
             else
             if MatchText(sVersion,['15.3', '15.1', '15.0']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE5))
             else
-            if sVersion='14.6' then
+            if MatchText(sVersion,['14.6']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE4))
             else
             if MatchText(sVersion,['14.3','14.4']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE3))
             else
-            if sVersion='13.4' then
+            if MatchText(sVersion,['13.4']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE2))
             else
             if MatchText(sVersion,['12.2','12.3']) then

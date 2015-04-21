@@ -82,10 +82,10 @@
     <DCC_MapFile>3</DCC_MapFile>
     <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
     <Debugger_RunParams>-Settings</Debugger_RunParams>
-    <VerInfo_Build>59</VerInfo_Build>
+    <VerInfo_Build>63</VerInfo_Build>
     <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
     <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
-    <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.59;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+    <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.63;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     <DCC_RemoteDebug>false</DCC_RemoteDebug>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Cfg_2)'!=''">

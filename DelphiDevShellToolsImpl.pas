@@ -47,24 +47,24 @@ type
   IShellExtInit, IContextMenu, IContextMenu2, IContextMenu3)
   private
     FFileName, FFileExt: string;
-    DProjectVersion : SetDelphiVersions;
+    FDProjectVersion : SetDelphiVersions;
     FMSBuildDProj : TMSBuildDProj;
     FMSBuildGroupDProj : TMSBuildGroupProj;
     FMethodsDict : TObjectDictionary<Integer, TMethodInfo>;
     FOwnerDrawId : UINT;
     //]DelphiDevShellTasks : TDelphiDevShellTasks;
 
-    InstalledDelphiVersions : TInstalledDelphiVerions;
-    PAClientProfiles        : TPAClientProfileList;
-    BitmapsDict        : TObjectDictionary<string, TBitmap>;
-    IconsExternals     : TObjectDictionary<string, TIcon>;//TIcon is a instance
-    IconsDictExternal  : TDictionary<Integer, TIcon>;//TIcon is only a reference
-    IconsDictResources : TDictionary<Integer, string>;
+    FInstalledDelphiVersions : TInstalledDelphiVerions;
+    FPAClientProfiles        : TPAClientProfileList;
+    FBitmapsDict        : TObjectDictionary<string, TBitmap>;
+    FIconsExternals     : TObjectDictionary<string, TIcon>;//TIcon is a instance
+    FIconsDictExternal  : TDictionary<Integer, TIcon>;//TIcon is only a reference
+    FIconsDictResources : TDictionary<Integer, string>;
 
-    ExeNameTxt, FriendlyAppNameTxt : string;
-    LazarusInstalled : Boolean;
-    Settings         : TSettings;
-    DelphiToolsExts, ExternalToolsExts, FPCToolsExts     : TStringDynArray;
+    FExeNameTxt, FFriendlyAppNameTxt : string;
+    FLazarusInstalled : Boolean;
+    FSettings         : TSettings;
+    FDelphiToolsExts, FExternalToolsExts, FPCToolsExts     : TStringDynArray;
 
     procedure AddCommonTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
     procedure AddOpenRADCmdTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
@@ -93,6 +93,7 @@ type
     procedure RegisterBitmap(const ResourceName: string;const DictName:string='');
     procedure RegisterBitmap32(const ResourceName: string);
 
+    function  IsSeparator(MenuType: UINT): Boolean;
   protected
     function IShellExtInit.Initialize = ShellExtInitialize;
     function ShellExtInitialize(pidlFolder: PItemIDList; lpdobj: IDataObject; hKeyProgID: HKEY): HResult; stdcall;
@@ -159,12 +160,12 @@ end;
 procedure TDelphiDevShellToolsContextMenu.FreeResources;
 begin
   log('FreeResources init');
-  Settings.Free;
-  BitmapsDict.Free;
-  InstalledDelphiVersions.Free;
-  PAClientProfiles.Free;
-  IconsDictResources.Free;
-  IconsDictExternal.Free;
+  FSettings.Free;
+  FBitmapsDict.Free;
+  FInstalledDelphiVersions.Free;
+  FPAClientProfiles.Free;
+  FIconsDictResources.Free;
+  FIconsDictExternal.Free;
   log('FreeResources done');
 end;
 
@@ -190,11 +191,11 @@ begin
     CX:=GetSystemMetrics(SM_CXMENUCHECK);
     if CX>=16 then
     begin
-      BitmapsDict.Add(LDictName,TBitmap.Create);
+      FBitmapsDict.Add(LDictName,TBitmap.Create);
       LPng:=TPngImage.Create;
       try
         LPng.LoadFromResourceName(HInstance, ResourceName);
-        BitmapsDict.Items[LDictName].Assign(LPng);
+        FBitmapsDict.Items[LDictName].Assign(LPng);
       finally
         LPng.Free;
       end;
@@ -204,7 +205,7 @@ begin
       Factor:= CX/16;
       TempBitmap:=TBitmap.Create;
       try
-        BitmapsDict.Add(LDictName,TBitmap.Create);
+        FBitmapsDict.Add(LDictName,TBitmap.Create);
         LPng:=TPngImage.Create;
         try
           LPng.LoadFromResourceName(HInstance, ResourceName);
@@ -213,7 +214,7 @@ begin
           LPng.Free;
         end;
 
-        ScaleImage32(TempBitmap, BitmapsDict.Items[LDictName], Factor);
+        ScaleImage32(TempBitmap, FBitmapsDict.Items[LDictName], Factor);
       finally
         TempBitmap.Free;
       end;
@@ -238,7 +239,7 @@ begin
     s:=GetDevShellToolsImagesFolder+ResourceName;
     if IsVistaOrLater then
     begin
-        if (not BitmapsDict.ContainsKey(ResourceName)) and FileExists(s) then
+        if (not FBitmapsDict.ContainsKey(ResourceName)) and FileExists(s) then
         begin
           LPicture := TPicture.Create;
           try
@@ -246,18 +247,18 @@ begin
 
              if CX>=16 then
              begin
-              BitmapsDict.Add(ResourceName, TBitmap.Create);
-              BitmapsDict.Items[ResourceName].Assign(LPicture.Graphic);
+              FBitmapsDict.Add(ResourceName, TBitmap.Create);
+              FBitmapsDict.Items[ResourceName].Assign(LPicture.Graphic);
              end
              else
              begin
                 Factor:= CX/16;
                 TempBitmap:=TBitmap.Create;
                 try
-                  BitmapsDict.Add(ResourceName,TBitmap.Create);
-                  BitmapsDict.Items[ResourceName].PixelFormat:=pf32bit;
+                  FBitmapsDict.Add(ResourceName,TBitmap.Create);
+                  FBitmapsDict.Items[ResourceName].PixelFormat:=pf32bit;
                   TempBitmap.Assign(LPicture.Graphic);
-                  ScaleImage32(TempBitmap, BitmapsDict.Items[ResourceName], Factor);
+                  ScaleImage32(TempBitmap, FBitmapsDict.Items[ResourceName], Factor);
                 finally
                   TempBitmap.Free;
                 end;
@@ -268,10 +269,10 @@ begin
         end;
     end
     else
-    if (not IconsExternals.ContainsKey(ResourceName)) and FileExists(s) then
+    if (not FIconsExternals.ContainsKey(ResourceName)) and FileExists(s) then
     begin
-        IconsExternals.Add(ResourceName, TIcon.Create);
-        IconsExternals.Items[ResourceName].LoadFromFile(s);
+        FIconsExternals.Add(ResourceName, TIcon.Create);
+        FIconsExternals.Items[ResourceName].LoadFromFile(s);
     end;
  except
    on  E : Exception do
@@ -288,13 +289,13 @@ var
 begin
   try
     CX:=GetSystemMetrics(SM_CXMENUCHECK);
-    Settings:=TSettings.Create;
-    InstalledDelphiVersions:=GetListInstalledDelphiVersions;
-    PAClientProfiles:=TPAClientProfileList.Create(InstalledDelphiVersions);
-    BitmapsDict        :=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
-    IconsExternals     :=TObjectDictionary<string, TIcon>.Create([doOwnsValues]);
-    IconsDictExternal  :=TDictionary<Integer, TIcon>.Create;
-    IconsDictResources := TDictionary<Integer, string>.Create;
+    FSettings:=TSettings.Create;
+    FInstalledDelphiVersions:=GetListInstalledDelphiVersions;
+    FPAClientProfiles:=TPAClientProfileList.Create(FInstalledDelphiVersions);
+    FBitmapsDict        :=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
+    FIconsExternals     :=TObjectDictionary<string, TIcon>.Create([doOwnsValues]);
+    FIconsDictExternal  :=TDictionary<Integer, TIcon>.Create;
+    FIconsDictResources := TDictionary<Integer, string>.Create;
     RegisterBitmap('logo');
     RegisterBitmap('notepad');
     RegisterBitmap('cmd');
@@ -336,51 +337,51 @@ begin
 
      if CX>=16 then
      begin
-       BitmapsDict.Add('logo24',TBitmap.Create);
-       BitmapsDict.Items['logo24'].LoadFromResourceName(HInstance,'logo24');
+       FBitmapsDict.Add('logo24',TBitmap.Create);
+       FBitmapsDict.Items['logo24'].LoadFromResourceName(HInstance,'logo24');
      end
      else
      begin
         Factor:= CX/16;
         TempBitmap:=TBitmap.Create;
         try
-          BitmapsDict.Add('logo24',TBitmap.Create);
+          FBitmapsDict.Add('logo24',TBitmap.Create);
           TempBitmap.LoadFromResourceName(HInstance,'logo24');
-          ScaleImage(TempBitmap, BitmapsDict.Items['logo24'], Factor);
+          ScaleImage(TempBitmap, FBitmapsDict.Items['logo24'], Factor);
         finally
           TempBitmap.Free;
         end;
      end;
-    MakeBitmapMenuTransparent(BitmapsDict.Items['logo24']);
+    MakeBitmapMenuTransparent(FBitmapsDict.Items['logo24']);
 
-    for LCurrentDelphiVersionData in InstalledDelphiVersions.Values do
-       if not BitmapsDict.ContainsKey(LCurrentDelphiVersionData.Name) then
+    for LCurrentDelphiVersionData in FInstalledDelphiVersions.Values do
+       if not FBitmapsDict.ContainsKey(LCurrentDelphiVersionData.Name) then
        begin
-         BitmapsDict.Add(LCurrentDelphiVersionData.Name, TBitmap.Create);
-         BitmapsDict.Items[LCurrentDelphiVersionData.Name].Assign(LCurrentDelphiVersionData.Bitmap);
+         FBitmapsDict.Add(LCurrentDelphiVersionData.Name, TBitmap.Create);
+         FBitmapsDict.Items[LCurrentDelphiVersionData.Name].Assign(LCurrentDelphiVersionData.Bitmap);
        end;
 
      try
-       BitmapsDict.Add('txt',TBitmap.Create);
-       GetAssocAppByExt('foo.txt', ExeNameTxt, FriendlyAppNameTxt);
-       if (ExeNameTxt<>'') and TFile.Exists(ExeNameTxt)  then
+       FBitmapsDict.Add('txt',TBitmap.Create);
+       GetAssocAppByExt('foo.txt', FExeNameTxt, FFriendlyAppNameTxt);
+       if (FExeNameTxt<>'') and TFile.Exists(FExeNameTxt)  then
        begin
          if IsVistaOrLater then
          begin
            if CX<16 then
            begin
-             BitmapsDict.Add('txt2',TBitmap.Create);
-             ExtractBitmapFile32(BitmapsDict.Items['txt2'], ExeNameTxt, SHGFI_SMALLICON);
+             FBitmapsDict.Add('txt2',TBitmap.Create);
+             ExtractBitmapFile32(FBitmapsDict.Items['txt2'], FExeNameTxt, SHGFI_SMALLICON);
              Factor:= CX/16;
-             ScaleImage32( BitmapsDict.Items['txt2'], BitmapsDict.Items['txt'], Factor);
+             ScaleImage32( FBitmapsDict.Items['txt2'], FBitmapsDict.Items['txt'], Factor);
            end
            else
-             ExtractBitmapFile32(BitmapsDict.Items['txt'], GetLazarusIDEFileName, SHGFI_SMALLICON);
+             ExtractBitmapFile32(FBitmapsDict.Items['txt'], GetLazarusIDEFileName, SHGFI_SMALLICON);
          end
          else
          begin
-           IconsExternals.Add('txt', TIcon.Create);
-           ExtractIconFile( IconsExternals['txt'] , ExeNameTxt, SHGFI_SMALLICON);
+           FIconsExternals.Add('txt', TIcon.Create);
+           ExtractIconFile( FIconsExternals['txt'] , FExeNameTxt, SHGFI_SMALLICON);
          end;
        end;
      except
@@ -389,42 +390,42 @@ begin
      end;
 
      try
-       DelphiToolsExts:=GetGroupToolsExtensions('Delphi Tools');
+       FDelphiToolsExts:=GetGroupToolsExtensions('Delphi Tools');
      except
        on  E : Exception do
        log(Format('GetGroupToolsExtensions Message %s  Trace %s',[E.Message, e.StackTrace]));
      end;
 
      try
-       ExternalToolsExts:=GetGroupToolsExtensions('External Tools');
+       FExternalToolsExts:=GetGroupToolsExtensions('External Tools');
      except
        on  E : Exception do
        log(Format('GetGroupToolsExtensions Message %s  Trace %s',[E.Message, e.StackTrace]));
      end;
 
-     LazarusInstalled:=IsLazarusInstalled and TFile.Exists(GetLazarusIDEFileName);
+     FLazarusInstalled:=IsLazarusInstalled and TFile.Exists(GetLazarusIDEFileName);
 
-     if LazarusInstalled then
+     if FLazarusInstalled then
      begin
        try
          FPCToolsExts:=GetGroupToolsExtensions('FPC Tools');
-         BitmapsDict.Add('lazarus',TBitmap.Create);
+         FBitmapsDict.Add('lazarus',TBitmap.Create);
          if IsVistaOrLater then
          begin
            if CX<16 then
            begin
-             BitmapsDict.Add('lazarus2',TBitmap.Create);
-             ExtractBitmapFile32(BitmapsDict.Items['lazarus2'], GetLazarusIDEFileName, SHGFI_SMALLICON);
+             FBitmapsDict.Add('lazarus2',TBitmap.Create);
+             ExtractBitmapFile32(FBitmapsDict.Items['lazarus2'], GetLazarusIDEFileName, SHGFI_SMALLICON);
              Factor:= CX/16;
-             ScaleImage32( BitmapsDict.Items['lazarus2'], BitmapsDict.Items['lazarus'], Factor);
+             ScaleImage32( FBitmapsDict.Items['lazarus2'], FBitmapsDict.Items['lazarus'], Factor);
            end
            else
-             ExtractBitmapFile32(BitmapsDict.Items['lazarus'], GetLazarusIDEFileName, SHGFI_SMALLICON);
+             ExtractBitmapFile32(FBitmapsDict.Items['lazarus'], GetLazarusIDEFileName, SHGFI_SMALLICON);
          end
          else
          begin
-           IconsExternals.Add('lazarus', TIcon.Create);
-           ExtractIconFile(IconsExternals['lazarus'], GetLazarusIDEFileName, SHGFI_SMALLICON);
+           FIconsExternals.Add('lazarus', TIcon.Create);
+           ExtractIconFile(FIconsExternals['lazarus'], GetLazarusIDEFileName, SHGFI_SMALLICON);
          end;
        except
          on  E : Exception do
@@ -432,8 +433,8 @@ begin
        end;
      end;
 
-     ReadSettings(Settings);
-     if Settings.CheckForUpdates then
+     ReadSettings(FSettings);
+     if FSettings.CheckForUpdates then
        CheckUpdates;
   except
    on  E : Exception do
@@ -453,8 +454,8 @@ begin
     LMenuItem.fType  := MFT_STRING;
     LMenuItem.wID    := uIDNewItem;
     LMenuItem.dwTypeData := lpNewItem;
-    if (IconName<>nil) and (IsVistaOrLater and BitmapsDict.ContainsKey(IconName)) then
-      LMenuItem.hbmpItem   := BitmapsDict[IconName].Handle
+    if (IconName<>nil) and (IsVistaOrLater and FBitmapsDict.ContainsKey(IconName)) then
+      LMenuItem.hbmpItem   := FBitmapsDict[IconName].Handle
     else
     if (IconName<>nil) and not IsVistaOrLater then
       LMenuItem.hbmpItem   :=HBMMENU_CALLBACK;
@@ -484,9 +485,9 @@ begin
   if IsVistaOrLater then exit;
   //log('RegisterMenuItemBitmapDevShell '+IconName+' init');
   try
-    if not IconsDictResources.ContainsKey(wID) then
+    if not FIconsDictResources.ContainsKey(wID) then
     begin
-     IconsDictResources.Add(wID, IconName);
+     FIconsDictResources.Add(wID, IconName);
      log('RegisterMenuItemBitmapDevShell '+IconName+' ok wID '+IntToStr(wID));
     end;
   except
@@ -524,8 +525,8 @@ begin
   if IsVistaOrLater then exit;
 
   try
-    if not IconsDictExternal.ContainsKey(wID) then
-     IconsDictExternal.Add(wID, IconsExternals[IconName]);
+    if not FIconsDictExternal.ContainsKey(wID) then
+     FIconsDictExternal.Add(wID, FIconsExternals[IconName]);
   except
    on  E : Exception do
    log(Format('TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapDevShell Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -565,8 +566,8 @@ begin
     if GetMenuItemInfo(hMenu, MenuIndex-1, True, LMenuInfo) then
     begin
       //log('GetMenuItemInfo ok '+IntToStr(LMenuInfo.fType));
-      if (LMenuInfo.fType and MFT_SEPARATOR) = MFT_SEPARATOR then
-      else
+
+      if not IsSeparator(LMenuInfo.fType)  then
       begin
         //log('adding separator');
         InsertMenu(hMenu, MenuIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil);
@@ -622,6 +623,11 @@ begin
 end;
 
 
+function TDelphiDevShellToolsContextMenu.IsSeparator(MenuType: UINT): Boolean;
+begin
+ Result := (MenuType and MFT_SEPARATOR) = MFT_SEPARATOR;
+end;
+
 function TDelphiDevShellToolsContextMenu.MenuMessageHandler(uMsg: UINT; wParam: WPARAM; lParam: LPARAM; var lpResult: LRESULT): HResult; stdcall;
 const
   Dx = 20;
@@ -667,19 +673,19 @@ begin
           if PDrawItemStruct(lParam)^.itemID<>FOwnerDrawId then
           with PDrawItemStruct(lParam)^ do
           begin
-              if IconsDictResources.ContainsKey(PDrawItemStruct(lParam)^.itemID) then
+              if FIconsDictResources.ContainsKey(PDrawItemStruct(lParam)^.itemID) then
               begin
                 LIcon:=TIcon.Create;
                 try
-                 LIcon.LoadFromResourceName(HInstance,IconsDictResources[PDrawItemStruct(lParam)^.itemID]);
+                 LIcon.LoadFromResourceName(HInstance,FIconsDictResources[PDrawItemStruct(lParam)^.itemID]);
                  DrawIconEx(hDC,rcItem.Left-16, rcItem.Top + (rcItem.Bottom - rcItem.Top - 16) div 2,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
                 finally
                  LIcon.Free;
                 end;
               end
               else
-              if IconsDictExternal.ContainsKey(PDrawItemStruct(lParam)^.itemID) then
-                 DrawIconEx(hDC,rcItem.Left-16, rcItem.Top + (rcItem.Bottom - rcItem.Top - 16) div 2,  IconsDictExternal[PDrawItemStruct(lParam)^.itemID].Handle, 16, 16,  0, 0, DI_NORMAL);
+              if FIconsDictExternal.ContainsKey(PDrawItemStruct(lParam)^.itemID) then
+                 DrawIconEx(hDC,rcItem.Left-16, rcItem.Top + (rcItem.Bottom - rcItem.Top - 16) div 2,  FIconsDictExternal[PDrawItemStruct(lParam)^.itemID].Handle, 16, 16,  0, 0, DI_NORMAL);
           end
           else
           if (PDrawItemStruct(lParam)^.itemID=FOwnerDrawId)  then
@@ -714,9 +720,9 @@ begin
                   LCanvas.TextOut(Lx, Ly, 'Delphi Version (Detected)');
                   LIcon:=TIcon.Create;
                   try
-                    Found:=InstalledDelphiVersions.ContainsKey(FMSBuildDProj.DelphiVersion);
+                    Found:=FInstalledDelphiVersions.ContainsKey(FMSBuildDProj.DelphiVersion);
                     if Found then
-                      LIcon.Assign(InstalledDelphiVersions[FMSBuildDProj.DelphiVersion].Icon);
+                      LIcon.Assign(FInstalledDelphiVersions[FMSBuildDProj.DelphiVersion].Icon);
 
 //                    for LCurrentDelphiVersionData in InstalledDelphiVersions do
 //                     if LCurrentDelphiVersionData.Version=FMSBuildDProj.DelphiVersion then
@@ -959,8 +965,8 @@ begin
   try
    if not MatchText(FFileExt, SupportedExts) then exit;
 
-      if (1=1){Settings.SubMenuCommonTasks} then
-      begin
+//      if (1=1){Settings.SubMenuCommonTasks} then
+//      begin
         LSubMenuIndex :=0;
         LSubMenu   := CreatePopupMenu;
         sSubMenuCaption:='Calculate Checksum';
@@ -973,21 +979,21 @@ begin
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
-        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['checksum'].Handle, HBMMENU_CALLBACK);
-        LMenuItem.hbmpChecked   := BitmapsDict['checksum'].Handle;
-        LMenuItem.hbmpUnchecked := BitmapsDict['checksum'].Handle;
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['checksum'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := FBitmapsDict['checksum'].Handle;
+        LMenuItem.hbmpUnchecked := FBitmapsDict['checksum'].Handle;
 
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
         RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, uIDNewItem, 'checksum_ico');
         Inc(uIDNewItem);
         Inc(MenuIndex);
-      end
-      else
-      begin
-         LSubMenuIndex:=MenuIndex;
-         LSubMenu:=hMenu;
-      end;
-
+//      end
+//      else
+//      begin
+//         LSubMenuIndex:=MenuIndex;
+//         LSubMenu:=hMenu;
+//      end;
+//
 
 
      InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate CRC32'), nil);
@@ -1080,7 +1086,7 @@ begin
   try
    if not MatchText(FFileExt, SupportedExts) then exit;
 
-      if Settings.SubMenuCommonTasks then
+      if FSettings.SubMenuCommonTasks then
       begin
         LSubMenuIndex :=0;
         LSubMenu   := CreatePopupMenu;
@@ -1094,9 +1100,9 @@ begin
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
-        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['common'].Handle, HBMMENU_CALLBACK);
-        LMenuItem.hbmpChecked   := BitmapsDict['common'].Handle;
-        LMenuItem.hbmpUnchecked := BitmapsDict['common'].Handle;
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['common'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := FBitmapsDict['common'].Handle;
+        LMenuItem.hbmpUnchecked := FBitmapsDict['common'].Handle;
 
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
         if not IsVistaOrLater then
@@ -1176,14 +1182,14 @@ begin
      Inc(LSubMenuIndex);
 
      try
-       if (ExeNameTxt<>'') and (not SameText('notepad.exe', ExtractFileName(ExeNameTxt))) then
+       if (FExeNameTxt<>'') and (not SameText('notepad.exe', ExtractFileName(FExeNameTxt))) then
        begin
-           log(ExtractFileName(ExeNameTxt));
-           InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Open In '+FriendlyAppNameTxt), 'txt');
+           log(ExtractFileName(FExeNameTxt));
+           InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Open In '+FFriendlyAppNameTxt), 'txt');
            RegisterMenuItemBitmapExternal(LSubMenu, LSubMenuIndex, uIDNewItem, 'txt');
            LMethodInfo:=TMethodInfo.Create;
            LMethodInfo.Method:=TDelphiDevShellTasks.OpenWithApp;
-           LMethodInfo.Value1:=ExeNameTxt;
+           LMethodInfo.Value1:=FExeNameTxt;
            LMethodInfo.Value2:=FFileName;
            FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
            Inc(uIDNewItem);
@@ -1215,7 +1221,7 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-      if not Settings.SubMenuCommonTasks then
+      if not FSettings.SubMenuCommonTasks then
        MenuIndex:=LSubMenuIndex;
 
   except
@@ -1239,7 +1245,7 @@ begin
 
     //Open RAD Studio Command Prompt Here
     Found:=False;
-    for LCurrentDelphiVersionData in InstalledDelphiVersions.Values do
+    for LCurrentDelphiVersionData in FInstalledDelphiVersions.Values do
      if LCurrentDelphiVersionData.Version>=Delphi2007 then
      begin
       Found:=True;
@@ -1249,7 +1255,7 @@ begin
 
     if Found then
     begin
-      if Settings.SubMenuOpenCmdRAD then
+      if FSettings.SubMenuOpenCmdRAD then
       begin
         LSubMenuIndex :=0;
         LSubMenu   := CreatePopupMenu;
@@ -1263,9 +1269,9 @@ begin
         LMenuItem.hSubMenu   := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
-        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['radcmd'].Handle, HBMMENU_CALLBACK);
-        LMenuItem.hbmpChecked   := BitmapsDict['radcmd'].Handle;
-        LMenuItem.hbmpUnchecked := BitmapsDict['radcmd'].Handle;
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['radcmd'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := FBitmapsDict['radcmd'].Handle;
+        LMenuItem.hbmpUnchecked := FBitmapsDict['radcmd'].Handle;
 
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
         if not IsVistaOrLater then
@@ -1279,12 +1285,12 @@ begin
         LSubMenu      := hMenu;
       end;
 
-      for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
+      for LCurrentDelphiVersionData in FInstalledDelphiVersions.ValuesSorted do
        if LCurrentDelphiVersionData.Version>=Delphi2007 then
        begin
         InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(LCurrentDelphiVersionData.Name+' Command Prompt'), PWideChar(LCurrentDelphiVersionData.Name));
-        if not IconsDictExternal.ContainsKey(uIDNewItem) then
-          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+        if not FIconsDictExternal.ContainsKey(uIDNewItem) then
+          FIconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
         //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
         LMethodInfo:=TMethodInfo.Create;
         LMethodInfo.Method:=TDelphiDevShellTasks.OpenRADCmd;
@@ -1295,7 +1301,7 @@ begin
         Inc(LSubMenuIndex);
        end;
 
-      if not Settings.SubMenuOpenCmdRAD then
+      if not FSettings.SubMenuOpenCmdRAD then
        MenuIndex:=LSubMenuIndex;
     end;
  except
@@ -1322,8 +1328,8 @@ begin
     if not MatchText(FFileExt, SupportedExts) then exit;
 
 
-      if (1=1){Settings.SubMenuLazarus} then
-      begin
+//      if (1=1){Settings.SubMenuLazarus} then
+//      begin
         LSubMenuIndex :=0;
         LSubMenu   := CreatePopupMenu;
         sSubMenuCaption:='External Tools';
@@ -1336,9 +1342,9 @@ begin
         LMenuItem.hSubMenu   := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
-        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['wrench'].Handle, HBMMENU_CALLBACK);
-        LMenuItem.hbmpChecked   := BitmapsDict['wrench'].Handle;
-        LMenuItem.hbmpUnchecked := BitmapsDict['wrench'].Handle;
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['wrench'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := FBitmapsDict['wrench'].Handle;
+        LMenuItem.hbmpUnchecked := FBitmapsDict['wrench'].Handle;
 
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
 
@@ -1346,12 +1352,12 @@ begin
           RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, uIDNewItem, 'wrench_ico');
         Inc(uIDNewItem);
         Inc(MenuIndex);
-      end
-      else
-      begin
-         LSubMenuIndex:=MenuIndex;
-         LSubMenu:=hMenu;
-      end;
+//      end
+//      else
+//      begin
+//         LSubMenuIndex:=MenuIndex;
+//         LSubMenu:=hMenu;
+//      end;
 
        LClientDataSet:= TClientDataSet.Create(nil);
        try
@@ -1426,8 +1432,8 @@ begin
     if not MatchText(FFileExt, SupportedExts) then exit;
 
 
-      if (1=1){Settings.SubMenuLazarus} then
-      begin
+//      if (1=1){Settings.SubMenuLazarus} then
+//      begin
         LSubMenuIndex :=0;
         LSubMenu   := CreatePopupMenu;
         sSubMenuCaption:='Free Pascal Tools';
@@ -1440,9 +1446,9 @@ begin
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
-        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['fpc_tools'].Handle, HBMMENU_CALLBACK);
-        LMenuItem.hbmpChecked   := BitmapsDict['fpc_tools'].Handle;
-        LMenuItem.hbmpUnchecked := BitmapsDict['fpc_tools'].Handle;
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['fpc_tools'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := FBitmapsDict['fpc_tools'].Handle;
+        LMenuItem.hbmpUnchecked := FBitmapsDict['fpc_tools'].Handle;
 
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
 
@@ -1450,12 +1456,12 @@ begin
           RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, uIDNewItem, 'fpc_tools_ico');
         Inc(uIDNewItem);
         Inc(MenuIndex);
-      end
-      else
-      begin
-         LSubMenuIndex:=MenuIndex;
-         LSubMenu:=hMenu;
-      end;
+//      end
+//      else
+//      begin
+//         LSubMenuIndex:=MenuIndex;
+//         LSubMenu:=hMenu;
+//      end;
 
        LClientDataSet:= TClientDataSet.Create(nil);
        try
@@ -1526,14 +1532,14 @@ begin
   try
      if not MatchText(FFileExt, SupportedExts) then exit;
 
-     if (Length(DProjectVersion)=0) then exit;
+     if (Length(FDProjectVersion)=0) then exit;
 
 
-     LCurrentDelphiVersion:=DProjectVersion[0];
-     LCurrentDelphiVersionData:=InstalledDelphiVersions.Values.ToArray[0];
-     Found:=InstalledDelphiVersions.ContainsKey(LCurrentDelphiVersion);
+     LCurrentDelphiVersion:=FDProjectVersion[0];
+     LCurrentDelphiVersionData:=FInstalledDelphiVersions.Values.ToArray[0];
+     Found:=FInstalledDelphiVersions.ContainsKey(LCurrentDelphiVersion);
      if Found then
-       LCurrentDelphiVersionData:=InstalledDelphiVersions[LCurrentDelphiVersion];
+       LCurrentDelphiVersionData:=FInstalledDelphiVersions[LCurrentDelphiVersion];
 
 //     for LCurrentDelphiVersionData in InstalledDelphiVersions do
 //      if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
@@ -1542,14 +1548,14 @@ begin
 //       Break;
 //      end;
 
-     if Found and (InstalledDelphiVersions.Count>0) and (Length(DProjectVersion)>0) then
+     if Found and (FInstalledDelphiVersions.Count>0) and (Length(FDProjectVersion)>0) then
        begin
 
-        if Settings.SubMenuMSBuild then
+        if FSettings.SubMenuMSBuild then
         begin
           LSubMenuIndex :=0;
           LSubMenu   := CreatePopupMenu;
-          sSubMenuCaption:='Run MSBuild '+DelphiVersionsNames[DProjectVersion[0]];
+          sSubMenuCaption:='Run MSBuild '+DelphiVersionsNames[FDProjectVersion[0]];
 
           ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
           LMenuItem.cbSize   := SizeOf(TMenuItemInfo);
@@ -1559,9 +1565,9 @@ begin
           LMenuItem.hSubMenu := LSubMenu;
           LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
           LMenuItem.cch := Length(sSubMenuCaption);
-          LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
-          LMenuItem.hbmpChecked   := BitmapsDict['delphi'].Handle;
-          LMenuItem.hbmpUnchecked := BitmapsDict['delphi'].Handle;
+          LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
+          LMenuItem.hbmpChecked   := FBitmapsDict['delphi'].Handle;
+          LMenuItem.hbmpUnchecked := FBitmapsDict['delphi'].Handle;
           InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
 
           if not IsVistaOrLater then
@@ -1579,7 +1585,7 @@ begin
           LFileName:=ChangeFileExt(FFileName,'.dproj');
 
          if  (FMSBuildDProj<>nil) and (FMSBuildDProj.ValidData) then
-         for LCurrentDelphiVersion in DProjectVersion do
+         for LCurrentDelphiVersion in FDProjectVersion do
          for sPlatform in FMSBuildDProj.TargetPlatforms do
          begin
 
@@ -1642,7 +1648,7 @@ begin
            end;
          end;
 
-        if not Settings.SubMenuMSBuild then
+        if not FSettings.SubMenuMSBuild then
           MenuIndex:=LSubMenuIndex;
 
        end;
@@ -1670,20 +1676,20 @@ begin
 
      Found:=False;
 
-     for LCurrentDelphiVersionData in InstalledDelphiVersions.Values do
+     for LCurrentDelphiVersionData in FInstalledDelphiVersions.Values do
       if (LCurrentDelphiVersionData.Version>=DelphiXE2) and not Found then
-       for i:= 0 to PAClientProfiles.Profiles.Count-1 do
-        if PAClientProfiles.Profiles[i].RADStudioVersion=LCurrentDelphiVersionData.Version then
+       for i:= 0 to FPAClientProfiles.Profiles.Count-1 do
+        if FPAClientProfiles.Profiles[i].RADStudioVersion=LCurrentDelphiVersionData.Version then
         begin
          Found:=True;
          Break;
         end;
 
-     if Found and (InstalledDelphiVersions.Count>0)  then
+     if Found and (FInstalledDelphiVersions.Count>0)  then
        begin
 
-        if {Settings.SubMenuMSBuild}1=1 then
-        begin
+//        if {Settings.SubMenuMSBuild}1=1 then
+//        begin
           LSubMenuIndex :=0;
           LSubMenu   := CreatePopupMenu;
           sSubMenuCaption:='PAClient';
@@ -1696,9 +1702,9 @@ begin
           LMenuItem.hSubMenu := LSubMenu;
           LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
           LMenuItem.cch := Length(sSubMenuCaption);
-          LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
-          LMenuItem.hbmpChecked   := BitmapsDict['delphi'].Handle;
-          LMenuItem.hbmpUnchecked := BitmapsDict['delphi'].Handle;
+          LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
+          LMenuItem.hbmpChecked   := FBitmapsDict['delphi'].Handle;
+          LMenuItem.hbmpUnchecked := FBitmapsDict['delphi'].Handle;
           InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
 
           if not IsVistaOrLater then
@@ -1706,21 +1712,21 @@ begin
 
           Inc(uIDNewItem);
           Inc(MenuIndex);
-        end
-        else
-        begin
-          LSubMenu:=hMenu;
-          LSubMenuIndex:=MenuIndex;
-        end;
+//        end
+//        else
+//        begin
+//          LSubMenu:=hMenu;
+//          LSubMenuIndex:=MenuIndex;
+//        end;
 
           LFileName:=FFileName;
 
-        for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
+        for LCurrentDelphiVersionData in FInstalledDelphiVersions.ValuesSorted do
           if (LCurrentDelphiVersionData.Version>=DelphiXE2) then
-            for i:= 0 to PAClientProfiles.Profiles.Count-1 do
-             if PAClientProfiles.Profiles[i].RADStudioVersion=LCurrentDelphiVersionData.Version then
+            for i:= 0 to FPAClientProfiles.Profiles.Count-1 do
+             if FPAClientProfiles.Profiles[i].RADStudioVersion=LCurrentDelphiVersionData.Version then
              begin
-               LPAClientProfile:=PAClientProfiles.Profiles[i];
+               LPAClientProfile:=FPAClientProfiles.Profiles[i];
                sSubMenuCaption:='Test Profile '+LPAClientProfile.Name+Format(' (Platform : %s - Host : %s - Port : %d)',[LPAClientProfile.Platform, LPAClientProfile.Host, LPAClientProfile.Port]);
 
                  if StartsText('Win', LPAClientProfile.Platform) then
@@ -1762,7 +1768,7 @@ begin
                  Inc(LSubMenuIndex);
              end;
 
-        if not Settings.SubMenuMSBuild then
+        if not FSettings.SubMenuMSBuild then
           MenuIndex:=LSubMenuIndex;
 
        end;
@@ -1788,7 +1794,7 @@ begin
 
 
     Found:=False;
-    for LCurrentDelphiVersionData in InstalledDelphiVersions.Values do
+    for LCurrentDelphiVersionData in FInstalledDelphiVersions.Values do
     if (LCurrentDelphiVersionData.Version>=Delphi2007) and (  ((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or MatchText(FFileExt,['.groupproj','.proj'])) then
     begin
       Found:=True;
@@ -1797,7 +1803,7 @@ begin
 
     if Found then
     begin
-      if Settings.SubMenuMSBuildAnother then
+      if FSettings.SubMenuMSBuildAnother then
       begin
         LSubMenuIndex :=0;
         LSubMenu   := CreatePopupMenu;
@@ -1811,9 +1817,9 @@ begin
         LMenuItem.hSubMenu   := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
-        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['msbuild'].Handle, HBMMENU_CALLBACK);
-        LMenuItem.hbmpChecked   := BitmapsDict['msbuild'].Handle;
-        LMenuItem.hbmpUnchecked := BitmapsDict['msbuild'].Handle;
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['msbuild'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := FBitmapsDict['msbuild'].Handle;
+        LMenuItem.hbmpUnchecked := FBitmapsDict['msbuild'].Handle;
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
 
         if not IsVistaOrLater then
@@ -1828,14 +1834,14 @@ begin
         LSubMenu:=hMenu;
       end;
 
-      for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
+      for LCurrentDelphiVersionData in FInstalledDelphiVersions.ValuesSorted do
        if (LCurrentDelphiVersionData.Version>=Delphi2007) and (((FMSBuildDProj <>nil) and (LCurrentDelphiVersionData.Version<>FMSBuildDProj.DelphiVersion)) or MatchText(FFileExt,['.groupproj','.proj'])) then
        begin
         InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('MSBuild with '+LCurrentDelphiVersionData.Name), PWideChar(LCurrentDelphiVersionData.Name));
 
         if not IsVistaOrLater then
-        if not IconsDictExternal.ContainsKey(uIDNewItem) then
-          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+        if not FIconsDictExternal.ContainsKey(uIDNewItem) then
+          FIconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
 
         //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
         LMethodInfo:=TMethodInfo.Create;
@@ -1855,7 +1861,7 @@ begin
         Inc(LSubMenuIndex);
        end;
 
-      if not Settings.SubMenuMSBuildAnother then
+      if not FSettings.SubMenuMSBuildAnother then
         MenuIndex:=LSubMenuIndex;
 
     end;
@@ -1879,7 +1885,7 @@ begin
     if not MatchText(FFileExt, SupportedExts) then exit;
 
     Found:=False;
-    for LCurrentDelphiVersionData in InstalledDelphiVersions.Values do
+    for LCurrentDelphiVersionData in FInstalledDelphiVersions.Values do
     if LCurrentDelphiVersionData.Version>=DelphiXE2 then
     begin
       Found:=True;
@@ -1888,7 +1894,7 @@ begin
 
     if Found then
     begin
-      if Settings.SubMenuOpenVclStyle then
+      if FSettings.SubMenuOpenVclStyle then
       begin
         LSubMenuIndex :=0;
         LSubMenu   := CreatePopupMenu;
@@ -1902,9 +1908,9 @@ begin
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
-        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['vcl'].Handle, HBMMENU_CALLBACK);
-        LMenuItem.hbmpChecked   := BitmapsDict['vcl'].Handle;
-        LMenuItem.hbmpUnchecked := BitmapsDict['vcl'].Handle;
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['vcl'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := FBitmapsDict['vcl'].Handle;
+        LMenuItem.hbmpUnchecked := FBitmapsDict['vcl'].Handle;
 
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
         if not IsVistaOrLater then
@@ -1919,14 +1925,14 @@ begin
         LSubMenuIndex:=MenuIndex;
       end;
 
-      for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
+      for LCurrentDelphiVersionData in FInstalledDelphiVersions.ValuesSorted do
        if LCurrentDelphiVersionData.Version>=DelphiXE2 then
        begin
         InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Use Viewer of '+LCurrentDelphiVersionData.Name), PWideChar(LCurrentDelphiVersionData.Name));
 
         if not IsVistaOrLater then
-        if not IconsDictExternal.ContainsKey(uIDNewItem) then
-          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+        if not FIconsDictExternal.ContainsKey(uIDNewItem) then
+          FIconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
 
         //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
         LMethodInfo:=TMethodInfo.Create;
@@ -1938,7 +1944,7 @@ begin
         Inc(LSubMenuIndex);
        end;
 
-      if not Settings.SubMenuOpenVclStyle then
+      if not FSettings.SubMenuOpenVclStyle then
        MenuIndex:=LSubMenuIndex;
     end;
   except
@@ -1959,7 +1965,7 @@ begin
   try
     if not MatchText(FFileExt, SupportedExts) then exit;
 
-      if Settings.SubMenuLazarus then
+      if FSettings.SubMenuLazarus then
       begin
         LSubMenuIndex :=0;
         LSubMenu   := CreatePopupMenu;
@@ -1973,9 +1979,9 @@ begin
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
-        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['lazarusmenu'].Handle, HBMMENU_CALLBACK);
-        LMenuItem.hbmpChecked   := BitmapsDict['lazarusmenu'].Handle;
-        LMenuItem.hbmpUnchecked := BitmapsDict['lazarusmenu'].Handle;
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['lazarusmenu'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := FBitmapsDict['lazarusmenu'].Handle;
+        LMenuItem.hbmpUnchecked := FBitmapsDict['lazarusmenu'].Handle;
 
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
 
@@ -2018,7 +2024,7 @@ begin
       end;
 
 
-      if not Settings.SubMenuLazarus then
+      if not FSettings.SubMenuLazarus then
        MenuIndex:=LSubMenuIndex;
 
   except
@@ -2039,9 +2045,9 @@ var
   LMethodInfo : TMethodInfo;
 begin
   try
-     if (InstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
+     if (FInstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
 
-     if Settings.SubMenuOpenDelphi then
+     if FSettings.SubMenuOpenDelphi then
      begin
       LSubMenuIndex :=0;
       LSubMenu   := CreatePopupMenu;
@@ -2055,9 +2061,9 @@ begin
       LMenuItem.hSubMenu := LSubMenu;
       LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
       LMenuItem.cch := Length(sSubMenuCaption);
-      LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
-      LMenuItem.hbmpChecked   := BitmapsDict['delphi'].Handle;
-      LMenuItem.hbmpUnchecked := BitmapsDict['delphi'].Handle;
+      LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
+      LMenuItem.hbmpChecked   := FBitmapsDict['delphi'].Handle;
+      LMenuItem.hbmpUnchecked := FBitmapsDict['delphi'].Handle;
       InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
       if not IsVistaOrLater then
       RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, uIDNewItem, 'delphi_ico');
@@ -2074,12 +2080,12 @@ begin
      if  MatchText(FFileExt, ['.dproj', '.dpr']) then
      begin
 
-       for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
+       for LCurrentDelphiVersionData in FInstalledDelphiVersions.ValuesSorted do
        //if LCurrentDelphiVersionData.Version>=Delphi2007 then
        begin
          Found:=False;
          if LCurrentDelphiVersionData.Version>=Delphi2007 then
-         for LCurrentDelphiVersion in DProjectVersion do
+         for LCurrentDelphiVersion in FDProjectVersion do
          if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
          begin
            sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name+' (Detected)';
@@ -2096,8 +2102,8 @@ begin
          end;
 
         if not IsVistaOrLater then
-        if not IconsDictExternal.ContainsKey(uIDNewItem) then
-          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+        if not FIconsDictExternal.ContainsKey(uIDNewItem) then
+          FIconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
          //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
          LMethodInfo:=TMethodInfo.Create;
          LMethodInfo.Method:=TDelphiDevShellTasks.OpenRADStudio;
@@ -2121,14 +2127,14 @@ begin
      end
      else
      //if  MatchText(FFileExt, ['.pas','.inc','.pp','.dpk'])  then
-     for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
+     for LCurrentDelphiVersionData in FInstalledDelphiVersions.ValuesSorted do
      begin
        sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name;
        InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), PWideChar(LCurrentDelphiVersionData.Name));
 
         if not IsVistaOrLater then
-        if not IconsDictExternal.ContainsKey(uIDNewItem) then
-          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+        if not FIconsDictExternal.ContainsKey(uIDNewItem) then
+          FIconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
 
        //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
        LMethodInfo:=TMethodInfo.Create;
@@ -2144,7 +2150,7 @@ begin
        Inc(LSubMenuIndex);
      end;
 
-     if not Settings.SubMenuOpenDelphi then
+     if not FSettings.SubMenuOpenDelphi then
       MenuIndex:=LSubMenuIndex;
   except
     on  E : Exception do
@@ -2166,10 +2172,10 @@ var
   LMethodInfo : TMethodInfo;
 begin
   try
-     if (InstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
+     if (FInstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
 
 
-     if Settings.SubMenuOpenDelphi then
+     if FSettings.SubMenuOpenDelphi then
      begin
       LSubMenuIndex :=0;
       LSubMenu   := CreatePopupMenu;
@@ -2183,9 +2189,9 @@ begin
       LMenuItem.hSubMenu := LSubMenu;
       LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
       LMenuItem.cch := Length(sSubMenuCaption);
-      LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
-      LMenuItem.hbmpChecked   := BitmapsDict['delphi'].Handle;
-      LMenuItem.hbmpUnchecked := BitmapsDict['delphi'].Handle;
+      LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
+      LMenuItem.hbmpChecked   := FBitmapsDict['delphi'].Handle;
+      LMenuItem.hbmpUnchecked := FBitmapsDict['delphi'].Handle;
       InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
       if not IsVistaOrLater then
       RegisterMenuItemBitmapDevShell(hMenu, MenuIndex, uIDNewItem, 'delphi_ico');
@@ -2201,11 +2207,11 @@ begin
 
      if  MatchText(FFileExt, ['.groupproj']) then
      begin
-       for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
+       for LCurrentDelphiVersionData in FInstalledDelphiVersions.ValuesSorted do
        if LCurrentDelphiVersionData.Version>=Delphi2007 then
        begin
          Found:=False;
-         for LCurrentDelphiVersion in DProjectVersion do
+         for LCurrentDelphiVersion in FDProjectVersion do
          if LCurrentDelphiVersionData.Version=LCurrentDelphiVersion then
          begin
            sSubMenuCaption:='Open with '+LCurrentDelphiVersionData.Name+' (Detected)';
@@ -2222,8 +2228,8 @@ begin
          end;
 
         if not IsVistaOrLater then
-        if not IconsDictExternal.ContainsKey(uIDNewItem) then
-          IconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
+        if not FIconsDictExternal.ContainsKey(uIDNewItem) then
+          FIconsDictExternal.Add(uIDNewItem, LCurrentDelphiVersionData.Icon);
          //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, LCurrentDelphiVersionData.Bitmap.Handle, LCurrentDelphiVersionData.Bitmap.Handle);
          LMethodInfo:=TMethodInfo.Create;
          LMethodInfo.Method:=TDelphiDevShellTasks.OpenRADStudio;
@@ -2239,7 +2245,7 @@ begin
        end
      end;
 
-     if not Settings.SubMenuOpenDelphi then
+     if not FSettings.SubMenuOpenDelphi then
       MenuIndex:=LSubMenuIndex;
   except
     on  E : Exception do
@@ -2261,11 +2267,11 @@ var
   LArray : TStringDynArray;
 begin
   try
-    if (InstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
+    if (FInstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
 
 
-      if (1=1) then
-      begin
+//      if (1=1) then
+//      begin
         LSubMenuIndex :=0;
         LSubMenu   := CreatePopupMenu;
         sSubMenuCaption:='Delphi && RAD Studio Tools';
@@ -2278,9 +2284,9 @@ begin
         LMenuItem.hSubMenu := LSubMenu;
         LMenuItem.dwTypeData := PWideChar(sSubMenuCaption);
         LMenuItem.cch := Length(sSubMenuCaption);
-        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
-        LMenuItem.hbmpChecked   := BitmapsDict['delphi'].Handle;
-        LMenuItem.hbmpUnchecked := BitmapsDict['delphi'].Handle;
+        LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['delphi'].Handle, HBMMENU_CALLBACK);
+        LMenuItem.hbmpChecked   := FBitmapsDict['delphi'].Handle;
+        LMenuItem.hbmpUnchecked := FBitmapsDict['delphi'].Handle;
         InsertMenuItem(hMenu, MenuIndex, True, LMenuItem);
 
         if not IsVistaOrLater then
@@ -2288,12 +2294,12 @@ begin
 
         Inc(uIDNewItem);
         Inc(MenuIndex);
-      end
-      else
-      begin
-         LSubMenuIndex:=MenuIndex;
-         LSubMenu:=hMenu;
-      end;
+//      end
+//      else
+//      begin
+//         LSubMenuIndex:=MenuIndex;
+//         LSubMenu:=hMenu;
+//      end;
 
 
        LClientDataSet:= TClientDataSet.Create(nil);
@@ -2304,7 +2310,7 @@ begin
            LClientDataSet.Filter:='Group = '+QuotedStr('Delphi Tools');
            LClientDataSet.Filtered:=True;
 
-           for LCurrentDelphiVersionData in InstalledDelphiVersions.ValuesSorted do
+           for LCurrentDelphiVersionData in FInstalledDelphiVersions.ValuesSorted do
            begin
             LClientDataSet.First;
 
@@ -2374,7 +2380,7 @@ begin
   log('TDelphiDevShellToolsContextMenu.QueryContextMenu Init');
   InitResources;
 
-  ReadSettings(Settings);
+  ReadSettings(FSettings);
   if (uFlags and CMF_DEFAULTONLY)<> 0 then
     Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0))
   else
@@ -2387,13 +2393,13 @@ begin
   if (not MatchText(FFileExt,[
      '.pas','.dpr','.inc','.pp','.proj','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm',
      '.lfm','.fmx','.vsf','.style','.lpi','.lpr','.lpk','.h','.ppu']))
-     and (not MatchText(FFileExt, ExternalToolsExts))
+     and (not MatchText(FFileExt, FExternalToolsExts))
      and (not MatchText(FFileExt, FPCToolsExts))
-     and (not MatchText(FFileExt, DelphiToolsExts))
-     and (not MatchText(FFileExt, SplitString(Settings.CommonTaskExt,',')))
-     and (not MatchText(FFileExt, SplitString(Settings.OpenDelphiExt,',')))
-     and (not MatchText(FFileExt, SplitString(Settings.OpenLazarusExt,',')))
-     and (not MatchText(FFileExt, SplitString(Settings.CheckSumExt,',')))
+     and (not MatchText(FFileExt, FDelphiToolsExts))
+     and (not MatchText(FFileExt, SplitString(FSettings.CommonTaskExt,',')))
+     and (not MatchText(FFileExt, SplitString(FSettings.OpenDelphiExt,',')))
+     and (not MatchText(FFileExt, SplitString(FSettings.OpenLazarusExt,',')))
+     and (not MatchText(FFileExt, SplitString(FSettings.CheckSumExt,',')))
 
   then
    Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0));
@@ -2404,27 +2410,27 @@ begin
      begin
       sValue:=ChangeFileExt(FFileName,'.dproj');
       if TFile.Exists(sValue) then
-         DProjectVersion:=GetDelphiVersions(sValue);
+         FDProjectVersion:=GetDelphiVersions(sValue);
      end
      else
-     DProjectVersion:=GetDelphiVersions(FFileName)
+     FDProjectVersion:=GetDelphiVersions(FFileName)
    end
    else
    if MatchText(FFileExt ,['.groupproj']) then
    begin
      if (FMSBuildGroupDProj<>nil) and (FMSBuildGroupDProj.ValidData) and (FMSBuildGroupDProj.Projects.Count>0) and (FMSBuildGroupDProj.Projects[0].ValidData) then
-       DProjectVersion:=GetDelphiVersions(FMSBuildGroupDProj.Projects[0].ProjectFile)
+       FDProjectVersion:=GetDelphiVersions(FMSBuildGroupDProj.Projects[0].ProjectFile)
      else
-       SetLength(DProjectVersion, 0);
+       SetLength(FDProjectVersion, 0);
    end
    else
-     SetLength(DProjectVersion, 0);
+     SetLength(FDProjectVersion, 0);
 
     hSubMenu   := CreatePopupMenu;
     uIDNewItem := idCmdFirst;
     hSubMenuIndex := 0;
 
-     if Settings.ShowInfoDProj and  MatchText(FFileExt,['.dproj','.dpr']) and (FMSBuildDProj<>nil) and (FMSBuildDProj.ValidData) then
+     if FSettings.ShowInfoDProj and  MatchText(FFileExt,['.dproj','.dpr']) and (FMSBuildDProj<>nil) and (FMSBuildDProj.ValidData) then
      begin
        ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
        LMenuItem.cbSize := SizeOf(TMenuItemInfo);
@@ -2442,11 +2448,11 @@ begin
 
 
     //AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj','.bdsproj','.dpk','.groupproj','.rc','.lfm','.dfm','.fmx','.lpi','.lpr','.lpk']);
-    AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.CommonTaskExt,','));
+    AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(FSettings.CommonTaskExt,','));
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
-    AddCheckSumTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.CheckSumExt,','));
+    AddCheckSumTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(FSettings.CheckSumExt,','));
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
-    AddExternalToolsTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ExternalToolsExts);
+    AddExternalToolsTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, FExternalToolsExts);
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     AddOpenRADCmdTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj','.bdsproj','.dpk','.groupproj','.rc','.dfm','.fmx','.vsf','.style']);
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
@@ -2464,11 +2470,11 @@ begin
      if  MatchText(ExtractFileExt(FFileName),['.dproj','.dpr']) then
      begin
 
-       if Length(DProjectVersion)>0 then
+       if Length(FDProjectVersion)>0 then
        begin
-         LCurrentDelphiVersion:=DProjectVersion[0];
+         LCurrentDelphiVersion:=FDProjectVersion[0];
 
-         Found:=InstalledDelphiVersions.ContainsKey(LCurrentDelphiVersion);
+         Found:=FInstalledDelphiVersions.ContainsKey(LCurrentDelphiVersion);
 
 //         for LCurrentDelphiVersion in DProjectVersion do
 //           for LCurrentDelphiVersionData in InstalledDelphiVersions do
@@ -2504,19 +2510,19 @@ begin
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
     //AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj', '.groupproj','.dpr','.pas','.inc','.pp','.dpk']);
-    AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.OpenDelphiExt,','));
+    AddOpenWithDelphi(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(FSettings.OpenDelphiExt,','));
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
     AddOpenWithDelphi_GroupProject(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.groupproj']);
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
-    AddRADStudioToolsTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, DelphiToolsExts);
+    AddRADStudioToolsTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, FDelphiToolsExts);
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
-    if Settings.ActivateLazarus and LazarusInstalled then
+    if FSettings.ActivateLazarus and FLazarusInstalled then
     begin
       //AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.lpi','.pp','.inc','.pas','.lpk']);
-      AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(Settings.OpenLazarusExt,','));
+      AddLazarusTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(FSettings.OpenLazarusExt,','));
       AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
       AddFPCToolsTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, FPCToolsExts);
@@ -2572,13 +2578,13 @@ begin
     LMenuItem.dwTypeData := PWideChar(LMenuCaption);
     LMenuItem.cch := Length(LMenuCaption);
     //LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['logo'].Handle, HBMMENU_CALLBACK);
-    LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['logo'].Handle, BitmapsDict['logo24'].Handle);
+    LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['logo'].Handle, FBitmapsDict['logo24'].Handle);
     LMenuItem.hbmpChecked   := 0;
     LMenuItem.hbmpUnchecked := 0;
     if IsVistaOrLater then
     begin
-      LMenuItem.hbmpChecked   := BitmapsDict['logo'].Handle;
-      LMenuItem.hbmpUnchecked := BitmapsDict['logo'].Handle;
+      LMenuItem.hbmpChecked   := FBitmapsDict['logo'].Handle;
+      LMenuItem.hbmpUnchecked := FBitmapsDict['logo'].Handle;
     end;
 
     if not InsertMenuItem(Menu, indexMenu, True, LMenuItem) then
