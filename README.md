@@ -2,32 +2,12 @@
 
 ## Features ##
 
-* Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006 and RAD Studio 2007, 2009, 2010, XE, XE2, XE3, XE4, XE5, XE6, XE7 Appmethod 1.13, Lazarus v1.0.1.3
+* Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006 and RAD Studio 2007, 2009, 2010, XE-XE8 Appmethod 1.13, Lazarus v1.0.1.3
 * Works in Windows 8/7/Vista/XP. (x86 and x64 versions)
 
 [![](https://dl.dropboxusercontent.com/u/12733424/Images/followrruz.png)](https://twitter.com/RRUZ)
 
 ---
-
-
-
-## Important ##
-> We detect a conflict with the <strong>AVG Antivirus 2014 Shell extension</strong> . This cause which the <strong>Delphi Dev. Shell Tools</strong>  menu is not show. To fix this you must disable and enable  the  AVG Antivirus Shell extension.
-
-
-Please follow the next steps to fix.
-
-  1. Download and Run the [ShellExView](http://www.nirsoft.net/utils/shexview.html) utility
-  1. Locate the AVG Antivirus Shell extensions and disable it as is shown in the below image.
-  1. log-off and log-on or restart Windows
-  1. Test the **Delphi Dev. Shell Tools** extension
-  1. Run the **ShellExView** utility again and enable the **AVG Antivirus Shell** extensions
-  1. log-off and log-on or restart Windows
-  1. Now both shell extensions should work normally.
-
-
-![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/AVG.png)
-
 
 ## Installer ##
 
