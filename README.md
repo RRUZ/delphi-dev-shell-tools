@@ -16,32 +16,34 @@
 
 ---
 
-### Common Tasks for .pas, .dpr, .inc, .pp, .dpk, . dproj, .dfm, .fmx, .rc, .lpk, lpr, .lpi extensions ###
+### Common Tasks ###
 
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/common_tasks.png)
 
+This is a list of taks available for these file extensions .pas, .dpr, .inc, .pp, .dpk, . dproj, .dfm, .fmx, .rc, .lpk, lpr, .lpi
 
- * <strong>Copy File Path to the clipboard</strong>  : Copy the path of the selected file to the clipboard.
- * <strong>Copy Full FileName to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard.
- * <strong>Copy FileName using URL format to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard using the Internet Path format
- * <strong>Copy FileName using UNC format to the clipboard</strong>  : Copy the full file-name (Path + Name) of the selected file to the clipboard UNC format.
- * <strong>Copy file content to the clipboard</strong>  : Copy the content of the selected file to the clipboard.
- * <strong>Open In Notepad</strong>  : Open the selected file in the notepad editor.
- * <strong>Open In Default text file editor</strong>  : Open the selected file in the default text editor installed.
- * <strong>Open In associated text editor</strong>  : Open the selected file in the associated text editor.
- * <strong>Open Command Line here</strong>  : Open the cmd.exe application in the folder of the selected file.
- * <strong>Open Command Line here as Administrator</strong>  : Open the cmd.exe application in the folder of the selected file as Administrator.
+
+ * _Copy File Path to the clipboard_  : Copy the path of the selected file to the clipboard.
+ * _Copy Full FileName to the clipboard_  : Copy the full file-name (Path + Name) of the selected file to the clipboard.
+ * _Copy FileName using URL format to the clipboard_ : Copy the full file-name (Path + Name) of the selected file to the clipboard using the Internet Path format
+ * _Copy FileName using UNC format to the clipboard_  : Copy the full file-name (Path + Name) of the selected file to the clipboard UNC format.
+ * _Copy file content to the clipboard_  : Copy the content of the selected file to the clipboard.
+ * _Open In Notepad_  : Open the selected file in the notepad editor.
+ * _Open In Default text file editor_ : Open the selected file in the default text editor installed.
+ * _Open In associated text editor_  : Open the selected file in the associated text editor.
+ * _Open Command Line here_  : Open the cmd.exe application in the folder of the selected file.
+ * _Open Command Line here as Administrator_  : Open the cmd.exe application in the folder of the selected file as Administrator.
 
 
 ---
 
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/CmdRAD.png)
- * <strong>Open RAD Studio Command prompt here</strong>  : Open the RAD Studio Command prompt (of any installed Delphi version) in the folder of the selected file.
+ * _Open RAD Studio Command prompt here_  : Open the RAD Studio Command prompt (of any installed Delphi version) in the folder of the selected file.
 
 ---
 
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/pas_menu.png)
- * <strong>Open with Delphi(N)</strong>  : Open the selected file with any version of Delphi or Rad Studio installed.
+ * _Open with Delphi(N)_  : Open the selected file with any version of Delphi or Rad Studio installed.
 
 ---
 
@@ -49,9 +51,9 @@
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/dproj_menu_new.png)
 
 
- * <strong>Run MSBuild (Default Settings)</strong> : Execute MSBuild using the default settings of the selected .dproj file.
- * <strong>Run MSBuild With .. </strong>: Execute MSBuild using any of the platforms and targets detected in the selected .dproj file.
- * <strong>MSBuild</strong>: Allow to select and execute the MSBuild tool (associated to any version of the RAD Studio installed) using the default configuration of the project.
+ * _Run MSBuild (Default Settings)_ : Execute MSBuild using the default settings of the selected .dproj file.
+ * _Run MSBuild With .._: Execute MSBuild using any of the platforms and targets detected in the selected .dproj file.
+ * _MSBuild_: Allow to select and execute the MSBuild tool (associated to any version of the RAD Studio installed) using the default configuration of the project.
 
 
 ---
@@ -59,8 +61,8 @@
 ### Specific Tasks for .lpi, .lpk files (Lazarus Projects and packages) ###
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/lazarus_menu.png)
 
- * <strong>Open with Lazarus IDE</strong>: Allow to open the selected file with the installed Lazarus IDE.
- * <strong>Build with lazbuild</strong>: Allow to build a project or package using the lazbuild tool.
+ * _Open with Lazarus IDE_: Allow to open the selected file with the installed Lazarus IDE.
+ * _Build with lazbuild_: Allow to build a project or package using the lazbuild tool.
 
 
 ---
@@ -68,7 +70,7 @@
 ### Calculate CheckSum ###
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum_menu.png)
 
-This option allow to calculate the checksum for the selected file, this option supports  <strong>CRC32, MD4, MD5, SHA1, SHA256, SHA384, SHA512</strong>
+This option allow to calculate the checksum for the selected file, this feature supports  <strong>CRC32, MD4, MD5, SHA1, SHA256, SHA384, SHA512</strong>
 
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum.png)
 
@@ -83,5 +85,5 @@ The shell extension can be customized to support additional  file extensions in 
 ### Support for register customs applications ###
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/Custom_Tools.png)
 
-This option allows you register a script which will be associated  to any specified extension.
+This option allows you register a script which will be associated to any specified extension.
 
