@@ -112,7 +112,7 @@ type
   function GetUNCNameEx(const lpLocalPath: string): string;
   function LocalPathToFileURL(const pszPath: string): string;
 
-  procedure CheckUpdates;
+  procedure CheckUpdates(Silent : Boolean);
 
   function GetGroupToolsExtensions(const GroupName : string) : TStringDynArray;
 
@@ -276,10 +276,11 @@ begin
     Result := pszUrl;
 end;
 
-procedure CheckUpdates;
+procedure CheckUpdates(Silent : Boolean);
 var
   LRegistry : TRegistry;
   dt : TDateTime;
+  LBinaryPath, LUpdaterPath : string;
 begin
   LRegistry:=TRegistry.Create;
   try
@@ -287,7 +288,8 @@ begin
     if LRegistry.OpenKeyReadOnly('Software\DelphiDevShellTools\') then
     begin
       try
-        LRegistry.ReadBinaryData('LastUpdateCheck', dt, SizeOf(dt));
+        if LRegistry.ReadBinaryData('LastUpdateCheck', dt, SizeOf(dt)) = 0 then
+          dt := Now -1;
       finally
         LRegistry.CloseKey;
       end;
@@ -296,9 +298,16 @@ begin
     LRegistry.Free;
   end;
 
-  if Abs(Now-dt)>=1 then
+  if not Silent or (Abs(Now-dt)>=1) then
   begin
-    ShellExecute(0, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(GetModuleName))+'GUIDelphiDevShell.exe'), PChar('-checkupdates') , nil , SW_SHOWNORMAL);
+    //ShellExecute(0, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(GetModuleName))+'GUIDelphiDevShell.exe'), PChar('-checkupdates') , nil , SW_SHOWNORMAL);
+
+    LBinaryPath:=GetModuleName();
+    LUpdaterPath := ExtractFilePath(LBinaryPath)+'Updater.exe';
+    if Silent then
+     ShellExecute(0, 'open', PChar(LUpdaterPath), PChar(Format('"%s" -Silent', [LBinaryPath])), '', SW_SHOWNORMAL)
+    else
+     ShellExecute(0, 'open', PChar(LUpdaterPath), PChar(Format('"%s"', [LBinaryPath])), '', SW_SHOWNORMAL);
 
     LRegistry:=TRegistry.Create;
     try

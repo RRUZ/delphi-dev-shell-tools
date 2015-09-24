@@ -59,7 +59,7 @@ type
     DelphiXE6,
     DelphiXE7,
     DelphiXE8,
-	Delphi10Seattle
+	  Delphi10Seattle
 );
 
   SetDelphiVersions= TArray<TDelphiVersions>;
@@ -461,8 +461,9 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
-			if MatchText(sVersion,['18.0']) then
-			 Exit(TArray<TDelphiVErsions>.Create(Delphi10Seattle));
+            if MatchText(sVersion,['18.0']) then
+             Exit(TArray<TDelphiVErsions>.Create(Delphi10Seattle))
+            else
             if  MatchText(sVersion,['17.0', '17.1', '17.2']) then
              Exit(TArray<TDelphiVersions>.Create(DelphiXE8))
             else

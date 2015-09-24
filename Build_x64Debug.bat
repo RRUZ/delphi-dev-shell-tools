@@ -7,7 +7,7 @@ pause
 EXIT
 
 :GUI
-msbuild.exe GUI\GUIDelphiDevShell.dproj /target:Clean;Build /p:Platform=Win32 /p:config=debug
+msbuild.exe GUI\GUIDelphiDevShell.dproj /target:Clean;Build /p:Platform=Win32 /p:config=release
 copy GUI\GUIDelphiDevShell.exe Win64\Debug\GUIDelphiDevShell.exe
 
 pause

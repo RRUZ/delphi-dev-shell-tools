@@ -23,18 +23,14 @@
 program GUIDelphiDevShell;
 
 uses
-{$IFDEF DEBUG}
-{$ENDIF}
+  {$IFDEF DEBUG}
+  {$ENDIF }
   Vcl.Forms,
   Vcl.Dialogs,
   SysUtils,
   StrUtils,
   Windows,
   uAbout in 'uAbout.pas' {FrmAbout},
-  uCheckUpdate in 'uCheckUpdate.pas' {FrmCheckUpdate},
-  uWinInet in 'uWinInet.pas',
-  uUpdatesChanges in 'uUpdatesChanges.pas' {FrmUpdateChanges},
-  Vcl.Styles.WebBrowser in 'Vcl.Styles.WebBrowser.pas',
   uMiscGUI in 'uMiscGUI.pas',
   Vcl.Themes,
   Vcl.Styles,
@@ -68,11 +64,9 @@ begin
   end;
 end;
 
-var
-  Frm: TFrmCheckUpdate;
 
 begin
-  if (ParamCount>0) and MatchText(ParamStr(1),['-settings','-update','-checkupdates','-about']) then
+  if (ParamCount>0) and MatchText(ParamStr(1),['-settings','-about']) then
   OnlyOne;
 
   Application.Initialize;
@@ -90,30 +84,8 @@ begin
     FrmCheckSum.FileName:=ParamStr(2);
    end
    else
-   if SameText('-settings',ParamStr(1)) then
+   if SameText('-settings', ParamStr(1)) then
     Application.CreateForm(TFrmSettings, FrmSettings)
-   else
-   if SameText('-update',ParamStr(1)) then
-   begin
-      Frm := GetUpdaterInstance;
-      try
-        Frm.ShowModal();
-      finally
-        Frm.Free;
-      end;
-   end
-   else
-   if SameText('-checkupdates',ParamStr(1)) then
-   begin
-      Frm := GetUpdaterInstance;
-      try
-        Frm.CheckExternal:=True;
-        if Frm.UpdateAvailable then
-          Frm.ExecuteUpdater;
-      finally
-        //Frm.Free;
-      end;
-   end
    else
     Application.CreateForm(TFrmAbout, FrmAbout);
   end

@@ -331,6 +331,7 @@ begin
     end;
   end;
 end;
+
 procedure TFrmSettings.LoadSettings;
 begin
   ReadSettings(FSettings);

@@ -62,7 +62,6 @@ var
 implementation
 
 uses
-  uCheckUpdate,
   ShellApi,
   uMisc;
 
@@ -70,14 +69,11 @@ uses
 
 procedure TFrmAbout.btnCheckUpdatesClick(Sender: TObject);
 var
-  Frm: TFrmCheckUpdate;
+  LBinaryPath, LUpdaterPath: string;
 begin
-  Frm := GetUpdaterInstance;
-  try
-    Frm.ShowModal();
-  finally
-    Frm.Free;
-  end;
+  LBinaryPath:=ExtractFilePath(ParamStr(0))+'DelphiDevShellTools.dll';
+  LUpdaterPath := ExtractFilePath(ParamStr(0))+'Updater.exe';
+  ShellExecute(0, 'open', PChar(LUpdaterPath), PChar(Format('"%s"', [LBinaryPath])), '', SW_SHOWNORMAL);
 end;
 
 procedure TFrmAbout.Button1Click(Sender: TObject);
@@ -87,7 +83,7 @@ end;
 
 procedure TFrmAbout.Button2Click(Sender: TObject);
 begin
-  ShellExecute(Handle, 'open', PChar('http://code.google.com/p/delphi-dev-shell-tools/'), nil,
+  ShellExecute(Handle, 'open', PChar('https://github.com/RRUZ/delphi-dev-shell-tools'), nil,
     nil, SW_SHOW);
 end;
 
@@ -118,8 +114,8 @@ begin
 
   LabelWindowsVersion.Caption    := Format('%s', [TOSVersion.ToString]);
   MemoCopyRights.Lines.Add('Shell Extension for Delphi Developers ');
-  MemoCopyRights.Lines.Add('Author Rodrigo Ruz rodrigo.ruz.v@gmail.com - © 2013-2014 all rights reserved.');
-  MemoCopyRights.Lines.Add('http://code.google.com/p/delphi-dev-shell-tools/');
+  MemoCopyRights.Lines.Add('Author Rodrigo Ruz rodrigo.ruz.v@gmail.com - © 2013-2015 all rights reserved.');
+  MemoCopyRights.Lines.Add('https://github.com/RRUZ/delphi-dev-shell-tools');
   MemoCopyRights.Lines.Add('');
   MemoCopyRights.Lines.Add('This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/)');
   MemoCopyRights.Lines.Add('');

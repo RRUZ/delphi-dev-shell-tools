@@ -435,7 +435,7 @@ begin
 
      ReadSettings(FSettings);
      if FSettings.CheckForUpdates then
-       CheckUpdates;
+       CheckUpdates(True);
   except
    on  E : Exception do
      log(Format('TDelphiDevShellToolsContextMenu.InitResources Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -2551,8 +2551,8 @@ begin
     if not IsVistaOrLater then
     RegisterMenuItemBitmapDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, 'updates_ico');
     LMethodInfo:=TMethodInfo.Create;
-    LMethodInfo.Method:=TDelphiDevShellTasks.OpenGUI;
-    LMethodInfo.Value1:='-update';
+    LMethodInfo.Method:=TDelphiDevShellTasks.Updater;
+    //LMethodInfo.Value1:='-update';
     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
     Inc(uIDNewItem);
     Inc(hSubMenuIndex);

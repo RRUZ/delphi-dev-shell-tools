@@ -59,6 +59,9 @@ type
     class procedure RADTools(Info : TMethodInfo);
     class procedure ExternalTools(Info : TMethodInfo);
 
+    class procedure Updater(Info : TMethodInfo);
+
+
     //Lazarus & FPC
     class procedure OpenWithLazarus(Info : TMethodInfo);
     class procedure BuildWithLazBuild(Info : TMethodInfo);
@@ -549,6 +552,11 @@ begin
    on  E : Exception do
    log(Format('TDelphiDevShellTasks.RADTools Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
+end;
+
+class procedure TDelphiDevShellTasks.Updater(Info: TMethodInfo);
+begin
+  CheckUpdates(False);
 end;
 
 end.
