@@ -14,6 +14,7 @@ Source: Win32\Debug\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitI
 Source: Win64\Release\DelphiDevShellTools.dll; DestDir: {app}; Check: Is64BitInstallMode; Flags: regserver restartreplace; Components: Release
 Source: Win32\Release\DelphiDevShellTools.dll; DestDir: {app}; Check: not Is64BitInstallMode; Flags: regserver restartreplace; Components: Release
 Source: Updater\Updater.exe; DestDir: {app}; Components: program
+Source: Updater\DownloadInfo.xml; DestDir: {app}; Components: program
 Source: GUI\GUIDelphiDevShell.exe; DestDir: {app}; Components: program
 ;Source: OpenSSL\openssl-1.0.1g-i386-win32\ssleay32.dll; DestDir: {app}; Check: not Is64BitInstallMode; Components: program
 ;Source: OpenSSL\openssl-1.0.1g-i386-win32\libeay32.dll; DestDir: {app}; Check: not Is64BitInstallMode; Components: program
