@@ -1,20 +1,18 @@
 ![](https://dl.dropboxusercontent.com/u/12733424/github/delphi-dev-shell-tools/logo.png)The <strong>Delphi Dev. Shell Tools</strong> is a  Windows shell extension with useful tasks for Object Pascal Developers (Delphi, Free Pascal).
 
-## Features ##
+### Features ###
 
-* Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006 and RAD Studio 2007, 2009, 2010, XE-XE8, 10 Seattle, Appmethod 1.13, Lazarus v1.0.1.3
-* Works in Windows 8/7/Vista/XP. (x86 and x64 versions)
+* Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006 and RAD Studio 2007, 2009, 2010, XE-XE8, 10 Seattle, Appmethod, Lazarus v1.0.1.3
+* Works in Windows 10/8/7/Vista/XP. (x86 and x64 versions)
 
 [![](https://dl.dropboxusercontent.com/u/12733424/Images/followrruz.png)](https://twitter.com/RRUZ)
 
 ---
 
-## Installer ##
+### Installer ###
 
-[Download the installer - Mirror 1](https://goo.gl/RJanwS)
-
-[Download the installer - Mirror 2](https://docs.google.com/uc?export=download&id=0B7KzPH8HQCZNQmRnWUpxbEtaT3c)
-
+[![](https://dl.dropboxusercontent.com/u/12733424/github/buttons/DownloadSite1.png)](https://goo.gl/RJanwS)
+[![](https://dl.dropboxusercontent.com/u/12733424/github/buttons/DownloadSite2.png)](https://docs.google.com/uc?export=download&id=0B7KzPH8HQCZNQmRnWUpxbEtaT3c)
 
 ---
 
@@ -47,7 +45,7 @@
 
 ---
 
-## Specific Tasks for .dpr, .dproj files (Rad Studio Projects), .groupproj (Group Projects) ##
+### Specific Tasks for .dpr, .dproj files (Rad Studio Projects), .groupproj (Group Projects) ###
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/dproj_menu_new.png)
 
 
@@ -58,7 +56,7 @@
 
 ---
 
-## Specific Tasks for .lpi, .lpk files (Lazarus Projects and packages) ##
+### Specific Tasks for .lpi, .lpk files (Lazarus Projects and packages) ###
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/lazarus_menu.png)
 
  * <strong>Open with Lazarus IDE</strong>: Allow to open the selected file with the installed Lazarus IDE.
@@ -67,7 +65,7 @@
 
 ---
 
-## Calculate CheckSum ##
+### Calculate CheckSum ###
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum_menu.png)
 
 This option allow to calculate the checksum for the selected file, this option supports  <strong>CRC32, MD4, MD5, SHA1, SHA256, SHA384, SHA512</strong>
@@ -76,13 +74,13 @@ This option allow to calculate the checksum for the selected file, this option s
 
 ---
 
-## Support for customs extensions ##
+### Support for customs extensions ###
 
 The shell extension can be customized to support additional  file extensions in some tasks.
 
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/settings1.png)
 
-## Support for register customs applications ##
+### Support for register customs applications ###
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/Custom_Tools.png)
 
 This option allows you register a script which will be associated  to any specified extension.
