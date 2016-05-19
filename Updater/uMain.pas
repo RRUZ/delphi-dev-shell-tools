@@ -326,7 +326,7 @@ end;
 
 procedure TFrmMain.FormCreate(Sender: TObject);
 begin
-  FSilent   :=  {$IFDEF DEBUG} False; {$ELSE} (ParamCount>1) and (SameText(ParamStr(2),'-Silent'));{$ENDIF}
+  FSilent   :=  {$IFDEF DEBUG} False; {$ELSE} (ParamCount>1) and (FindCmdLineSwitch('silent', true));{$ENDIF}
   FRemoteVersion:='';
   FErrorUpdate  :=False;
   FCheckExternal:=False;

@@ -87,7 +87,7 @@ Source: ico\touch.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: ico\vcl.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: ico\win.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: Installer\VclStylesInno.dll; DestDir: {app}; Flags: dontcopy
-Source: Installer\Auric.vsf; DestDir: {app}; Flags: dontcopy
+Source: Installer\Glossy.vsf; DestDir: {app}; Flags: dontcopy
 Source: Installer\background.bmp; Flags: dontcopy
 
 [Run]
@@ -100,9 +100,9 @@ AppName={#MyAppName}
 AppPublisher=The Road To Delphi
 AppVerName={#MyAppName} {#MyAppVersion}
 VersionInfoVersion={#MyAppVersion}
-AppPublisherURL=http://theroadtodelphi.wordpress.com/
-AppSupportURL=http://theroadtodelphi.wordpress.com/
-AppUpdatesURL=http://theroadtodelphi.wordpress.com/
+AppPublisherURL=https://github.com/RRUZ/delphi-dev-shell-tools
+AppSupportURL=https://github.com/RRUZ/delphi-dev-shell-tools
+AppUpdatesURL=https://github.com/RRUZ/delphi-dev-shell-tools
 DefaultDirName={pf}\The Road To Delphi\Delphi Dev. Shell Tools
 OutputBaseFileName=Setup
 DisableDirPage=true
@@ -113,8 +113,8 @@ AppendDefaultDirName=true
 PrivilegesRequired=admin
 WindowVisible=false
 ArchitecturesInstallIn64BitMode=x64
-WizardSmallImageFile=Installer\WizModernSmallImage-IS_BW.bmp
-WizardImageFile=Installer\WizModernImage-IS_BW.bmp
+WizardSmallImageFile=Installer\WizModernSmallImage-IS.bmp
+WizardImageFile=Installer\WizModernImage-IS.bmp
 AppContact=theroadtodelphi@gmail.com
 DisableProgramGroupPage=false
 AppID=DelphiDevShellTools
@@ -229,8 +229,8 @@ end;
 
 function InitializeSetup(): Boolean;
 begin
-   ExtractTemporaryFile('Auric.vsf');
-   LoadVCLStyle(ExpandConstant('{tmp}\Auric.vsf'));
+   ExtractTemporaryFile('Glossy.vsf');
+   LoadVCLStyle(ExpandConstant('{tmp}\Glossy.vsf'));
    Result:=True;
 end;
 

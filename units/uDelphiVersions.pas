@@ -15,7 +15,7 @@
 // The Original Code is uDelphiVersions.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2015 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2016 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -59,7 +59,8 @@ type
     DelphiXE6,
     DelphiXE7,
     DelphiXE8,
-	  Delphi10Seattle
+	  Delphi10Seattle,
+	  Delphi10Berlin
 );
 
   SetDelphiVersions= TArray<TDelphiVersions>;
@@ -194,7 +195,8 @@ const
     'RAD Studio XE6',
     'RAD Studio XE7',
     'RAD Studio XE8',
-	'RAD Studio 10 Seattle'
+  	'RAD Studio 10 Seattle',
+  	'RAD Studio 10 Berlin'
     );
 
   DelphiRegPaths: array[TDelphiVersions] of string = (
@@ -218,7 +220,8 @@ const
     '\Software\Embarcadero\BDS\14.0',
     '\Software\Embarcadero\BDS\15.0',
     '\Software\Embarcadero\BDS\16.0',
-    '\Software\Embarcadero\BDS\17.0'
+    '\Software\Embarcadero\BDS\17.0',
+    '\Software\Embarcadero\BDS\18.0'
     );
 
  PAClientProfilesPaths: array[TDelphiVersions] of string = (
@@ -242,7 +245,8 @@ const
     '\Embarcadero\BDS\14.0',
     '\Embarcadero\BDS\15.0',
     '\Embarcadero\BDS\16.0',
-    '\Embarcadero\BDS\17.0'
+    '\Embarcadero\BDS\17.0',
+    '\Embarcadero\BDS\18.0'
     );
 
   function  GetListInstalledDelphiVersions : TInstalledDelphiVerions;
@@ -461,6 +465,9 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
+            if MatchText(sVersion,['18.1']) then
+             Exit(TArray<TDelphiVErsions>.Create(Delphi10Berlin))
+            else
             if MatchText(sVersion,['18.0']) then
              Exit(TArray<TDelphiVErsions>.Create(Delphi10Seattle))
             else
