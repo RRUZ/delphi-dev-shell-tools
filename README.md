@@ -2,7 +2,12 @@
 
 ### Features ###
 
-* Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006 and RAD Studio 2007, 2009, 2010, XE-XE8, 10 Seattle, Appmethod, Lazarus v1.0.1.3
+* Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006
+* RAD Studio 2007, 2009, 2010
+* RAD Studio XE-XE8 
+* RAD Studio 10 Seattle, [RAD Studio 10.1 Berlin](https://www.embarcadero.com/es/app-development-tools-store/rad-studio)
+* Appmethod
+* [Lazarus 1.6](http://www.lazarus-ide.org/)
 * Works in Windows 10/8/7/Vista/XP. (x86 and x64 versions)
 
 [![](https://dl.dropboxusercontent.com/u/12733424/Images/followrruz.png)](https://twitter.com/RRUZ)
