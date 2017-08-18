@@ -12,12 +12,6 @@
 
 [![](https://dl.dropboxusercontent.com/u/12733424/Images/followrruz.png)](https://twitter.com/RRUZ)
 
----
-
-### Installer ###
-
-[![](https://dl.dropboxusercontent.com/u/12733424/github/buttons/DownloadSite1.png)](https://goo.gl/RJanwS)
-[![](https://dl.dropboxusercontent.com/u/12733424/github/buttons/DownloadSite2.png)](https://docs.google.com/uc?export=download&id=0B7KzPH8HQCZNQmRnWUpxbEtaT3c)
 
 ---
 
@@ -75,20 +69,18 @@ This is a list of taks available for these file extensions .pas, .dpr, .inc, .pp
 ### Calculate CheckSum ###
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum_menu.png)
 
-This option allow to calculate the checksum for the selected file, this feature supports  <strong>CRC32, MD4, MD5, SHA1, SHA256, SHA384, SHA512</strong>
-
-![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum.png)
-
 ---
 
-### Support for customs extensions ###
+### Support for custom extensions ###
 
-The shell extension can be customized to support additional  file extensions in some tasks.
+The shell extension can be customized to support additional file extensions in some tasks.
 
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/settings1.png)
 
-### Support for register customs applications ###
+### Support for register custom applications ###
 ![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/Custom_Tools.png)
 
 This option allows you register a script which will be associated to any specified extension.
 
+---
+Looking for the installer? Check the [Release Area](https://github.com/RRUZ/elphi-dev-shell-tools/releases/latest) 
