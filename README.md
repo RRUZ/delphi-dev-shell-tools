@@ -83,4 +83,4 @@ The shell extension can be customized to support additional file extensions in s
 This option allows you register a script which will be associated to any specified extension.
 
 ---
-Looking for the installer? Check the [Release Area](https://github.com/RRUZ/elphi-dev-shell-tools/releases/latest) 
+Looking for the installer? Check the [Release Area](https://github.com/RRUZ/delphi-dev-shell-tools/releases/latest) 
