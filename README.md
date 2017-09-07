@@ -1,4 +1,4 @@
-![](https://dl.dropboxusercontent.com/u/12733424/github/delphi-dev-shell-tools/logo.png)The <strong>Delphi Dev. Shell Tools</strong> is a  Windows shell extension with useful tasks for Object Pascal Developers (Delphi, Free Pascal).
+![](https://github.com/RRUZ/delphi-dev-shell-tools/blob/master/Images/logo.png)The <strong>Delphi Dev. Shell Tools</strong> is a  Windows shell extension with useful tasks for Object Pascal Developers (Delphi, Free Pascal).
 
 ### Features ###
 
@@ -8,16 +8,16 @@
 * RAD Studio 10 Seattle, [RAD Studio 10.1 Berlin](https://www.embarcadero.com/es/app-development-tools-store/rad-studio)
 * Appmethod
 * [Lazarus 1.6](http://www.lazarus-ide.org/)
-* Works in Windows 10/8/7/Vista/XP. (x86 and x64 versions)
+* Works in Windows 10/8/7/XP. (x86 and x64 versions)
 
-[![](https://dl.dropboxusercontent.com/u/12733424/Images/followrruz.png)](https://twitter.com/RRUZ)
+[![](https://theroadtodelphi.files.wordpress.com/2014/07/followrruz.png)](https://twitter.com/RRUZ)
 
 
 ---
 
 ### Common Tasks ###
 
-![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/common_tasks.png)
+![](https://github.com/RRUZ/delphi-dev-shell-tools/blob/master/Images/common_tasks.png)
 
 This is a list of taks available for these file extensions .pas, .dpr, .inc, .pp, .dpk, . dproj, .dfm, .fmx, .rc, .lpk, lpr, .lpi
 
@@ -36,18 +36,18 @@ This is a list of taks available for these file extensions .pas, .dpr, .inc, .pp
 
 ---
 
-![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/CmdRAD.png)
+![](https://github.com/RRUZ/delphi-dev-shell-tools/blob/master/Images/CmdRAD.png)
  * _Open RAD Studio Command prompt here_  : Open the RAD Studio Command prompt (of any installed Delphi version) in the folder of the selected file.
 
 ---
 
-![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/pas_menu.png)
+![](https://github.com/RRUZ/delphi-dev-shell-tools/blob/master/Images/pas_menu.png)
  * _Open with Delphi(N)_  : Open the selected file with any version of Delphi or Rad Studio installed.
 
 ---
 
 ### Specific Tasks for .dpr, .dproj files (Rad Studio Projects), .groupproj (Group Projects) ###
-![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/dproj_menu_new.png)
+![](https://github.com/RRUZ/delphi-dev-shell-tools/blob/master/Images/dproj_menu_new.png)
 
 
  * _Run MSBuild (Default Settings)_ : Execute MSBuild using the default settings of the selected .dproj file.
@@ -58,7 +58,7 @@ This is a list of taks available for these file extensions .pas, .dpr, .inc, .pp
 ---
 
 ### Specific Tasks for .lpi, .lpk files (Lazarus Projects and packages) ###
-![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/lazarus_menu.png)
+![](https://github.com/RRUZ/delphi-dev-shell-tools/blob/master/Images/lazarus_menu.png)
 
  * _Open with Lazarus IDE_: Allow to open the selected file with the installed Lazarus IDE.
  * _Build with lazbuild_: Allow to build a project or package using the lazbuild tool.
@@ -67,7 +67,7 @@ This is a list of taks available for these file extensions .pas, .dpr, .inc, .pp
 ---
 
 ### Calculate CheckSum ###
-![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/checksum_menu.png)
+![](https://github.com/RRUZ/delphi-dev-shell-tools/blob/master/Images/checksum_menu.png)
 
 ---
 
@@ -75,10 +75,10 @@ This is a list of taks available for these file extensions .pas, .dpr, .inc, .pp
 
 The shell extension can be customized to support additional file extensions in some tasks.
 
-![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/settings1.png)
+![](https://github.com/RRUZ/delphi-dev-shell-tools/blob/master/Images/settings1.png)
 
 ### Support for register custom applications ###
-![](https://dl.dropboxusercontent.com/u/12733424/Blog/DevShell/Images/Custom_Tools.png)
+![](https://github.com/RRUZ/delphi-dev-shell-tools/blob/master/Images/Custom_Tools.png)
 
 This option allows you register a script which will be associated to any specified extension.
 
