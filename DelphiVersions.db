@@ -27,5 +27,7 @@
     <ROW Version="16" Name="RAD Studio XE8"/>			
     <ROW Version="17" Name="RAD Studio 10 Seattle"/>	
     <ROW Version="18" Name="RAD Studio 10 Berlin"/>		
+	<ROW Version="19" Name="RAD Studio 10 Tokyo"/>	
+	<ROW Version="20" Name="RAD Studio 10 Rio"/>		
   </ROWDATA>
 </DATAPACKET>
