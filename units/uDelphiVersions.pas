@@ -473,13 +473,13 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
-            if MatchText(sVersion,['18.3']) then
+            if MatchText(sVersion,['18.5', '18.6']) then
              Exit(TArray<TDelphiVersions>.Create(Delphi10Rio))
             else				
-            if MatchText(sVersion,['18.2']) then
+            if MatchText(sVersion,['18.3', '18.4']) then
              Exit(TArray<TDelphiVersions>.Create(Delphi10Tokyo))
             else			
-            if MatchText(sVersion,['18.1']) then
+            if MatchText(sVersion,['18.1', '18.2']) then
              Exit(TArray<TDelphiVersions>.Create(Delphi10Berlin))
             else
             if MatchText(sVersion,['18.0']) then
