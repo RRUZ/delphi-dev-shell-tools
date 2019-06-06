@@ -284,7 +284,7 @@ begin
   BatchFile:=TStringList.Create;
   try
     BatchFile.Add(Format('call "%s"',[RsvarsPath]));
-    BatchFile.Add(Format('msbuild.exe "%s" /target:build /p:Platform=%s /p:config=%s', [LFileName, sPlatform, sConfig]));
+    BatchFile.Add(Format('msbuild.exe "%s" /target:build /p:Platform="%s" /p:config="%s"', [LFileName, sPlatform, sConfig]));
     BatchFile.Add('Pause');
     BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
     BatchFile.SaveToFile(BatchFileName);
