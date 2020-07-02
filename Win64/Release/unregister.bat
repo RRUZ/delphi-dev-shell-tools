@@ -1,1 +1,1 @@
-regsvr32 "C:\Dephi\google-code\dev-shell-tools\Win64\Release\DelphiDevShellTools.dll" /U
+regsvr32 "DelphiDevShellTools.dll" /U

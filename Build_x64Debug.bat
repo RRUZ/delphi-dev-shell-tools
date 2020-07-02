@@ -1,5 +1,5 @@
 BRCC32 VersionInfo.rc
-call "C:\Program Files (x86)\Embarcadero\Studio\18.0\bin\rsvars.bat"
+call "C:\Program Files (x86)\Embarcadero\Studio\20.0\bin\rsvars.bat"
 msbuild.exe "DelphiDevShellTools.dproj" /target:Clean;Build /p:Platform=Win64 /p:config=debug
 set BUILD_STATUS=%ERRORLEVEL%
 if %BUILD_STATUS%==0 GOTO Updater
