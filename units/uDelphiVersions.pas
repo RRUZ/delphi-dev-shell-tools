@@ -62,7 +62,8 @@ type
 	  Delphi10Seattle,
 	  Delphi10Berlin,
 	  Delphi10Tokyo,
-	  Delphi10Rio
+	  Delphi10Rio,
+		Delphi10Sydney
 );
 
   SetDelphiVersions= TArray<TDelphiVersions>;
@@ -199,8 +200,9 @@ const
     'RAD Studio XE8',
   	'RAD Studio 10 Seattle',
   	'RAD Studio 10 Berlin',
-	'RAD Studio 10 Tokyo',
-	'RAD Studio 10 Rio'
+		'RAD Studio 10 Tokyo',
+		'RAD Studio 10 Rio',
+		'RAD Studio 10 Sydney'
     );
 
   DelphiRegPaths: array[TDelphiVersions] of string = (
@@ -226,8 +228,9 @@ const
     '\Software\Embarcadero\BDS\16.0',
     '\Software\Embarcadero\BDS\17.0',
     '\Software\Embarcadero\BDS\18.0',
-	'\Software\Embarcadero\BDS\19.0',
-	'\Software\Embarcadero\BDS\20.0'
+		'\Software\Embarcadero\BDS\19.0',
+		'\Software\Embarcadero\BDS\20.0',
+		'\Software\Embarcadero\BDS\21.0'
     );
 
  PAClientProfilesPaths: array[TDelphiVersions] of string = (
@@ -253,8 +256,9 @@ const
     '\Embarcadero\BDS\16.0',
     '\Embarcadero\BDS\17.0',
     '\Embarcadero\BDS\18.0',
-	'\Embarcadero\BDS\19.0',
-	'\Embarcadero\BDS\20.0'
+		'\Embarcadero\BDS\19.0',
+		'\Embarcadero\BDS\20.0',
+		'\Embarcadero\BDS\21.0'
     );
 
   function  GetListInstalledDelphiVersions : TInstalledDelphiVerions;
@@ -473,7 +477,10 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
-            if MatchText(sVersion,['18.5', '18.6']) then
+						if MatchText(sVersion,['19.0', '19.1']) then
+							Exit(TArray<TDelphiVersions>.Create(Delphi10Sydney))
+						else
+            if MatchText(sVersion,['18.5', '18.8']) then
              Exit(TArray<TDelphiVersions>.Create(Delphi10Rio))
             else				
             if MatchText(sVersion,['18.3', '18.4']) then

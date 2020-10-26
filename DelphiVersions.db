@@ -20,14 +20,15 @@
     <ROW Version="9" Name="RAD Studio XE"/>
     <ROW Version="10" Name="RAD Studio XE2"/>
     <ROW Version="11" Name="RAD Studio XE3"/>
-    <ROW Version="12" Name="RAD Studio XE4"/>	
-    <ROW Version="13" Name="RAD Studio XE5"/>		
-    <ROW Version="14" Name="RAD Studio XE6"/>		
-    <ROW Version="15" Name="RAD Studio XE7"/>		
-    <ROW Version="16" Name="RAD Studio XE8"/>			
-    <ROW Version="17" Name="RAD Studio 10 Seattle"/>	
-    <ROW Version="18" Name="RAD Studio 10 Berlin"/>		
-	<ROW Version="19" Name="RAD Studio 10 Tokyo"/>	
-	<ROW Version="20" Name="RAD Studio 10 Rio"/>		
+    <ROW Version="12" Name="RAD Studio XE4"/>
+    <ROW Version="13" Name="RAD Studio XE5"/>
+    <ROW Version="14" Name="RAD Studio XE6"/>
+    <ROW Version="15" Name="RAD Studio XE7"/>
+    <ROW Version="16" Name="RAD Studio XE8"/>
+    <ROW Version="17" Name="RAD Studio 10 Seattle"/>
+    <ROW Version="18" Name="RAD Studio 10 Berlin"/>
+    <ROW Version="19" Name="RAD Studio 10 Tokyo"/>
+    <ROW Version="20" Name="RAD Studio 10 Rio"/>
+    <ROW Version="21" Name="RAD Studio 10 Sydney"/>
   </ROWDATA>
 </DATAPACKET>
