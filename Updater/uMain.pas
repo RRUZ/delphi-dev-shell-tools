@@ -14,7 +14,7 @@
 // The Original Code is uMain.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2011-2014 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2011-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -39,14 +39,14 @@ type
     RangeFrom: Integer;
     RangeTo: Integer;
     CurrentIndex: Integer;
-    FSegments : Integer;
-    FSegmentSize : Integer;
-    FFileName : string;
+    FSegments: Integer;
+    FSegmentSize: Integer;
+    FFileName: string;
     procedure SetInitialValues;
   protected
     procedure Execute; override;
   public
-    constructor Create(Segments, SegmentSize:Integer; Const FileName : String);
+    constructor Create(Segments, SegmentSize:Integer; Const FileName: String);
   end;
 
   TFrmMain = class(TForm)
@@ -81,7 +81,7 @@ type
     procedure Timer1Timer(Sender: TObject);
   private
     FApplicationName: string;
-    FRemoteVersionFile : string;
+    FRemoteVersionFile: string;
     FXmlVersionInfo: string;
     FLocalVersion: string;
     FRemoteVersion: string;
@@ -92,10 +92,10 @@ type
     FStopwatch: TStopwatch;
     FSegmentSize: Integer;
     FSegments: Integer;
-    WaitDownloadThr : TWaitDownloadThr;
+    WaitDownloadThr: TWaitDownloadThr;
     FCheckExternal: boolean;
-    FErrorUpdate : boolean;
-    FSilent : Boolean;
+    FErrorUpdate: boolean;
+    FSilent: Boolean;
     procedure AddLog(const Msg: string);
     procedure UpdateProgress(Offset, lIndex, lDownloaded: Integer;
       lRate, lPorc: Double);
@@ -112,14 +112,14 @@ type
     procedure Download;
     procedure ExecuteInstaller;
   public
-    property  CheckExternal   : boolean read FCheckExternal write FCheckExternal;
-    property  XmlVersionInfo : string read FXmlVersionInfo write FXmlVersionInfo;
-    property  RemoteVersion : string read FRemoteVersion write FRemoteVersion;
-    property  LocalVersion  : string read FLocalVersion write FLocalVersion;
-    property  UrlInstaller : string read FUrlInstaller write FUrlInstaller;
-    property  InstallerFileName : string read FInstallerFileName write FInstallerFileName;
-    property  TempInstallerFileName : string read FTempInstallerFileName write FTempInstallerFileName;
-    property  UpdateAvailable : Boolean read GetUpdateAvailable;
+    property  CheckExternal: boolean read FCheckExternal write FCheckExternal;
+    property  XmlVersionInfo: string read FXmlVersionInfo write FXmlVersionInfo;
+    property  RemoteVersion: string read FRemoteVersion write FRemoteVersion;
+    property  LocalVersion: string read FLocalVersion write FLocalVersion;
+    property  UrlInstaller: string read FUrlInstaller write FUrlInstaller;
+    property  InstallerFileName: string read FInstallerFileName write FInstallerFileName;
+    property  TempInstallerFileName: string read FTempInstallerFileName write FTempInstallerFileName;
+    property  UpdateAvailable: Boolean read GetUpdateAvailable;
     procedure ExecuteUpdater;
   end;
 
@@ -149,17 +149,17 @@ const
 
 function GetFileVersionStr(const FileName: string): string;
 var
-  FSO  : OleVariant;
+  FSO: OleVariant;
 begin
   FSO    := CreateOleObject('Scripting.FileSystemObject');
   Result := FSO.GetFileVersion(FileName);
 end;
 
 
-function LHttpGet(const Url : string) : string;
+function LHttpGet(const Url: string): string;
 var
   Http: TIdHTTP;
-  buffer : TStringStream;
+  buffer: TStringStream;
   LHandler: TIdSSLIOHandlerSocketOpenSSL;
 begin
   Http := TIdHTTP.Create(nil);
@@ -244,7 +244,7 @@ begin
     if PbGeneral.Position=0 then
       GetRemoteFileInfo;
     InitThreads(PbGeneral.Position=0);
-  except on E : Exception do
+  except on E: Exception do
     if FSilent then Halt(0)
     else
     AddLog(Format('Error checking updates %s',[E.Message]));
@@ -312,7 +312,7 @@ begin
       //PbGeneral.Style:=pbstNormal;
       //BtnCheckUpdates.Enabled:=True;
     end;
-  except on E : Exception do
+  except on E: Exception do
     if FSilent then Halt(0)
     else
     AddLog(Format('Error checking updates %s',[E.Message]));
@@ -374,7 +374,7 @@ begin
    {$ELSE}
      Result:=(FRemoteVersion>FLocalVersion);
    {$ENDIF}
- except on E : Exception do
+ except on E: Exception do
    begin
     FErrorUpdate:=True;
     if FSilent then Halt(0)
@@ -458,9 +458,9 @@ end;
 
 procedure TFrmMain.ReadInfoUpdater;
 var
-  LFile : string;
-  Node   : OleVariant;
-  XmlDoc : OleVariant;
+  LFile: string;
+  Node: OleVariant;
+  XmlDoc: OleVariant;
 begin
   AddLog('Reading info updater');
   LFile:=ExtractFilePath(ParamStr(0))+'DownloadInfo.xml';
@@ -491,7 +491,7 @@ end;
 procedure TFrmMain.ReadLocalInfo;
 {$IFNDEF DEBUG}
 var
-  LBinaryFile : string;
+  LBinaryFile: string;
 {$ENDIF}
 begin
    {$IFDEF DEBUG}
@@ -511,8 +511,8 @@ end;
 
 procedure TFrmMain.ReadRemoteInfo;
 var
-  XmlDoc : OleVariant;
-  Node   : OleVariant;
+  XmlDoc: OleVariant;
+  Node: OleVariant;
 begin
   XmlDoc       := CreateOleObject('Msxml2.DOMDocument.6.0');
   XmlDoc.Async := False;
@@ -601,7 +601,7 @@ end;
 
 
 {TWaitDownloadThr}
-constructor TWaitDownloadThr.Create(Segments, SegmentSize:Integer;Const FileName : String);
+constructor TWaitDownloadThr.Create(Segments, SegmentSize:Integer;Const FileName: String);
 begin
   Inherited Create(false);
   FSegments:=Segments;
@@ -626,9 +626,9 @@ end;
 
 procedure TWaitDownloadThr.Execute;
 var
-  FileName    : string;
-  Index       : Integer;
-  WaitResult  : Cardinal;
+  FileName: string;
+  Index: Integer;
+  WaitResult: Cardinal;
 begin
   RangeTo := -1;
 

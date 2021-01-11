@@ -15,7 +15,7 @@
 // The Original Code is uMisc.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2016 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -35,12 +35,12 @@ uses
 type
 
   TMethodInfo=class
-   hwnd   : HWND;
-   Value1 : TValue;
-   Value2 : TValue;
-   Value3 : TValue;
-   Value4 : TValue;
-   Method : procedure (Info : TMethodInfo) of object;
+   hwnd: HWND;
+   Value1: TValue;
+   Value2: TValue;
+   Value3: TValue;
+   Value4: TValue;
+   Method: procedure (Info: TMethodInfo) of object;
   end;
 
 
@@ -49,7 +49,7 @@ type
     FSubMenuOpenCmdRAD: Boolean;
     FShowInfoDProj: Boolean;
     FSubMenuLazarus: Boolean;
-    FActivateLazarus : Boolean;
+    FActivateLazarus: Boolean;
     FSubMenuCommonTasks: Boolean;
     FSubMenuMSBuild: Boolean;
     FSubMenuMSBuildAnother: Boolean;
@@ -60,51 +60,51 @@ type
     FSubMenuOpenFMXStyle: Boolean;
     FSubMenuCompileRC: Boolean;
     FCheckForUpdates: Boolean;
-    FCheckSumExt, FOpenLazarusExt, FOpenDelphiExt, FCommonTaskExt : string;
+    FCheckSumExt, FOpenLazarusExt, FOpenDelphiExt, FCommonTaskExt: string;
   public
-    property SubMenuOpenCmdRAD : Boolean read FSubMenuOpenCmdRAD write FSubMenuOpenCmdRAD;
-    property SubMenuLazarus : Boolean read FSubMenuLazarus write FSubMenuLazarus;
-    property SubMenuCommonTasks : Boolean read FSubMenuCommonTasks write FSubMenuCommonTasks;
-    property ShowInfoDProj : Boolean read FShowInfoDProj write FShowInfoDProj;
-    property ActivateLazarus : Boolean read FActivateLazarus write FActivateLazarus;
-    property SubMenuMSBuild : Boolean read FSubMenuMSBuild write FSubMenuMSBuild;
-    property SubMenuMSBuildAnother : Boolean read FSubMenuMSBuildAnother write FSubMenuMSBuildAnother;
-    property SubMenuRunTouch : Boolean read FSubMenuRunTouch write FSubMenuRunTouch;
-    property SubMenuOpenDelphi : Boolean read FSubMenuOpenDelphi write FSubMenuOpenDelphi;
-    property SubMenuFormat : Boolean read FSubMenuFormat write FSubMenuFormat;
-    property SubMenuCompileRC : Boolean read FSubMenuCompileRC  write FSubMenuCompileRC;
-    property SubMenuOpenFMXStyle : Boolean read FSubMenuOpenFMXStyle write FSubMenuOpenFMXStyle;
-    property SubMenuOpenVclStyle : Boolean read FSubMenuOpenVclStyle write FSubMenuOpenVclStyle;
+    property SubMenuOpenCmdRAD: Boolean read FSubMenuOpenCmdRAD write FSubMenuOpenCmdRAD;
+    property SubMenuLazarus: Boolean read FSubMenuLazarus write FSubMenuLazarus;
+    property SubMenuCommonTasks: Boolean read FSubMenuCommonTasks write FSubMenuCommonTasks;
+    property ShowInfoDProj: Boolean read FShowInfoDProj write FShowInfoDProj;
+    property ActivateLazarus: Boolean read FActivateLazarus write FActivateLazarus;
+    property SubMenuMSBuild: Boolean read FSubMenuMSBuild write FSubMenuMSBuild;
+    property SubMenuMSBuildAnother: Boolean read FSubMenuMSBuildAnother write FSubMenuMSBuildAnother;
+    property SubMenuRunTouch: Boolean read FSubMenuRunTouch write FSubMenuRunTouch;
+    property SubMenuOpenDelphi: Boolean read FSubMenuOpenDelphi write FSubMenuOpenDelphi;
+    property SubMenuFormat: Boolean read FSubMenuFormat write FSubMenuFormat;
+    property SubMenuCompileRC: Boolean read FSubMenuCompileRC  write FSubMenuCompileRC;
+    property SubMenuOpenFMXStyle: Boolean read FSubMenuOpenFMXStyle write FSubMenuOpenFMXStyle;
+    property SubMenuOpenVclStyle: Boolean read FSubMenuOpenVclStyle write FSubMenuOpenVclStyle;
 
-    property CheckForUpdates     : Boolean read FCheckForUpdates write FCheckForUpdates;
-    property CommonTaskExt : string read FCommonTaskExt write FCommonTaskExt;
-    property OpenDelphiExt : string read FOpenDelphiExt write FOpenDelphiExt;
-    property OpenLazarusExt : string read FOpenLazarusExt write FOpenLazarusExt;
-    property CheckSumExt : string read FCheckSumExt write FCheckSumExt;
+    property CheckForUpdates: Boolean read FCheckForUpdates write FCheckForUpdates;
+    property CommonTaskExt: string read FCommonTaskExt write FCommonTaskExt;
+    property OpenDelphiExt: string read FOpenDelphiExt write FOpenDelphiExt;
+    property OpenLazarusExt: string read FOpenLazarusExt write FOpenLazarusExt;
+    property CheckSumExt: string read FCheckSumExt write FCheckSumExt;
   end;
 
 
   procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
-  procedure ExtractIconFile(Icon: TIcon; const Filename: string;IconType : Cardinal);
-  procedure ExtractBitmapFile(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
-  procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
+  procedure ExtractIconFile(Icon: TIcon; const Filename: string;IconType: Cardinal);
+  procedure ExtractBitmapFile(Bmp: TBitmap; const Filename: string;IconType: Cardinal);
+  procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType: Cardinal);
 
   function  GetFileVersion(const FileName: string): string;
   function  IsAppRunning(const FileName: string): boolean;
   function  GetLocalAppDataFolder: string;
   function  GetTempDirectory: string;
   procedure MsgBox(const Msg: string);
-  procedure CreateArrayBitmap(Width,Height:Word;Colors: Array of TColor;var bmp : TBitmap);
-  function  GetSpecialFolder(const CSIDL: integer) : string;
+  procedure CreateArrayBitmap(Width,Height:Word;Colors: Array of TColor;var bmp: TBitmap);
+  function  GetSpecialFolder(const CSIDL: integer): string;
   function  IsUACEnabled: Boolean;
   procedure RunAsAdmin(const FileName, Params: string; hWnd: HWND = 0);
   function  CurrentUserIsAdmin: Boolean;
   function  GetModuleName: string;
-  procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName : string);
-  function  GetDelphiDevShellToolsFolder : string;
-  function  GetDevShellToolsDbName : String;
-  function  GetDevShellToolsDbDelphi : String;
-  function  GetDevShellToolsImagesFolder : String;
+  procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName: string);
+  function  GetDelphiDevShellToolsFolder: string;
+  function  GetDevShellToolsDbName: String;
+  function  GetDevShellToolsDbDelphi: String;
+  function  GetDevShellToolsImagesFolder: String;
 
   procedure ReadSettings(var Settings: TSettings);
   procedure WriteSettings(const Settings: TSettings);
@@ -112,13 +112,13 @@ type
   function GetUNCNameEx(const lpLocalPath: string): string;
   function LocalPathToFileURL(const pszPath: string): string;
 
-  procedure CheckUpdates(Silent : Boolean);
+  procedure CheckUpdates(Silent: Boolean);
 
-  function GetGroupToolsExtensions(const GroupName : string) : TStringDynArray;
+  function GetGroupToolsExtensions(const GroupName: string): TStringDynArray;
 
   procedure ScaleImage32(const SourceBitmap, ResizedBitmap: TBitmap; const ScaleAmount: Double);
-  function IsVistaOrLater : Boolean;
-  function IconToBitmapPARGB32(hIcon : HICON): HBITMAP;
+  function IsVistaOrLater: Boolean;
+  function IconToBitmapPARGB32(hIcon: HICON): HBITMAP;
   procedure log(const msg: string);
 
 implementation
@@ -168,7 +168,7 @@ type
   ASSOCSTR_DDETOPIC );
 
 const
-  AssocStrDisplaystrings : array [ASSOCSTR_COMMAND..ASSOCSTR_DDETOPIC]
+  AssocStrDisplaystrings: array [ASSOCSTR_COMMAND..ASSOCSTR_DDETOPIC]
   of string = (
   'ASSOCSTR_COMMAND',
   'ASSOCSTR_EXECUTABLE',
@@ -191,18 +191,18 @@ begin
 end;
 
 
-function IsVistaOrLater : Boolean;
+function IsVistaOrLater: Boolean;
 begin
   Result:= (Win32MajorVersion >= 6);
 end;
 
-function GetGroupToolsExtensions(const GroupName : string) : TStringDynArray;
+function GetGroupToolsExtensions(const GroupName: string): TStringDynArray;
 var
- LClientDataSet : TClientDataSet;
- List : TStrings;
- LArray  : TStringDynArray;
- s : string;
- i : integer;
+ LClientDataSet: TClientDataSet;
+ List: TStrings;
+ LArray: TStringDynArray;
+ s: string;
+ i: integer;
 begin
 Result:=nil;
  LClientDataSet:= TClientDataSet.Create(nil);
@@ -276,11 +276,11 @@ begin
     Result := pszUrl;
 end;
 
-procedure CheckUpdates(Silent : Boolean);
+procedure CheckUpdates(Silent: Boolean);
 var
-  LRegistry : TRegistry;
-  dt : TDateTime;
-  LBinaryPath, LUpdaterPath : string;
+  LRegistry: TRegistry;
+  dt: TDateTime;
+  LBinaryPath, LUpdaterPath: string;
 begin
   LRegistry:=TRegistry.Create;
   try
@@ -327,24 +327,24 @@ begin
   end;
 end;
 
-function GetDelphiDevShellToolsFolder : string;
+function GetDelphiDevShellToolsFolder: string;
 begin
  Result:=IncludeTrailingPathDelimiter(GetSpecialFolder(CSIDL_COMMON_APPDATA))+ 'DelphiDevShellTools\';
  //C:\ProgramData\DelphiDevShellTools
  ForceDirectories(Result);
 end;
 
-function GetDevShellToolsDbName : String;
+function GetDevShellToolsDbName: String;
 begin
  Result:=GetDelphiDevShellToolsFolder + 'Tools.db';
 end;
 
-function GetDevShellToolsDbDelphi : String;
+function GetDevShellToolsDbDelphi: String;
 begin
  Result:=GetDelphiDevShellToolsFolder + 'DelphiVersions.db';
 end;
 
-function GetDevShellToolsImagesFolder : String;
+function GetDevShellToolsImagesFolder: String;
 begin
  Result:=GetDelphiDevShellToolsFolder+'ico\';
 end;
@@ -354,10 +354,10 @@ end;
 procedure ReadSettings(var Settings: TSettings);
 var
   iniFile: TIniFile;
-  LCtx   : TRttiContext;
-  LProp  : TRttiProperty;
-  BooleanValue : Boolean;
-  StringValue : string;
+  LCtx: TRttiContext;
+  LProp: TRttiProperty;
+  BooleanValue: Boolean;
+  StringValue: string;
 begin
   iniFile := TIniFile.Create(GetDelphiDevShellToolsFolder + 'Settings.ini');
   try
@@ -386,10 +386,10 @@ end;
 procedure WriteSettings(const Settings: TSettings);
 var
   iniFile: TIniFile;
-  LCtx   : TRttiContext;
-  LProp  : TRttiProperty;
-  BooleanValue : Boolean;
-  StringValue : string;
+  LCtx: TRttiContext;
+  LProp: TRttiProperty;
+  BooleanValue: Boolean;
+  StringValue: string;
 begin
   iniFile := TIniFile.Create(GetDelphiDevShellToolsFolder + 'Settings.ini');
   try
@@ -415,7 +415,7 @@ begin
   end;
 end;
 
-procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName : string);
+procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName: string);
 var
  pszOut: array [0..1024] of Char;
  pcchOut: DWord;
@@ -465,11 +465,11 @@ begin
 end;
 
 
-function  UserInGroup(Group :DWORD) : Boolean;
+function  UserInGroup(Group :DWORD): Boolean;
  var
   pIdentifierAuthority :TSIDIdentifierAuthority;
-  pSid : Windows.PSID;
-  IsMember    : BOOL;
+  pSid: Windows.PSID;
+  IsMember: BOOL;
  begin
   pIdentifierAuthority := SECURITY_NT_AUTHORITY;
   Result := AllocateAndInitializeSid(pIdentifierAuthority,2, SECURITY_BUILTIN_DOMAIN_RID, Group, 0, 0, 0, 0, 0, 0, pSid);
@@ -506,9 +506,9 @@ begin
 end;
 
 
-function GetSpecialFolder(const CSIDL: integer) : string;
+function GetSpecialFolder(const CSIDL: integer): string;
 var
-  lpszPath : PWideChar;
+  lpszPath: PWideChar;
 begin
   lpszPath := StrAlloc(MAX_PATH);
   try
@@ -579,7 +579,7 @@ end;
 
 function IsAppRunning(const FileName: string): boolean;
 var
-  hSnapshot      : Cardinal;
+  hSnapshot: Cardinal;
   EntryParentProc: TProcessEntry32;
 begin
   Result := False;
@@ -606,13 +606,13 @@ end;
 
 function GetFileVersion(const FileName: string): string;
 var
-  FSO  : OleVariant;
+  FSO: OleVariant;
 begin
   FSO    := CreateOleObject('Scripting.FileSystemObject');
   Result := FSO.GetFileVersion(FileName);
 end;
 
-procedure ExtractIconFile(Icon: TIcon; const Filename: string;IconType : Cardinal);
+procedure ExtractIconFile(Icon: TIcon; const Filename: string;IconType: Cardinal);
 var
   FileInfo: TShFileInfo;
 begin
@@ -626,7 +626,7 @@ begin
   end;
 end;
 
-procedure ExtractBitmapFile(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
+procedure ExtractBitmapFile(Bmp: TBitmap; const Filename: string;IconType: Cardinal);
 var
  Icon: TIcon;
 begin
@@ -644,7 +644,7 @@ begin
 end;
 
 
-procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType : Cardinal);
+procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType: Cardinal);
 var
  Icon: TIcon;
 begin
@@ -680,10 +680,10 @@ begin
 end;
 
 
-procedure CreateArrayBitmap(Width,Height:Word;Colors: Array of TColor;var bmp : TBitmap);
+procedure CreateArrayBitmap(Width,Height:Word;Colors: Array of TColor;var bmp: TBitmap);
 Var
- i : integer;
- w : integer;
+ i: integer;
+ w: integer;
 begin
   bmp.PixelFormat:=pf24bit;
   bmp.Width:=Width;
@@ -875,10 +875,10 @@ begin
     EnlargeImage32(SourceBitmap, ResizedBitmap, ScaleAmount);
 end;
 
-function Create32BitHBITMAP(hdc : HDC; psize : TSize ; var ppvBits : Pointer; out  phBmp : HBITMAP) : HRESULT;
+function Create32BitHBITMAP(hdc: HDC; psize: TSize ; var ppvBits: Pointer; out  phBmp: HBITMAP): HRESULT;
 var
-  bmi  : TBitmapInfo;
-  hdcUsed : Windows.HDC;
+  bmi: TBitmapInfo;
+  hdcUsed: Windows.HDC;
 begin
     phBmp := 0;
     ZeroMemory(@bmi, sizeof(bmi));
@@ -907,16 +907,16 @@ begin
 end;
 
 
-function IconToBitmapPARGB32(hIcon : HICON): HBITMAP;
+function IconToBitmapPARGB32(hIcon: HICON): HBITMAP;
 var
-  sizIcon : TSize;
-  rcIcon  : TRect;
-  hbmpOld, hBmp    : HBITMAP;
-  hdcBuffer, hdcDest : HDC;
-  bfAlpha : TBlendFunction;
-  paintParams : TBPPaintParams;
-  hPaintBuffer : UxTheme.HPAINTBUFFER;
-  ppvBits : Pointer;
+  sizIcon: TSize;
+  rcIcon: TRect;
+  hbmpOld, hBmp: HBITMAP;
+  hdcBuffer, hdcDest: HDC;
+  bfAlpha: TBlendFunction;
+  paintParams: TBPPaintParams;
+  hPaintBuffer: UxTheme.HPAINTBUFFER;
+  ppvBits: Pointer;
 begin
     if (hIcon=0) then Exit(0);
 
@@ -962,7 +962,7 @@ begin
     Exit(hBmp);
 end;
 
-//function IconToBitmap(hIcon : HICON) : HBITMAP;
+//function IconToBitmap(hIcon: HICON): HBITMAP;
 //begin
 //
 //    RECT rect;

@@ -15,7 +15,7 @@
 // The Original Code is uSettings.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2015 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -128,8 +128,8 @@ Uses
 
 procedure TFrmSettings.BtnInsertMacroClick(Sender: TObject);
 var
- sValue : string;
- iSelPos, iSelLen : Integer;
+ sValue: string;
+ iSelPos, iSelLen: Integer;
 begin
  if ListViewMacros.Selected<>nil then
  begin
@@ -217,8 +217,8 @@ end;
 procedure TFrmSettings.DBComboBoxImageDrawItem(Control: TWinControl;
   Index: Integer; Rect: TRect; State: TOwnerDrawState);
 var
-  LIcon : TIcon;
-  IconFile : string;
+  LIcon: TIcon;
+  IconFile: string;
 begin
   with TDBComboBox(Control).Canvas do
   begin
@@ -239,7 +239,7 @@ begin
   end;
 end;
 
-function ExistevShellToolsDb : Boolean;
+function ExistevShellToolsDb: Boolean;
 begin
   Result:=TFile.Exists(GetDevShellToolsDbName);
 end;
@@ -251,7 +251,7 @@ end;
 
 procedure TFrmSettings.FormCreate(Sender: TObject);
 var
- s : string;
+ s: string;
 begin
   DBComboBoxGroup.DataField:='Group';
   DBEditName.DataField:='Name';
@@ -299,8 +299,8 @@ var
   FileName: TFileName;
   XmlDoc: olevariant;
   Nodes: olevariant;
-  lNodes, i : Integer;
-  LItem : TListItem;
+  lNodes, i: Integer;
+  LItem: TListItem;
 begin
   LocalFolder := GetDelphiDevShellToolsFolder;
   if LocalFolder <> '' then

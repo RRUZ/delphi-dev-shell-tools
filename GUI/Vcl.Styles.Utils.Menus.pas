@@ -14,7 +14,7 @@
 //
 //
 // Portions created by Mahdi Safsafi [SMP3]   e-mail SMP@LIVE.FR
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2015 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 // **************************************************************************************************
@@ -120,7 +120,7 @@ type
 {$ENDREGION}
 
   var
-    FOffset : Integer;
+    FOffset: Integer;
     FItemsPainted: Boolean;
     FParentSubItemPainted: Boolean;
     FPreviousHotItemIndex: integer;
@@ -130,7 +130,7 @@ type
     FCount: integer;
     FMenu: HMENU;
     FVCLMenuItems: TMenuItem;
-    FNCRect : TRect;
+    FNCRect: TRect;
     function GetMenuFromHandle(AHandle: HWND): HMENU;
     function GetItemsCount: integer;
     procedure MNSELECTITEM(var Message: TMessage); message MN_SELECTITEM;
@@ -1403,7 +1403,7 @@ begin
     windows will delete this item but the VCL will not delete
     the item from Items property .And thats can cause the item to be painted !
     Do not access VCLMenuItems.Items[Index] directly
-    => Instead , use this one : VCLItem .
+    => Instead , use this one: VCLItem .
   }
   VisibleItems := nil;
   Result := nil;

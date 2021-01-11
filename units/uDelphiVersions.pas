@@ -15,7 +15,7 @@
 // The Original Code is uDelphiVersions.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2016 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -79,12 +79,12 @@ type
     FIDEType: TSupportedIDEs;
     FBitmap: TBitmap;
   public
-    property Version : TDelphiVersions read FVersion;
-    property Path    : string read FPath write FPath;
-    property Name    : string read FName write FName;
-    property Icon    : TIcon read FIcon write FIcon;
-    property IDEType : TSupportedIDEs read FIDEType write FIDEType;
-    property Bitmap  : TBitmap read FBitmap write FBitmap;
+    property Version: TDelphiVersions read FVersion;
+    property Path: string read FPath write FPath;
+    property Name: string read FName write FName;
+    property Icon: TIcon read FIcon write FIcon;
+    property IDEType: TSupportedIDEs read FIDEType write FIDEType;
+    property Bitmap: TBitmap read FBitmap write FBitmap;
     constructor Create;
     Destructor  Destroy; override;
   end;
@@ -93,51 +93,51 @@ type
   private
     function GetValuesSorted: TArray<TDelphiVersionData>;
   public
-    property ValuesSorted : TArray<TDelphiVersionData> read GetValuesSorted;
+    property ValuesSorted: TArray<TDelphiVersionData> read GetValuesSorted;
   end;
 
   TMSBuildDProj=class
   private
     FFrameworkType: string;
-    FProjectFile : string;
+    FProjectFile: string;
     FTargetPlatforms: TStrings;
     FGUID: string;
-    FAppType : string;
-    FDelphiVersion : TDelphiVersions;
-    FDefaultConfiguration : string;
-    FDefaultPlatForm : string;
-    FValidData : Boolean;
+    FAppType: string;
+    FDelphiVersion: TDelphiVersions;
+    FDefaultConfiguration: string;
+    FDefaultPlatForm: string;
+    FValidData: Boolean;
     FBuildConfigurations: TStrings;
     procedure LoadInfo;
   public
-    property FrameworkType : string read FFrameworkType;
-    property TargetPlatforms : TStrings read FTargetPlatforms write FTargetPlatforms;
-    property BuildConfigurations : TStrings read FBuildConfigurations write FBuildConfigurations;
-    property GUID : string read FGUID;
-    property AppType : string read FAppType;
-    property DelphiVersion : TDelphiVersions read FDelphiVersion;
-    property DefaultConfiguration : string read  FDefaultConfiguration; //Release, Debug
-    property DefaultPlatForm : string read  FDefaultPlatForm; //Win32, OSX
-    property ValidData : Boolean read FValidData;
-    property ProjectFile : string read FProjectFile;
-    constructor Create(const _ProjectFile : string);
+    property FrameworkType: string read FFrameworkType;
+    property TargetPlatforms: TStrings read FTargetPlatforms write FTargetPlatforms;
+    property BuildConfigurations: TStrings read FBuildConfigurations write FBuildConfigurations;
+    property GUID: string read FGUID;
+    property AppType: string read FAppType;
+    property DelphiVersion: TDelphiVersions read FDelphiVersion;
+    property DefaultConfiguration: string read  FDefaultConfiguration; //Release, Debug
+    property DefaultPlatForm: string read  FDefaultPlatForm; //Win32, OSX
+    property ValidData: Boolean read FValidData;
+    property ProjectFile: string read FProjectFile;
+    constructor Create(const _ProjectFile: string);
     Destructor  Destroy; override;
   end;
 
   TMSBuildGroupProj=class
   private
-    FGroupProjectFile : string;
+    FGroupProjectFile: string;
     FGUID: string;
-    FDelphiVersion : TDelphiVersions;
-    FValidData : Boolean;
-    FProjects  : TObjectList<TMSBuildDProj>;
+    FDelphiVersion: TDelphiVersions;
+    FValidData: Boolean;
+    FProjects: TObjectList<TMSBuildDProj>;
     procedure LoadInfo;
   public
-    property Projects : TObjectList<TMSBuildDProj> read FProjects;
-    property GUID : string read FGUID;
-    property DelphiVersion : TDelphiVersions read FDelphiVersion;
-    property ValidData : Boolean read FValidData;
-    constructor Create(const GroupProjectFile : string);
+    property Projects: TObjectList<TMSBuildDProj> read FProjects;
+    property GUID: string read FGUID;
+    property DelphiVersion: TDelphiVersions read FDelphiVersion;
+    property ValidData: Boolean read FValidData;
+    constructor Create(const GroupProjectFile: string);
     Destructor  Destroy; override;
   end;
 
@@ -151,12 +151,12 @@ type
     FFileName: string;
     FRADStudioVersion: TDelphiVersions;
   public
-    property Platform : string read FPlatform;
-    property Host : string read FHost;
-    property Port : Integer read FPort;
-    property Name : string read FName;
-    property FileName : string read FFileName;
-    property RADStudioVersion : TDelphiVersions read FRADStudioVersion;
+    property Platform: string read FPlatform;
+    property Host: string read FHost;
+    property Port: Integer read FPort;
+    property Name: string read FName;
+    property FileName: string read FFileName;
+    property RADStudioVersion: TDelphiVersions read FRADStudioVersion;
   end;
 
   TPAClientProfileList=class
@@ -165,7 +165,7 @@ type
     FListDelphiVersions:TDictionary<TDelphiVersions, TDelphiVersionData>;
     procedure LoadData;
   public
-    property    Profiles : TObjectList<TPAClientProfile> read FProfiles;
+    property    Profiles: TObjectList<TPAClientProfile> read FProfiles;
     constructor Create(ListDelphiVersions:TDictionary<TDelphiVersions, TDelphiVersionData>);
     Destructor  Destroy; override;
   end;
@@ -257,13 +257,13 @@ const
 	'\Embarcadero\BDS\20.0'
     );
 
-  function  GetListInstalledDelphiVersions : TInstalledDelphiVerions;
+  function  GetListInstalledDelphiVersions: TInstalledDelphiVerions;
   {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
-  function DelphiIsOldVersion(DelphiVersion:TDelphiVersions) : Boolean;
+  function DelphiIsOldVersion(DelphiVersion:TDelphiVersions): Boolean;
   {$ENDIF}
   procedure ReplaceColor(ABitmap: TBitmap; SourceColor, TargetColor: TColor);
   procedure MakeBitmapMenuTransparent(ABitmap: TBitmap);
-  function GetDelphiVersions(const ProjectFile: string) : SetDelphiVersions;
+  function GetDelphiVersions(const ProjectFile: string): SetDelphiVersions;
 
 implementation
 
@@ -286,7 +286,7 @@ uses
   System.Types,
   Registry;
 
-constructor TMSBuildDProj.Create(const _ProjectFile : string);
+constructor TMSBuildDProj.Create(const _ProjectFile: string);
 begin
  inherited Create;
  FProjectFile:=_ProjectFile;
@@ -311,9 +311,9 @@ var
   ns: string;
   XmlDoc: OleVariant;
   Nodes, Node: OleVariant;
-  i, lNodes : Integer;
-  sdv : SetDelphiVersions;
-  LDelphiVersion      : TDelphiVersions;
+  i, lNodes: Integer;
+  sdv: SetDelphiVersions;
+  LDelphiVersion: TDelphiVersions;
 begin
 
   sdv:=GetDelphiVersions(FProjectFile);
@@ -445,9 +445,9 @@ begin
 end;
 
 
-function GetDelphiVersions(const ProjectFile: string) : SetDelphiVersions;
+function GetDelphiVersions(const ProjectFile: string): SetDelphiVersions;
 var
-  sVersion, ns, ProjectExt, ProjectPath : string;
+  sVersion, ns, ProjectExt, ProjectPath: string;
   XmlDoc: OleVariant;
   Node: OleVariant;
 begin
@@ -532,9 +532,9 @@ begin
 end;
 
 {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
-function DelphiIsOldVersion(DelphiVersion:TDelphiVersions) : Boolean;
+function DelphiIsOldVersion(DelphiVersion:TDelphiVersions): Boolean;
 var
- i  : integer;
+ i: integer;
 begin
  Result:=False;
   for i:=0  to DelphiOldVersions-1 do
@@ -592,16 +592,16 @@ begin
  ReplaceColor(ABitmap, ColorLeftCorner, ColorBackMenu);
 end;
 
-function  GetListInstalledDelphiVersions : TInstalledDelphiVerions;
+function  GetListInstalledDelphiVersions: TInstalledDelphiVerions;
 Var
-  Factor : Double;
-  VersionData : TDelphiVersionData;
-  DelphiComp  : TDelphiVersions;
-  FileName    : string;
-  Found       : boolean;
+  Factor: Double;
+  VersionData: TDelphiVersionData;
+  DelphiComp: TDelphiVersions;
+  FileName: string;
+  Found: boolean;
   ColorLeftCorner, ColorBackMenu: TColor;
-  TempBitmap  : TBitmap;
-  CX : Integer;
+  TempBitmap: TBitmap;
+  CX: Integer;
 begin
   Result:=TInstalledDelphiVerions.Create;
   ColorBackMenu := GetSysColor(COLOR_MENU);
@@ -700,8 +700,8 @@ end;
 
 procedure TPAClientProfileList.LoadData;
 var
-  LDelphiVersionData  : TDelphiVersionData;
-  ns, sProfile, sProfilePath : string;
+  LDelphiVersionData: TDelphiVersionData;
+  ns, sProfile, sProfilePath: string;
   XmlDoc: OleVariant;
   Node: OleVariant;
 begin
@@ -777,7 +777,7 @@ function PathCanonicalize(lpszDst: PChar; lpszSrc: PChar): LongBool; stdcall;  e
 
 function GetAbsolutePath(const RelativePath, BasePath: string): string;
 var
-  lpszDst : array[0..MAX_PATH-1] of char;
+  lpszDst: array[0..MAX_PATH-1] of char;
 begin
   PathCanonicalize(@lpszDst[0], PChar(IncludeTrailingPathDelimiter(BasePath) + RelativePath));
   Result := lpszDst;
@@ -789,8 +789,8 @@ var
   ns: string;
   XmlDoc: OleVariant;
   Nodes, Node: OleVariant;
-  i, lNodes : Integer;
-  DProjectFileName  : string;
+  i, lNodes: Integer;
+  DProjectFileName: string;
 begin
     CoInitialize(nil);
     try
