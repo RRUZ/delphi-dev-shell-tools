@@ -15,7 +15,7 @@
 // The Original Code is DelphiDevShellTools_TLB.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2015 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -58,9 +58,9 @@ uses Winapi.Windows, System.Classes, {System.Variants, {System.Win.StdVCL,Vcl.Gr
 
 // *********************************************************************//
 // GUIDS declared in the TypeLibrary. Following prefixes are used:
-//   Type Libraries     : LIBID_xxxx
-//   CoClasses          : CLASS_xxxx
-//   DISPInterfaces     : DIID_xxxx
+//   Type Libraries: LIBID_xxxx
+//   CoClasses: CLASS_xxxx
+//   DISPInterfaces: DIID_xxxx
 //   Non-DISP interfaces: IID_xxxx
 // *********************************************************************//
 const

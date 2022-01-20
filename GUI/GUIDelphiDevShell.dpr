@@ -15,7 +15,7 @@
 { The Original Code is GUIDelphiDevShell.pas.                                                      }
 {                                                                                                  }
 { The Initial Developer of the Original Code is Rodrigo Ruz V.                                     }
-{ Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2015 Rodrigo Ruz V.                    }
+{ Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.                    }
 { All Rights Reserved.                                                                             }
 {                                                                                                  }
 {**************************************************************************************************}
@@ -43,8 +43,8 @@ uses
 
 procedure OnlyOne;
 var
-    hWnd, hMutex : THandle;
-    lpName      : PWideChar;
+    hWnd, hMutex: THandle;
+    lpName: PWideChar;
 begin
   lpName := PWideChar(Application.Title);
   hMutex := CreateMutex (nil, FALSE, lpName );

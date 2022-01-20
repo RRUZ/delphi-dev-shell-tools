@@ -14,7 +14,7 @@
 // The Original Code is uHttpDownload.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2011-2014 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2011-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -35,28 +35,28 @@ const
   sUserAgent = 'Mozilla/5.001 (windows; U; NT4.0; en-US; rv:1.0) Gecko/25250101';
 
 type
-  TUpdateProgress = procedure(Offset, lIndex, lDownloaded: Integer; lRate, lPorc : Double) of object;
-  TLogCallback    = procedure(const Msg : string) of object;
+  TUpdateProgress = procedure(Offset, lIndex, lDownloaded: Integer; lRate, lPorc: Double) of object;
+  TLogCallback    = procedure(const Msg: string) of object;
 
   THttpDownloadSegmentThr = class(TThread)
   private
     FURL: string;
     FOffset: Integer;
-    FOverallDownload : Integer;
-    FSessionDownload : Integer;
+    FOverallDownload: Integer;
+    FSessionDownload: Integer;
     FRangeFrom: Integer;
     FRangeTo: Integer;
     FFileName: string;
     FStopwatch: TStopwatch;
     FUpdateProgress: TUpdateProgress;
-    FIndexItem : Integer;
-    FSegmentSize : Integer;
+    FIndexItem: Integer;
+    FSegmentSize: Integer;
     FException: Exception;
     FHttp: TIdHTTP;
     FileStream: TFileStream;
-    FLog : TLogCallback;
+    FLog: TLogCallback;
     FMsg: string;
-    SSLHandler : TIdSSLIOHandlerSocketOpenSSL;
+    SSLHandler: TIdSSLIOHandlerSocketOpenSSL;
     procedure OnWork(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: Int64);
     procedure UpdateProgress;
     procedure DoHandleException;
@@ -65,7 +65,7 @@ type
     procedure Execute; override;
     procedure HandleException; virtual;
   public
-    constructor Create(const URL, FileName: string; RangeFrom, RangeTo: Integer; IndexItem : Integer; UpdateProgress: TUpdateProgress; Log: TLogCallback);
+    constructor Create(const URL, FileName: string; RangeFrom, RangeTo: Integer; IndexItem: Integer; UpdateProgress: TUpdateProgress; Log: TLogCallback);
     destructor Destroy; override;
   end;
 
@@ -78,7 +78,7 @@ uses
 
 { THttpGetRange }
 
-constructor THttpDownloadSegmentThr.Create(const URL, FileName: string; RangeFrom, RangeTo: Integer; IndexItem : Integer; UpdateProgress: TUpdateProgress; Log: TLogCallback);
+constructor THttpDownloadSegmentThr.Create(const URL, FileName: string; RangeFrom, RangeTo: Integer; IndexItem: Integer; UpdateProgress: TUpdateProgress; Log: TLogCallback);
 begin
   inherited Create(False);
   FURL := URL;
@@ -137,7 +137,7 @@ end;
 procedure THttpDownloadSegmentThr.DoHandleException;
 begin
    if Assigned(FLog) then
-    FLog(Format('Exception in Segment %d : %s',[FIndexItem+1,FException.Message]));
+    FLog(Format('Exception in Segment %d: %s',[FIndexItem+1,FException.Message]));
 end;
 
 procedure THttpDownloadSegmentThr.Execute;
@@ -198,7 +198,7 @@ end;
 
 procedure THttpDownloadSegmentThr.UpdateProgress;
 var
-  Rate,Porc : Double;
+  Rate,Porc: Double;
 begin
   Rate:=0;
   {

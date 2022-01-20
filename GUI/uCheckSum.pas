@@ -15,7 +15,7 @@
 // The Original Code is uCheckSum.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2015 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -47,13 +47,13 @@ type
     { Private declarations }
   public
     { Public declarations }
-    property FileName : string read FFileName write FFileName;
-    property CheckSumAlgo : string read FCheckSumAlgo write FCheckSumAlgo;
+    property FileName: string read FFileName write FFileName;
+    property CheckSumAlgo: string read FCheckSumAlgo write FCheckSumAlgo;
   end;
 
 
 var
-  FrmCheckSum : TFrmCheckSum;
+  FrmCheckSum: TFrmCheckSum;
 
 implementation
 
@@ -68,7 +68,7 @@ uses
 function SHA1FromFile(const FileName: string): string;
 var
   LSHA1: TIdHashSHA1;
-  LStream : TFileStream;
+  LStream: TFileStream;
 begin
   LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
@@ -86,7 +86,7 @@ end;
 function SHA256FromFile(const FileName: string): string;
 var
   LSHA256: TIdHashSHA256;
-  LStream : TFileStream;
+  LStream: TFileStream;
 begin
   LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
@@ -104,7 +104,7 @@ end;
 function SHA384FromFile(const FileName: string): string;
 var
   LSHA384: TIdHashSHA384;
-  LStream : TFileStream;
+  LStream: TFileStream;
 begin
   LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
@@ -122,7 +122,7 @@ end;
 function SHA512FromFile(const FileName: string): string;
 var
   LSHA512: TIdHashSHA512;
-  LStream : TFileStream;
+  LStream: TFileStream;
 begin
   LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
@@ -140,7 +140,7 @@ end;
 function MD4FromFile(const FileName: string): string;
 var
   LMD4: TIdHashMessageDigest4;
-  LStream : TFileStream;
+  LStream: TFileStream;
 begin
   LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
@@ -158,7 +158,7 @@ end;
 function MD5FromFile(const FileName: string): string;
 var
   LMD5: TIdHashMessageDigest5;
-  LStream : TFileStream;
+  LStream: TFileStream;
 begin
   LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
@@ -176,7 +176,7 @@ end;
 function CRC32FromFile(const FileName: string): string;
 var
   LCRC32: TIdHashCRC32;
-  LStream : TFileStream;
+  LStream: TFileStream;
 begin
   LStream:=TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try

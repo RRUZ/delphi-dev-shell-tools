@@ -14,7 +14,7 @@
 //
 //
 // Portions created by Mahdi Safsafi [SMP3]   e-mail SMP@LIVE.FR
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2015 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 // **************************************************************************************************
@@ -134,7 +134,7 @@ type
     /// Collection of Styled Child Controls
     /// </summary>
     class property ChildRegSysStylesList: TObjectDictionary<HWND, TChildControlInfo> read FChildRegSysStylesList;
-    class procedure AddControlDirectly(Handle: HWND; const sClassName : string; IncludeChildControls : Boolean = False);
+    class procedure AddControlDirectly(Handle: HWND; const sClassName: string; IncludeChildControls: Boolean = False);
   end;
 
 function GetWindowClassName(Window: HWND): String;
@@ -535,11 +535,11 @@ begin
     $102C: Result := 'LVM_GETITEMSTATE';
     $8000: Result := 'WM_APP';
 
-    LM_HITTEST         : Result:= 'LM_HITTEST';
-    LM_GETIDEALHEIGHT  : Result:= 'LM_GETIDEALHEIGHT';
-    LM_SETITEM         : Result:= 'LM_SETITEM';
-    LM_GETITEM         : Result:= 'LM_GETITEM';
-    //LM_GETIDEALSIZE    : Result:= 'LM_GETIDEALSIZE';
+    LM_HITTEST: Result:= 'LM_HITTEST';
+    LM_GETIDEALHEIGHT: Result:= 'LM_GETIDEALHEIGHT';
+    LM_SETITEM: Result:= 'LM_SETITEM';
+    LM_GETITEM: Result:= 'LM_GETITEM';
+    //LM_GETIDEALSIZE: Result:= 'LM_GETIDEALSIZE';
 
   else
        begin
@@ -556,7 +556,7 @@ end;
 
 function GetWindowClassName(Window: HWND): String;
 var
-  lpClassName : array [0..255] of Char;
+  lpClassName: array [0..255] of Char;
 begin
   Result:='';
   if GetClassName(Window, @lpClassName, Length(lpClassName))>0 then
@@ -677,16 +677,16 @@ begin
   inherited;
 end;
 
-class procedure TSysStyleManager.AddControlDirectly(Handle: HWND; const sClassName : string; IncludeChildControls : Boolean = False);
+class procedure TSysStyleManager.AddControlDirectly(Handle: HWND; const sClassName: string; IncludeChildControls: Boolean = False);
 var
- LStyleHook  : TSysStyleHook;
- ParentStyle : DWORD;
+ LStyleHook: TSysStyleHook;
+ ParentStyle: DWORD;
 
   procedure AddChildControl(ChildHandle: HWND);
   var
     Info: TChildControlInfo;
-    sChildClassName : string;
-    LStyleHook  : TSysStyleHook;
+    sChildClassName: string;
+    LStyleHook: TSysStyleHook;
   begin
    { Hook the control directly ! }
     ZeroMemory(@Info, sizeof(TChildControlInfo));
@@ -704,7 +704,7 @@ var
     end;
   end;
 
-  function EnumChildProc(const hWindow: hWnd; const LParam : LParam): boolean; stdcall;
+  function EnumChildProc(const hWindow: hWnd; const LParam: LParam): boolean; stdcall;
   begin
     AddChildControl(hWindow);
     Result:= True;
@@ -753,7 +753,7 @@ var
 
   procedure RemoveUnusedHooks;
   var
-    LHandle : THandle;
+    LHandle: THandle;
   begin
    for LHandle in TSysStyleManager.SysStyleHookList.Keys do
     if TSysStyleClass(TSysStyleManager.SysStyleHookList.Items[LHandle]).MustRemove then
@@ -778,7 +778,7 @@ var
 
   procedure AddControl(Handle: HWND);
   var
-   LStyleHook : TSysStyleHook;
+   LStyleHook: TSysStyleHook;
   begin
     { Hook the control directly ! }
     RemoveUnusedHooks;
@@ -936,7 +936,7 @@ Type
   TCustomStyleEngineClass = class(TCustomStyleEngine);
 
   TCustomStyleEngineHelper = class helper for TCustomStyleEngine
-   function  CreateSysHookPtr : Pointer;
+   function  CreateSysHookPtr: Pointer;
    procedure SetPointer;
   end;
 
@@ -945,8 +945,8 @@ Type
 var
   LRegisterSysStyleHookPtr: TRegisterSysStyleHook;
   LCreateSysHookPtr: procedure of object;
-  Trampoline_RegisterSysStyleHook  : procedure(Self: TObject; SysControlClass: String; SysStyleHookClass: Vcl.Themes.TSysStyleHookClass);
-  Trampoline_CreateSysHook : procedure of Object;
+  Trampoline_RegisterSysStyleHook: procedure(Self: TObject; SysControlClass: String; SysStyleHookClass: Vcl.Themes.TSysStyleHookClass);
+  Trampoline_CreateSysHook: procedure of Object;
 
 procedure  Detour_RegisterSysStyleHook(Self: TObject; SysControlClass: String; SysStyleHookClass: Vcl.Themes.TSysStyleHookClass);
 begin
@@ -958,7 +958,7 @@ begin
  //OutputDebugString('Detour_CreateSysHook');
 end;
 
-function TCustomStyleEngineHelper.CreateSysHookPtr : Pointer;
+function TCustomStyleEngineHelper.CreateSysHookPtr: Pointer;
 var
   MethodAddr: procedure of object;
 begin

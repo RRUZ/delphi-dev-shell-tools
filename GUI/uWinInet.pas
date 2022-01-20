@@ -15,7 +15,7 @@
 // The Original Code is uWinInet.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2015 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -40,9 +40,9 @@ type
   TWinINetGetThread = class(TThread)
   private
     FBytesRead: DWORD;
-    FUrl : string;
-    FStream : TStream;
-    FCallBack : TuWinInetProcCallBack;
+    FUrl: string;
+    FStream: TStream;
+    FCallBack: TuWinInetProcCallBack;
     FhWnd: HWND;
     procedure SyncCallBack;
   public
@@ -53,7 +53,7 @@ type
 
 
 
-function  GetRemoteFileSize(const Url : string): Integer;
+function  GetRemoteFileSize(const Url: string): Integer;
 procedure WinInet_HttpGet(const Url: string;Stream:TStream;CallBack:TuWinInetProcCallBack);overload;
 function  WinInet_HttpGet(const Url: string;CallBack:TuWinInetProcCallBack): string;overload;
 function  GetWinInetError(ErrorCode:Cardinal): string;
@@ -90,13 +90,13 @@ end;
 
 procedure ParseURL(const lpszUrl: string; var Host, Resource: string);
 var
-  lpszScheme      : array[0..INTERNET_MAX_SCHEME_LENGTH - 1] of Char;
-  lpszHostName    : array[0..INTERNET_MAX_HOST_NAME_LENGTH - 1] of Char;
-  lpszUserName    : array[0..INTERNET_MAX_USER_NAME_LENGTH - 1] of Char;
-  lpszPassword    : array[0..INTERNET_MAX_PASSWORD_LENGTH - 1] of Char;
-  lpszUrlPath     : array[0..INTERNET_MAX_PATH_LENGTH - 1] of Char;
-  lpszExtraInfo   : array[0..1024 - 1] of Char;
-  lpUrlComponents : TURLComponents;
+  lpszScheme: array[0..INTERNET_MAX_SCHEME_LENGTH - 1] of Char;
+  lpszHostName: array[0..INTERNET_MAX_HOST_NAME_LENGTH - 1] of Char;
+  lpszUserName: array[0..INTERNET_MAX_USER_NAME_LENGTH - 1] of Char;
+  lpszPassword: array[0..INTERNET_MAX_PASSWORD_LENGTH - 1] of Char;
+  lpszUrlPath: array[0..INTERNET_MAX_PATH_LENGTH - 1] of Char;
+  lpszExtraInfo: array[0..1024 - 1] of Char;
+  lpUrlComponents: TURLComponents;
 begin
   ZeroMemory(@lpszScheme, SizeOf(lpszScheme));
   ZeroMemory(@lpszHostName, SizeOf(lpszHostName));
@@ -126,16 +126,16 @@ begin
   Resource := lpszUrlPath;
 end;
 
-function GetRemoteFileSize(const Url : string): Integer;
+function GetRemoteFileSize(const Url: string): Integer;
 var
-  hInet    : HINTERNET;
-  hConnect : HINTERNET;
-  hRequest : HINTERNET;
+  hInet: HINTERNET;
+  hConnect: HINTERNET;
+  hRequest: HINTERNET;
   lpdwBufferLength: DWORD;
-  lpdwReserved    : DWORD;
+  lpdwReserved: DWORD;
   ServerName: string;
   Resource: string;
-  ErrorCode : Cardinal;
+  ErrorCode: Cardinal;
 begin
   ParseURL(Url,ServerName,Resource);
   Result:=0;
@@ -197,10 +197,10 @@ procedure WinInet_HttpGet(const Url: string;Stream:TStream;CallBack:TuWinInetPro
 const
   BuffSize = 1024*64;
 var
-  hInter   : HINTERNET;
-  hFile    : HINTERNET;
+  hInter: HINTERNET;
+  hFile: HINTERNET;
   BytesRead: DWORD;
-  Buffer   : Pointer;
+  Buffer: Pointer;
   ErrorCode: Cardinal;
 begin
   hInter := InternetOpen('', INTERNET_OPEN_TYPE_PRECONFIG, nil, nil, 0);
@@ -244,7 +244,7 @@ end;
 
 function WinInet_HttpGet(const Url: string;CallBack:TuWinInetProcCallBack): string;overload;
 Var
-  StringStream : TStringStream;
+  StringStream: TStringStream;
 begin
   Result:='';
     StringStream:=TStringStream.Create('',TEncoding.UTF8);
@@ -283,9 +283,9 @@ procedure TWinINetGetThread.Execute;
 const
   BuffSize = 1024*64;
 var
-  hInter   : HINTERNET;
-  hFile    : HINTERNET;
-  Buffer   : Pointer;
+  hInter: HINTERNET;
+  hFile: HINTERNET;
+  Buffer: Pointer;
   ErrorCode: Cardinal;
 begin
   hInter := InternetOpen('', INTERNET_OPEN_TYPE_PRECONFIG, nil, nil, 0);

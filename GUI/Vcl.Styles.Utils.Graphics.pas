@@ -15,7 +15,7 @@
 // The Original Code is Vcl.Styles.Utils.Graphics.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2012-2015 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2012-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -571,16 +571,16 @@ type
   //http://fortawesome.github.io/Font-Awesome/cheatsheet/
   TAwesomeFont = class
   private
-    FFontHandle : THandle;
-    FDefaultQuality : DWORD;
+    FFontHandle: THandle;
+    FDefaultQuality: DWORD;
     procedure LoadFontFromResource;
   public
     constructor Create;
     Destructor Destroy; override;
-    procedure DrawChar(DC: HDC; const AChar: Char; DestRect: TRect; AColor : TColor; Orientation : Integer = 0; ImageAlignment: TImageAlignment = iaLeft); overload;
-    procedure DrawChar(DC: HDC; const ACode: Word; DestRect: TRect; AColor : TColor; Orientation : Integer = 0; ImageAlignment: TImageAlignment = iaLeft); overload;
-    function  GetIcon(const ACode: Word; Width, Height : Integer; AColor, ABackColor : TColor; Orientation : Integer = 0; ImageAlignment: TImageAlignment = iaLeft) : HICON; overload;
-    function  GetIcon(const ACode: Word; Width, Height, CharX, CharY : Integer; AColor, ABackColor : TColor; Orientation : Integer = 0; ImageAlignment: TImageAlignment = iaLeft) : HICON; overload;
+    procedure DrawChar(DC: HDC; const AChar: Char; DestRect: TRect; AColor: TColor; Orientation: Integer = 0; ImageAlignment: TImageAlignment = iaLeft); overload;
+    procedure DrawChar(DC: HDC; const ACode: Word; DestRect: TRect; AColor: TColor; Orientation: Integer = 0; ImageAlignment: TImageAlignment = iaLeft); overload;
+    function  GetIcon(const ACode: Word; Width, Height: Integer; AColor, ABackColor: TColor; Orientation: Integer = 0; ImageAlignment: TImageAlignment = iaLeft): HICON; overload;
+    function  GetIcon(const ACode: Word; Width, Height, CharX, CharY: Integer; AColor, ABackColor: TColor; Orientation: Integer = 0; ImageAlignment: TImageAlignment = iaLeft): HICON; overload;
   end;
 
 
@@ -612,8 +612,8 @@ const
   procedure _Hue32(const ABitMap: TBitmap; Value: integer);
 
   procedure _Sepia(const AColor: TColor;Value: Integer; out NewColor:TColor);
-  procedure _Sepia24(const ABitMap: TBitmap;Value : Byte=32);
-  procedure _Sepia32(const ABitMap: TBitmap;Value : Byte=32);
+  procedure _Sepia24(const ABitMap: TBitmap;Value: Byte=32);
+  procedure _Sepia32(const ABitMap: TBitmap;Value: Byte=32);
 
   procedure _BlendMultiply(const AColor: TColor;Value: Integer; out NewColor:TColor);
   procedure _BlendMultiply24(const ABitMap: TBitmap;Value: Integer);
@@ -673,28 +673,28 @@ const
   procedure Bitmap24_Grayscale(ABitmap: TBitmap);
   procedure Bitmap32_Grayscale(ABitmap: TBitmap);
   //Set the Alpha and Color of a 32 bit Bitmap
-  procedure Bitmap32_SetAlphaAndColor(ABitmap: TBitmap; AlphaValue : Byte; AColor: TColor);
+  procedure Bitmap32_SetAlphaAndColor(ABitmap: TBitmap; AlphaValue: Byte; AColor: TColor);
   //Set the Alpha value for a specific Color of a 32 bit Bitmap
-  procedure Bitmap32_SetAlphaByColor(ABitmap: TBitmap; AlphaValue : Byte; AColor: TColor);
+  procedure Bitmap32_SetAlphaByColor(ABitmap: TBitmap; AlphaValue: Byte; AColor: TColor);
 
   //Set the Alpha value for all Colors, execept the Color Param of a 32 bit Bitmap
-  procedure Bitmap32_SetAlphaExceptColor(ABitmap: TBitmap; AlphaValue : Byte; AColor: TColor);
+  procedure Bitmap32_SetAlphaExceptColor(ABitmap: TBitmap; AlphaValue: Byte; AColor: TColor);
 
  type
   TColorFilter=class
   private
-   FColorValue : Integer;
+   FColorValue: Integer;
   public
    constructor Create(AColorValue:Integer);
-   property ColorValue : Integer read FColorValue Write FColorValue;
+   property ColorValue: Integer read FColorValue Write FColorValue;
    function ProcessColor(AColor: TColor):TColor;virtual;abstract;
   end;
 
   TBitmapFilter=class(TColorFilter)
   private
-   //FColorValue   : Integer;
+   //FColorValue: Integer;
    FUseBitmap: Boolean;
-   FSourceBitmap : TBitmap;
+   FSourceBitmap: TBitmap;
   public
    constructor Create(AColorValue:Integer);
    constructor CreateBitMap(ASourceBitmap :TBitmap);
@@ -800,34 +800,34 @@ const
 
   procedure GradientRoundedFillCanvas(const ACanvas: TCanvas;
   const AStartColor, AEndColor: TColor; const ARect: TRect;
-  const Direction: TGradientDirection; Radius : Integer);
+  const Direction: TGradientDirection; Radius: Integer);
 
-  procedure AlphaBlendFillCanvas(const ACanvas: TCanvas;  const AColor : TColor;const ARect: TRect; SourceConstantAlpha : Byte); overload;
-  procedure AlphaBlendFillCanvas(const DC: HDC;  const AColor : TColor;const ARect: TRect; SourceConstantAlpha : Byte); overload;
+  procedure AlphaBlendFillCanvas(const ACanvas: TCanvas;  const AColor: TColor;const ARect: TRect; SourceConstantAlpha: Byte); overload;
+  procedure AlphaBlendFillCanvas(const DC: HDC;  const AColor: TColor;const ARect: TRect; SourceConstantAlpha: Byte); overload;
 
-  procedure AlphaBlendRectangle(const ACanvas: TCanvas;  const AColor : TColor;const ARect: TRect; SourceConstantAlpha : Byte); overload;
-  procedure AlphaBlendRectangle(const DC: HDC;  const AColor : TColor;const ARect: TRect; SourceConstantAlpha : Byte); overload;
-
-
-  procedure DrawStyleElement(hdc : HDC; LDetails  : TThemedElementDetails; pRect : TRect; RestoreDC : Boolean = True);
-  procedure DrawStyleDownArrow(hdc : HDC; LRect : TRect; AColor :TColor);
-  procedure DrawStyleFillRect(hdc : HDC; LRect : TRect; AColor :TColor);
-  procedure DrawStyleRectangle(hdc : HDC; LRect : TRect; AColor :TColor);
+  procedure AlphaBlendRectangle(const ACanvas: TCanvas;  const AColor: TColor;const ARect: TRect; SourceConstantAlpha: Byte); overload;
+  procedure AlphaBlendRectangle(const DC: HDC;  const AColor: TColor;const ARect: TRect; SourceConstantAlpha: Byte); overload;
 
 
-  procedure DrawStyleArrow(hdc : HDC; Direction: TScrollDirection; Location: TPoint; Size: Integer; AColor: TColor);
-  procedure DrawStyleParentBackground(Handle : THandle; DC: HDC; const ARect: TRect);
-  procedure DrawStyleParentBackgroundEx(Handle : THandle; DC: HDC; const ARect: TRect);
+  procedure DrawStyleElement(hdc: HDC; LDetails: TThemedElementDetails; pRect: TRect; RestoreDC: Boolean = True);
+  procedure DrawStyleDownArrow(hdc: HDC; LRect: TRect; AColor :TColor);
+  procedure DrawStyleFillRect(hdc: HDC; LRect: TRect; AColor :TColor);
+  procedure DrawStyleRectangle(hdc: HDC; LRect: TRect; AColor :TColor);
+
+
+  procedure DrawStyleArrow(hdc: HDC; Direction: TScrollDirection; Location: TPoint; Size: Integer; AColor: TColor);
+  procedure DrawStyleParentBackground(Handle: THandle; DC: HDC; const ARect: TRect);
+  procedure DrawStyleParentBackgroundEx(Handle: THandle; DC: HDC; const ARect: TRect);
 
 
   procedure RotateBitmap(ABitMap: TBitmap; Rads: Single; AdjustSize: Boolean; BackGroundColor: TColor = clNone);
-  procedure FlipBitmap24Horizontal(ABitMap : TBitmap);
-  procedure FlipBitmap32Horizontal(ABitMap : TBitmap);
+  procedure FlipBitmap24Horizontal(ABitMap: TBitmap);
+  procedure FlipBitmap32Horizontal(ABitMap: TBitmap);
 
-  function ColorIsBright(AColor : TColor) : Boolean;
+  function ColorIsBright(AColor: TColor): Boolean;
 
 var
-  AwesomeFont :  TAwesomeFont;
+  AwesomeFont:  TAwesomeFont;
 
 implementation
 
@@ -851,7 +851,7 @@ type
 type
   TMirrorKind = (mtHorizontal, mtVertical, mtBoth );
 
-procedure MirrorBitMap(ABitMap : TBitmap; MirrorType: TMirrorKind);
+procedure MirrorBitMap(ABitMap: TBitmap; MirrorType: TMirrorKind);
 var
   LRect: TRect;
 begin
@@ -900,21 +900,21 @@ begin
 end;
 
 
-function ColorIsBright(AColor : TColor) : Boolean;
+function ColorIsBright(AColor: TColor): Boolean;
 var
- R, G, B : byte;
- Delta : Double;
+ R, G, B: byte;
+ Delta: Double;
 begin
   GetRGB(AColor, R, G, B);
   Delta := 1 - ( (0.299 * R) + (0.587 * G) + (0.114 * B) )/255;
   Result:= (Delta < 0.5);
 end;
 
-procedure _FlipBitmap24Horizontal(ABitMap : TBitmap);
+procedure _FlipBitmap24Horizontal(ABitMap: TBitmap);
 var
-  LRGBArray24 : PRGBArray24;
-  LRGBTriple  : TRGBTriple;
-  x, y        : Integer;
+  LRGBArray24: PRGBArray24;
+  LRGBTriple: TRGBTriple;
+  x, y: Integer;
 begin
    for y := 0 to ABitMap.Height -1 do
    begin
@@ -938,11 +938,11 @@ begin
    end;
 end;
 
-procedure _FlipBitmap32Horizontal(ABitMap : TBitmap);
+procedure _FlipBitmap32Horizontal(ABitMap: TBitmap);
 var
-  LRGBArray32 : PRGBArray32;
-  LRGBQuad  : TRGBQuad;
-  x, y        : Integer;
+  LRGBArray32: PRGBArray32;
+  LRGBQuad: TRGBQuad;
+  x, y: Integer;
 begin
    if ABitMap.PixelFormat<>pf32bit then  exit;
 
@@ -969,13 +969,13 @@ begin
 end;
 
 
-procedure FlipBitmap24Horizontal(ABitMap : TBitmap);
+procedure FlipBitmap24Horizontal(ABitMap: TBitmap);
 begin
    if ABitMap.PixelFormat<>pf24bit then  exit;
      MirrorBitMap(ABitMap, TMirrorKind.mtHorizontal);
 end;
 
-procedure FlipBitmap32Horizontal(ABitMap : TBitmap);
+procedure FlipBitmap32Horizontal(ABitMap: TBitmap);
 begin
    if ABitMap.PixelFormat<>pf32bit then  exit;
      MirrorBitMap(ABitMap, TMirrorKind.mtHorizontal);
@@ -1047,12 +1047,12 @@ begin
 end;
 
 
-procedure Bitmap32_SetAlphaAndColor(ABitmap: TBitmap; AlphaValue : Byte; AColor: TColor);
+procedure Bitmap32_SetAlphaAndColor(ABitmap: TBitmap; AlphaValue: Byte; AColor: TColor);
 var
   X: Integer;
   Y: Integer;
   LRGBQuad: PRGBQuad;
-  R, G, B : Byte;
+  R, G, B: Byte;
 begin
   GetRGB(AColor, R, G, B);
   if ABitmap.PixelFormat<>pf32bit then Exit;
@@ -1071,7 +1071,7 @@ begin
   end;
 end;
 
-procedure Bitmap32_SetAlphaByColor(ABitmap: TBitmap; AlphaValue : Byte; AColor: TColor);
+procedure Bitmap32_SetAlphaByColor(ABitmap: TBitmap; AlphaValue: Byte; AColor: TColor);
 var
   X: Integer;
   Y: Integer;
@@ -1090,12 +1090,12 @@ begin
   end;
 end;
 
-procedure Bitmap32_SetAlphaExceptColor(ABitmap: TBitmap; AlphaValue : Byte; AColor: TColor);
+procedure Bitmap32_SetAlphaExceptColor(ABitmap: TBitmap; AlphaValue: Byte; AColor: TColor);
 var
   X: Integer;
   Y: Integer;
   LRGBQuad: PRGBQuad;
-  LColorRef : COLORREF;
+  LColorRef: COLORREF;
 begin
   if ABitmap.PixelFormat<>pf32bit then Exit;
 
@@ -1135,10 +1135,10 @@ begin
   end;
 end;
 
-procedure DrawStyleArrow(hdc : HDC; Direction: TScrollDirection; Location: TPoint; Size: Integer; AColor: TColor);
+procedure DrawStyleArrow(hdc: HDC; Direction: TScrollDirection; Location: TPoint; Size: Integer; AColor: TColor);
 var
-  SaveIndex : Integer;
-  LCanvas   : TCanvas;
+  SaveIndex: Integer;
+  LCanvas: TCanvas;
 begin
   SaveIndex := SaveDC(hdc);
   LCanvas:=TCanvas.Create;
@@ -1156,10 +1156,10 @@ end;
 
 
 
-procedure DrawStyleFillRect(hdc : HDC; LRect : TRect; AColor :TColor);
+procedure DrawStyleFillRect(hdc: HDC; LRect: TRect; AColor :TColor);
 var
- SaveIndex : Integer;
- LCanvas : TCanvas;
+ SaveIndex: Integer;
+ LCanvas: TCanvas;
 begin
   LCanvas:=TCanvas.Create;
   SaveIndex := SaveDC(hdc);
@@ -1175,10 +1175,10 @@ begin
   end;
 end;
 
-procedure DrawStyleRectangle(hdc : HDC; LRect : TRect; AColor :TColor);
+procedure DrawStyleRectangle(hdc: HDC; LRect: TRect; AColor :TColor);
 var
- SaveIndex : Integer;
- LCanvas : TCanvas;
+ SaveIndex: Integer;
+ LCanvas: TCanvas;
 begin
   LCanvas:=TCanvas.Create;
   SaveIndex := SaveDC(hdc);
@@ -1195,11 +1195,11 @@ begin
 end;
 
 
-procedure DrawStyleDownArrow(hdc : HDC; LRect : TRect; AColor :TColor);
+procedure DrawStyleDownArrow(hdc: HDC; LRect: TRect; AColor :TColor);
 var
- SaveIndex, X, Y, I : Integer;
- LColor : TColor;
- LCanvas : TCanvas;
+ SaveIndex, X, Y, I: Integer;
+ LColor: TColor;
+ LCanvas: TCanvas;
 begin
   SaveIndex := SaveDC(hdc);
   LCanvas:=TCanvas.Create;
@@ -1229,11 +1229,11 @@ begin
 end;
 
 
-procedure DrawStyleParentBackground(Handle : THandle; DC: HDC; const ARect: TRect);
+procedure DrawStyleParentBackground(Handle: THandle; DC: HDC; const ARect: TRect);
 var
   LBuffer: TBitmap;
   LPoint: TPoint;
-  LParentHandle : THandle;
+  LParentHandle: THandle;
 begin
   if (Handle=0) or (ARect.Width<=0) or (ARect.Height<=0) then exit;
 
@@ -1255,11 +1255,11 @@ begin
   end;
 end;
 
-procedure DrawStyleParentBackgroundEx(Handle : THandle; DC: HDC; const ARect: TRect);
+procedure DrawStyleParentBackgroundEx(Handle: THandle; DC: HDC; const ARect: TRect);
 var
   LBuffer: TBitmap;
   LPoint: TPoint;
-  LParentHandle : THandle;
+  LParentHandle: THandle;
 begin
   if (Handle=0) or (ARect.Width<=0) or (ARect.Height<=0) then exit;
   LPoint := Point(ARect.Left, ARect.Top);
@@ -1280,9 +1280,9 @@ begin
 end;
 
 
-procedure DrawStyleElement(hdc : HDC; LDetails  : TThemedElementDetails; pRect : TRect; RestoreDC : Boolean = True);
+procedure DrawStyleElement(hdc: HDC; LDetails: TThemedElementDetails; pRect: TRect; RestoreDC: Boolean = True);
 var
-  SaveIndex : Integer;
+  SaveIndex: Integer;
 begin
   SaveIndex :=0;
   if RestoreDC then
@@ -1297,12 +1297,12 @@ end;
 
 procedure GradientRoundedFillCanvas(const ACanvas: TCanvas;
   const AStartColor, AEndColor: TColor; const ARect: TRect;
-  const Direction: TGradientDirection; Radius : Integer);
+  const Direction: TGradientDirection; Radius: Integer);
 var
-  LBuffer : TBitmap;
-  LRect : TRect;
-  LRgn : THandle;
-  LPoint : TPoint;
+  LBuffer: TBitmap;
+  LRect: TRect;
+  LRgn: THandle;
+  LPoint: TPoint;
 begin
   LBuffer:=TBitmap.Create;
   try
@@ -1328,16 +1328,16 @@ begin
 end;
 
 
-procedure AlphaBlendRectangle(const ACanvas: TCanvas;  const AColor : TColor;const ARect: TRect; SourceConstantAlpha : Byte); overload;
+procedure AlphaBlendRectangle(const ACanvas: TCanvas;  const AColor: TColor;const ARect: TRect; SourceConstantAlpha: Byte); overload;
 begin
   AlphaBlendRectangle(ACanvas.Handle, AColor, ARect, SourceConstantAlpha);
 end;
 
-procedure AlphaBlendRectangle(const DC: HDC;  const AColor : TColor;const ARect: TRect; SourceConstantAlpha : Byte); overload;
+procedure AlphaBlendRectangle(const DC: HDC;  const AColor: TColor;const ARect: TRect; SourceConstantAlpha: Byte); overload;
 var
-   SaveIndex  : Integer;
-   LCanvas    : TCanvas;
-   LRect      : TRect;
+   SaveIndex: Integer;
+   LCanvas: TCanvas;
+   LRect: TRect;
 begin
   SaveIndex := SaveDC(DC);
   LCanvas:=TCanvas.Create;
@@ -1355,14 +1355,14 @@ begin
   end;
 end;
 
-procedure AlphaBlendFillCanvas(const ACanvas: TCanvas;  const AColor : TColor;const ARect: TRect; SourceConstantAlpha : Byte);
+procedure AlphaBlendFillCanvas(const ACanvas: TCanvas;  const AColor: TColor;const ARect: TRect; SourceConstantAlpha: Byte);
 begin
   AlphaBlendFillCanvas(ACanvas.Handle, AColor, ARect, SourceConstantAlpha);
 end;
 
-procedure AlphaBlendFillCanvas(const DC: HDC;  const AColor : TColor;const ARect: TRect; SourceConstantAlpha : Byte); overload;
+procedure AlphaBlendFillCanvas(const DC: HDC;  const AColor: TColor;const ARect: TRect; SourceConstantAlpha: Byte); overload;
 var
- LBuffer   : TBitmap;
+ LBuffer: TBitmap;
  LBlendFunc: TBlendFunction;
 begin
   LBuffer := TBitmap.Create;
@@ -1394,7 +1394,7 @@ end;
 
 procedure _ProcessBitmap32(const Dest: TBitmap; Value: Integer; _Process:TImageFilterCallback); overload;
 var
-  r, g, b, a   : byte;
+  r, g, b, a: byte;
   x, y:    integer;
   ARGB:    TColor;
   Line, Delta: integer;
@@ -1442,13 +1442,13 @@ end;
 
 procedure _ProcessBitmap32(const Source, Dest: TBitmap;_Process:TImageFilterCallback); overload;
 var
-  r, g, b, a   : byte;
+  r, g, b, a: byte;
   x, y:    integer;
   ARGB:    TColor;
   LineDest, DeltaDest: integer;
   LineSource, DeltaSource: integer;
-  Value : TColor;
-  SourceN : TBitmap;
+  Value: TColor;
+  SourceN: TBitmap;
 begin
   SourceN:=TBitmap.Create;
   try
@@ -1524,7 +1524,7 @@ end;
 
 procedure _ProcessBitmap24(const ABitMap: TBitmap; Value: Integer; _Process:TImageFilterCallback); overload;
 var
-  r, g, b    : byte;
+  r, g, b: byte;
   x, y:    integer;
   ARGB:    TColor;
   Line, Delta: integer;
@@ -1572,13 +1572,13 @@ end;
 
 procedure _ProcessBitmap24(const Source, Dest: TBitmap;_Process:TImageFilterCallback); overload;
 var
-  r, g, b   : byte;
+  r, g, b: byte;
   x, y:    integer;
   ARGB:    TColor;
   LineDest, DeltaDest: integer;
   LineSource, DeltaSource: integer;
-  Value : TColor;
-  SourceN : TBitmap;
+  Value: TColor;
+  SourceN: TBitmap;
 begin
   SourceN:=TBitmap.Create;
   try
@@ -1632,8 +1632,8 @@ end;
 
 procedure _Sepia(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  ARGB         : TColor;
-  r, g, b      : byte;
+  ARGB: TColor;
+  r, g, b: byte;
 begin
   GetRGB(AColor, r,g, b);
   ARGB:=(r+g+b) div 3;
@@ -1650,20 +1650,20 @@ begin
   NewColor:= RGB(r, g, b);
 end;
 
-procedure _Sepia24(const ABitMap: TBitmap;Value : Byte);
+procedure _Sepia24(const ABitMap: TBitmap;Value: Byte);
 begin
   _ProcessBitmap24(ABitMap, Value, _Sepia);
 end;
 
-procedure _Sepia32(const ABitMap: TBitmap;Value : Byte);
+procedure _Sepia32(const ABitMap: TBitmap;Value: Byte);
 begin
   _ProcessBitmap32(ABitMap, Value, _Sepia);
 end;
 
 procedure _Hue(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  ARGB         : TColor;
-  H, S, L      : double;
+  ARGB: TColor;
+  H, S, L: double;
 begin
   _RGBtoHSL(AColor, H, S, L);
   H    := H + Value / 360;
@@ -1692,10 +1692,10 @@ end;
 
 procedure _BlendBurn(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  ARGB         : TColor;
-  r, g, b      : byte;
-  br, bg, bb   : byte;
-  c            : Integer;
+  ARGB: TColor;
+  r, g, b: byte;
+  br, bg, bb: byte;
+  c: Integer;
 begin
   GetRGB(AColor, r,g, b);
   ARGB := Value;
@@ -1744,9 +1744,9 @@ end;
 
 procedure _BlendMultiply(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
-  ARGB         : TColor;
-  br, bg, bb   : byte;
+  r, g, b: byte;
+  ARGB: TColor;
+  br, bg, bb: byte;
 begin
   ARGB := Value;
   GetRGB(AColor, r, g, b);
@@ -1777,10 +1777,10 @@ if c > 255 then result := 255 else result := c;
 }
 procedure _BlendAdditive(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
-  ARGB         : TColor;
-  br, bg, bb   : byte;
-  c            : Integer;
+  r, g, b: byte;
+  ARGB: TColor;
+  br, bg, bb: byte;
+  c: Integer;
 begin
   ARGB := Value;
   GetRGB(AColor, r,g, b);
@@ -1817,10 +1817,10 @@ end;
 }
 procedure _BlendDodge(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
-  ARGB         : TColor;
-  br, bg, bb   : byte;
-  c            : Integer;
+  r, g, b: byte;
+  ARGB: TColor;
+  br, bg, bb: byte;
+  c: Integer;
 begin
   GetRGB(AColor, r,g, b);
 
@@ -1873,10 +1873,10 @@ else
 }
 procedure _BlendOverlay(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
-  ARGB         : TColor;
-  br, bg, bb   : byte;
-  c            : Integer;
+  r, g, b: byte;
+  ARGB: TColor;
+  br, bg, bb: byte;
+  c: Integer;
 begin
   GetRGB(AColor, r,g, b);
   ARGB := Value;
@@ -1926,9 +1926,9 @@ result := abs(a-b);
 
 procedure _BlendDifference(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
-  ARGB         : TColor;
-  br, bg, bb   : byte;
+  r, g, b: byte;
+  ARGB: TColor;
+  br, bg, bb: byte;
 begin
   GetRGB(AColor, r,g, b);
   ARGB := Value;
@@ -1958,9 +1958,9 @@ else
 }
 procedure _BlendLighten(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
-  ARGB         : TColor;
-  br, bg, bb   : byte;
+  r, g, b: byte;
+  ARGB: TColor;
+  br, bg, bb: byte;
 begin
   GetRGB(AColor, r,g, b);
 
@@ -1992,9 +1992,9 @@ else
 }
 procedure _BlendDarken(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
-  ARGB         : TColor;
-  br, bg, bb   : byte;
+  r, g, b: byte;
+  ARGB: TColor;
+  br, bg, bb: byte;
 begin
   GetRGB(AColor, r,g, b);
   ARGB := Value;
@@ -2020,10 +2020,10 @@ result := 255 - ((255-a) * (255-b) SHR 8);
 }
 procedure _BlendScreen(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
-  ARGB         : TColor;
-  br, bg, bb   : byte;
-  c            : Integer;
+  r, g, b: byte;
+  ARGB: TColor;
+  br, bg, bb: byte;
+  c: Integer;
 begin
   GetRGB(AColor, r,g, b);
 
@@ -2056,7 +2056,7 @@ end;
 
 procedure _SetRComponent(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
+  r, g, b: byte;
 begin
   GetRGB(AColor, r,g, b);
   r:=RoundIntToByte(r+Value);
@@ -2065,7 +2065,7 @@ end;
 
 procedure _SetGComponent(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
+  r, g, b: byte;
 begin
   GetRGB(AColor, r,g, b);
   g:=RoundIntToByte(g+Value);
@@ -2074,7 +2074,7 @@ end;
 
 procedure _SetBComponent(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
+  r, g, b: byte;
 begin
   GetRGB(AColor, r,g, b);
   b:=RoundIntToByte(b+Value);
@@ -2083,7 +2083,7 @@ end;
 
 procedure _SetRGB24(const ABitMap: TBitmap; DR,DG,DB: Integer);
 var
-  r, g, b : byte;
+  r, g, b: byte;
   x, y:    integer;
   Line, Delta: integer;
 begin
@@ -2133,8 +2133,8 @@ end;
 
 procedure _Saturation(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
-  Gray         : Integer;
+  r, g, b: byte;
+  Gray: Integer;
 begin
   GetRGB(AColor, r,g, b);
   Gray := (r + g + b) div 3;
@@ -2158,7 +2158,7 @@ end;
 
 procedure _Lightness(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
+  r, g, b: byte;
 begin
   GetRGB(AColor, r,g, b);
   r := RoundIntToByte(r + ((255 - r) * Value) div 255);
@@ -2179,7 +2179,7 @@ end;
 
 procedure _Darkness(const AColor: TColor;Value: Integer; out NewColor:TColor);
 var
-  r, g, b      : byte;
+  r, g, b: byte;
 begin
   GetRGB(AColor, r,g, b);
   r := RoundIntToByte(r - ((r) * Value) div 255);
@@ -2710,14 +2710,14 @@ procedure TAwesomeFont.LoadFontFromResource;
 var
   NbFontAdded: Cardinal;
 {$IFDEF USE_ZIP}
-  LZipFile     : TZipFile;
-  LResCompressed, LStream : TStream;
-  LocalHeader  : TZipHeader;
-  LMemoryStream : TMemoryStream;
+  LZipFile: TZipFile;
+  LResCompressed, LStream: TStream;
+  LocalHeader: TZipHeader;
+  LMemoryStream: TMemoryStream;
 {$ELSE}
-  hResInfo : HRSRC;
-  ResSize  : Cardinal;
-  ResAddr  : HGLOBAL;
+  hResInfo: HRSRC;
+  ResSize: Cardinal;
+  ResAddr: HGLOBAL;
 {$ENDIF}
 begin
 {$IFDEF USE_ZIP}
@@ -2765,7 +2765,7 @@ begin
 {$ENDIF}
 end;
 
-procedure TAwesomeFont.DrawChar(DC: HDC; const ACode: Word; DestRect: TRect; AColor: TColor; Orientation : Integer = 0; ImageAlignment: TImageAlignment = iaLeft);
+procedure TAwesomeFont.DrawChar(DC: HDC; const ACode: Word; DestRect: TRect; AColor: TColor; Orientation: Integer = 0; ImageAlignment: TImageAlignment = iaLeft);
 begin
   DrawChar(DC, Chr(ACode), DestRect, AColor, Orientation, ImageAlignment);
 end;
@@ -2774,9 +2774,9 @@ function TAwesomeFont.GetIcon(const ACode: Word; Width, Height, CharX,
   CharY: Integer; AColor, ABackColor: TColor; Orientation: Integer;
   ImageAlignment: TImageAlignment): HICON;
 var
-  LIconInfo : TIconInfo;
-  LBitmap, LMask : TBitmap;
-  NewIcon : HICON;
+  LIconInfo: TIconInfo;
+  LBitmap, LMask: TBitmap;
+  NewIcon: HICON;
 begin
   LBitmap:=TBitmap.Create;
   try
@@ -2818,14 +2818,14 @@ function TAwesomeFont.GetIcon(const ACode: Word; Width, Height: Integer; AColor,
 begin
   Result:=GetIcon(ACode, Width, Height, Width, Height, AColor, ABackColor, Orientation, ImageAlignment);
 end;
-procedure TAwesomeFont.DrawChar(DC: HDC; const AChar: Char; DestRect: TRect; AColor: TColor; Orientation : Integer = 0; ImageAlignment: TImageAlignment = iaLeft);
+procedure TAwesomeFont.DrawChar(DC: HDC; const AChar: Char; DestRect: TRect; AColor: TColor; Orientation: Integer = 0; ImageAlignment: TImageAlignment = iaLeft);
 var
   LogFont: TLogFont;
-  AFont  : HFONT;
+  AFont: HFONT;
   pOldFont: HGDIOBJ;
   LColorRef: COLORREF;
   OldMode: integer;
-  uFormat : Cardinal;
+  uFormat: Cardinal;
 begin
   ZeroMemory(@LogFont, SizeOf(LogFont));
   LogFont.lfHeight := DestRect.Height;
@@ -2856,11 +2856,11 @@ begin
         uFormat := DT_SINGLELINE;
 
         case ImageAlignment of
-         iaLeft   : uFormat:= uFormat or DT_LEFT;
-         iaRight  : uFormat:= uFormat or DT_RIGHT;
-         iaCenter : uFormat:= uFormat or DT_CENTER;
-         iaTop    : uFormat:= uFormat or DT_TOP;
-         iaBottom : uFormat:= uFormat or DT_BOTTOM;
+         iaLeft: uFormat:= uFormat or DT_LEFT;
+         iaRight: uFormat:= uFormat or DT_RIGHT;
+         iaCenter: uFormat:= uFormat or DT_CENTER;
+         iaTop: uFormat:= uFormat or DT_TOP;
+         iaBottom: uFormat:= uFormat or DT_BOTTOM;
         end;
 
         Winapi.Windows.DrawText(DC, AChar, 1, DestRect, uFormat);

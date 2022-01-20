@@ -14,7 +14,7 @@
 // The Original Code is uCheckUpdate.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2011-2014 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2011-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -51,34 +51,34 @@ type
     FTempInstallerFileName: string;
 
     FApplicationName: string;
-    FRemoteVersionFile : string;
+    FRemoteVersionFile: string;
 
-    FStopwatch : TStopwatch;
+    FStopwatch: TStopwatch;
     FCheckExternal: boolean;
-    FErrorUpdate : boolean;
+    FErrorUpdate: boolean;
     procedure ReadRemoteInfo;
     procedure ReadLocalInfo;
     procedure ReadInfoUpdater;
     function GetUpdateAvailable: Boolean;
-    property XmlVersionInfo : string read FXmlVersionInfo write FXmlVersionInfo;
-    property RemoteVersion : string read FRemoteVersion write FRemoteVersion;
-    property LocalVersion  : string read FLocalVersion write FLocalVersion;
-    property UrlInstaller : string read FUrlInstaller write FUrlInstaller;
-    property InstallerFileName : string read FInstallerFileName write FInstallerFileName;
-    property TempInstallerFileName : string read FTempInstallerFileName write FTempInstallerFileName;
+    property XmlVersionInfo: string read FXmlVersionInfo write FXmlVersionInfo;
+    property RemoteVersion: string read FRemoteVersion write FRemoteVersion;
+    property LocalVersion: string read FLocalVersion write FLocalVersion;
+    property UrlInstaller: string read FUrlInstaller write FUrlInstaller;
+    property InstallerFileName: string read FInstallerFileName write FInstallerFileName;
+    property TempInstallerFileName: string read FTempInstallerFileName write FTempInstallerFileName;
     procedure SetMsg(const Msg:string);
     procedure Download;
     procedure ExecuteInstaller;
     procedure DownloadCallBack(BytesRead:Integer);
   public
-    property  CheckExternal   : boolean read FCheckExternal write FCheckExternal;
-    property  UpdateAvailable : Boolean read GetUpdateAvailable;
+    property  CheckExternal: boolean read FCheckExternal write FCheckExternal;
+    property  UpdateAvailable: Boolean read GetUpdateAvailable;
     procedure ExecuteUpdater;
   end;
 
 
 var
-  FrmCheckUpdate : TFrmCheckUpdate;
+  FrmCheckUpdate: TFrmCheckUpdate;
 
 
 implementation
@@ -118,7 +118,7 @@ end;
 
 procedure TFrmCheckUpdate.Download;
 var
-  FileStream : TFileStream;
+  FileStream: TFileStream;
 begin
   try
    ProgressBar1.Style:=pbstNormal;
@@ -139,16 +139,16 @@ begin
    BtnInstall.Visible:=FileExists(TempInstallerFileName);
    BtnCheckUpdates.Visible:=not BtnInstall.Visible;
    if BtnInstall.Visible and not CheckExternal then ExecuteInstaller;
-  except on E : Exception do
+  except on E: Exception do
     SetMsg(Format('Error checking updates %s',[E.Message]));
   end;
 end;
 
 procedure TFrmCheckUpdate.DownloadCallBack(BytesRead: Integer);
 var
-  Pos  :  Integer;
-  Max  :  Integer;
-  Rate :  Integer;
+  Pos:  Integer;
+  Max:  Integer;
+  Rate:  Integer;
   sRate:  string;
 begin
    if ProgressBar1.Style=pbstNormal then
@@ -203,7 +203,7 @@ begin
       ProgressBar1.Style:=pbstNormal;
       BtnCheckUpdates.Enabled:=True;
     end;
-  except on E : Exception do
+  except on E: Exception do
     SetMsg(Format('Error checking updates %s',[E.Message]));
   end;
 end;
@@ -230,9 +230,9 @@ end;
 
 procedure TFrmCheckUpdate.ReadInfoUpdater;
 var
-  LFile : string;
-  Node   : OleVariant;
-  XmlDoc : OleVariant;
+  LFile: string;
+  Node: OleVariant;
+  XmlDoc: OleVariant;
 begin
   LFile:=ExtractFilePath(ParamStr(0))+'DownloadInfo.xml';
   if not FileExists(LFile) then
@@ -267,7 +267,7 @@ end;
 
 procedure TFrmCheckUpdate.ReadLocalInfo;
 var
-  LBinaryFile : string;
+  LBinaryFile: string;
 begin
    LBinaryFile:=ParamStr(1);
    if not FileExists(LBinaryFile) then
@@ -281,8 +281,8 @@ end;
 
 procedure TFrmCheckUpdate.ReadRemoteInfo;
 var
-  XmlDoc : OleVariant;
-  Node   : OleVariant;
+  XmlDoc: OleVariant;
+  Node: OleVariant;
 begin
   XmlDoc       := CreateOleObject('Msxml2.DOMDocument.6.0');
   XmlDoc.Async := False;
@@ -328,7 +328,7 @@ begin
      Result:=True
    else
      Result:=(FRemoteVersion>FLocalVersion);
- except on E : Exception do
+ except on E: Exception do
    begin
     FErrorUpdate:=True;
     MessageDlg(Format('Error checking updates %s',[E.Message]), mtWarning, [mbOK], 0);

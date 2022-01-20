@@ -15,7 +15,7 @@
 // The Original Code is DelphiDevShellToolsImpl.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2016 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -47,46 +47,46 @@ type
   IShellExtInit, IContextMenu, IContextMenu2, IContextMenu3)
   private
     FFileName, FFileExt: string;
-    FDProjectVersion : SetDelphiVersions;
-    FMSBuildDProj : TMSBuildDProj;
-    FMSBuildGroupDProj : TMSBuildGroupProj;
-    FMethodsDict : TObjectDictionary<Integer, TMethodInfo>;
-    FOwnerDrawId : UINT;
-    //]DelphiDevShellTasks : TDelphiDevShellTasks;
+    FDProjectVersion: SetDelphiVersions;
+    FMSBuildDProj: TMSBuildDProj;
+    FMSBuildGroupDProj: TMSBuildGroupProj;
+    FMethodsDict: TObjectDictionary<Integer, TMethodInfo>;
+    FOwnerDrawId: UINT;
+    //]DelphiDevShellTasks: TDelphiDevShellTasks;
 
-    FInstalledDelphiVersions : TInstalledDelphiVerions;
-    FPAClientProfiles        : TPAClientProfileList;
-    FBitmapsDict        : TObjectDictionary<string, TBitmap>;
-    FIconsExternals     : TObjectDictionary<string, TIcon>;//TIcon is a instance
-    FIconsDictExternal  : TDictionary<Integer, TIcon>;//TIcon is only a reference
-    FIconsDictResources : TDictionary<Integer, string>;
+    FInstalledDelphiVersions: TInstalledDelphiVerions;
+    FPAClientProfiles: TPAClientProfileList;
+    FBitmapsDict: TObjectDictionary<string, TBitmap>;
+    FIconsExternals: TObjectDictionary<string, TIcon>;//TIcon is a instance
+    FIconsDictExternal: TDictionary<Integer, TIcon>;//TIcon is only a reference
+    FIconsDictResources: TDictionary<Integer, string>;
 
-    FExeNameTxt, FFriendlyAppNameTxt : string;
-    FLazarusInstalled : Boolean;
-    FSettings         : TSettings;
-    FDelphiToolsExts, FExternalToolsExts, FPCToolsExts     : TStringDynArray;
+    FExeNameTxt, FFriendlyAppNameTxt: string;
+    FLazarusInstalled: Boolean;
+    FSettings: TSettings;
+    FDelphiToolsExts, FExternalToolsExts, FPCToolsExts: TStringDynArray;
 
-    procedure AddCommonTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-    procedure AddOpenRADCmdTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-    procedure AddMSBuildRAD_SpecificTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-    procedure AddMSBuildRAD_AllTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-    procedure AddOpenWithDelphi(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-    procedure AddOpenWithDelphi_GroupProject(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddCommonTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
+    procedure AddOpenRADCmdTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
+    procedure AddMSBuildRAD_SpecificTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
+    procedure AddMSBuildRAD_AllTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
+    procedure AddOpenWithDelphi(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
+    procedure AddOpenWithDelphi_GroupProject(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
 
-    procedure AddMSBuildPAClientTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-    procedure AddOpenVclStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-    procedure AddCheckSumTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-    procedure AddRADStudioToolsTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddMSBuildPAClientTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
+    procedure AddOpenVclStyleTask(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
+    procedure AddCheckSumTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
+    procedure AddRADStudioToolsTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
     //Lazarus & FPC
-    procedure AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
-    procedure AddFPCToolsTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddLazarusTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
+    procedure AddFPCToolsTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
     //-------------------
-    procedure AddExternalToolsTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+    procedure AddExternalToolsTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
     //Menu helper functions
     function  InsertMenuDevShell(hMenu: HMENU; uPosition: UINT; uIDNewItem: UINT_PTR; lpNewItem, IconName: LPCWSTR): BOOL;
-    procedure RegisterMenuItemBitmapDevShell(hMenu: HMENU; uPosition, wID: UINT; const IconName : String);
-    procedure RegisterMenuItemBitmapExternal(hMenu: HMENU; uPosition, wID: UINT; const IconName : String);
-    procedure AddMenuSeparatorEx(hMenu : HMENU; var MenuIndex : Integer);
+    procedure RegisterMenuItemBitmapDevShell(hMenu: HMENU; uPosition, wID: UINT; const IconName: String);
+    procedure RegisterMenuItemBitmapExternal(hMenu: HMENU; uPosition, wID: UINT; const IconName: String);
+    procedure AddMenuSeparatorEx(hMenu: HMENU; var MenuIndex: Integer);
 
     procedure InitResources;
     procedure FreeResources;
@@ -177,11 +177,11 @@ end;
 
 procedure TDelphiDevShellToolsContextMenu.RegisterBitmap(const ResourceName: string;const DictName:string='');
 var
-  Factor : Double;
-  CX     : Integer;
-  TempBitmap : TBitmap;
-  LDictName : string;
-  LPng : TPngImage;
+  Factor: Double;
+  CX: Integer;
+  TempBitmap: TBitmap;
+  LDictName: string;
+  LPng: TPngImage;
 begin
  try
     LDictName:=ResourceName;
@@ -220,7 +220,7 @@ begin
       end;
     end;
  except
-   on  E : Exception do
+   on  E: Exception do
      log(Format('RegisterBitmap Message %s Trace %s',[E.Message, e.StackTrace]));
  end;
 
@@ -228,11 +228,11 @@ end;
 
 procedure TDelphiDevShellToolsContextMenu.RegisterBitmap32(const ResourceName: string);
 var
-  TempBitmap : TBitmap;
-  CX     : Integer;
-  LPicture : TPicture;
-  s : string;
-  Factor : Double;
+  TempBitmap: TBitmap;
+  CX: Integer;
+  LPicture: TPicture;
+  s: string;
+  Factor: Double;
 begin
  try
     CX:=GetSystemMetrics(SM_CXMENUCHECK);
@@ -275,17 +275,17 @@ begin
         FIconsExternals.Items[ResourceName].LoadFromFile(s);
     end;
  except
-   on  E : Exception do
+   on  E: Exception do
    log(Format('RegisterBitmap32 Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 end;
 
 procedure TDelphiDevShellToolsContextMenu.InitResources;
 var
- CX     : Integer;
- Factor : Double;
- LCurrentDelphiVersionData  : TDelphiVersionData;
- TempBitmap : TBitmap;
+ CX: Integer;
+ Factor: Double;
+ LCurrentDelphiVersionData: TDelphiVersionData;
+ TempBitmap: TBitmap;
 begin
   try
     CX:=GetSystemMetrics(SM_CXMENUCHECK);
@@ -385,21 +385,21 @@ begin
          end;
        end;
      except
-       on  E : Exception do
+       on  E: Exception do
        log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
      end;
 
      try
        FDelphiToolsExts:=GetGroupToolsExtensions('Delphi Tools');
      except
-       on  E : Exception do
+       on  E: Exception do
        log(Format('GetGroupToolsExtensions Message %s  Trace %s',[E.Message, e.StackTrace]));
      end;
 
      try
        FExternalToolsExts:=GetGroupToolsExtensions('External Tools');
      except
-       on  E : Exception do
+       on  E: Exception do
        log(Format('GetGroupToolsExtensions Message %s  Trace %s',[E.Message, e.StackTrace]));
      end;
 
@@ -428,7 +428,7 @@ begin
            ExtractIconFile(FIconsExternals['lazarus'], GetLazarusIDEFileName, SHGFI_SMALLICON);
          end;
        except
-         on  E : Exception do
+         on  E: Exception do
          log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
        end;
      end;
@@ -437,14 +437,14 @@ begin
      if FSettings.CheckForUpdates then
        CheckUpdates(True);
   except
-   on  E : Exception do
+   on  E: Exception do
      log(Format('TDelphiDevShellToolsContextMenu.InitResources Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
-function TDelphiDevShellToolsContextMenu.InsertMenuDevShell(hMenu: HMENU; uPosition: UINT; uIDNewItem: UINT_PTR; lpNewItem, IconName: LPCWSTR) : BOOL;
+function TDelphiDevShellToolsContextMenu.InsertMenuDevShell(hMenu: HMENU; uPosition: UINT; uIDNewItem: UINT_PTR; lpNewItem, IconName: LPCWSTR): BOOL;
 var
-  LMenuItem : TMenuItemInfo;
+  LMenuItem: TMenuItemInfo;
 begin
   //log('TDelphiDevShellToolsContextMenu.InsertMenuDevShell '+lpNewItem);
   try
@@ -467,7 +467,7 @@ begin
     if not Result then
      log('TDelphiDevShellToolsContextMenu.InsertMenuDevShell SysErrorMessage ' + SysErrorMessage(GetLastError));
   except
-   on  E : Exception do
+   on  E: Exception do
    begin
      Result:=False;
      log(Format('TDelphiDevShellToolsContextMenu.InsertMenuDevShell Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -477,10 +477,10 @@ end;
 
 
 procedure TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapDevShell(hMenu: HMENU;
-  uPosition, wID: UINT; const IconName : String);
+  uPosition, wID: UINT; const IconName: String);
 //var
-//  LMenuInfo    : TMenuItemInfo;
-//  Buffer       : array [0..79] of char;
+//  LMenuInfo: TMenuItemInfo;
+//  Buffer: array [0..79] of char;
 begin
   if IsVistaOrLater then exit;
   //log('RegisterMenuItemBitmapDevShell '+IconName+' init');
@@ -491,7 +491,7 @@ begin
      log('RegisterMenuItemBitmapDevShell '+IconName+' ok wID '+IntToStr(wID));
     end;
   except
-   on  E : Exception do
+   on  E: Exception do
    log(Format('TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapDevShell Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 
@@ -515,11 +515,11 @@ begin
 //    log(SysErrorMessage(GetLastError));
 end;
 
-procedure  TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapExternal(hMenu: HMENU; uPosition, wID: UINT; const IconName : String);
+procedure  TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapExternal(hMenu: HMENU; uPosition, wID: UINT; const IconName: String);
 {
 var
-  LMenuInfo    : TMenuItemInfo;
-  Buffer       : array [0..79] of char;
+  LMenuInfo: TMenuItemInfo;
+  Buffer: array [0..79] of char;
 }
 begin
   if IsVistaOrLater then exit;
@@ -528,7 +528,7 @@ begin
     if not FIconsDictExternal.ContainsKey(wID) then
      FIconsDictExternal.Add(wID, FIconsExternals[IconName]);
   except
-   on  E : Exception do
+   on  E: Exception do
    log(Format('TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapDevShell Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 
@@ -546,17 +546,17 @@ begin
     else
       log(SysErrorMessage(GetLastError));
   except
-   on  E : Exception do
+   on  E: Exception do
    log(Format('TDelphiDevShellToolsContextMenu.RegisterMenuItemBitmapExternal Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 }
 end;
 
 
-procedure TDelphiDevShellToolsContextMenu.AddMenuSeparatorEx(hMenu : HMENU; var MenuIndex : Integer);
+procedure TDelphiDevShellToolsContextMenu.AddMenuSeparatorEx(hMenu: HMENU; var MenuIndex: Integer);
 var
-  LMenuInfo    : TMenuItemInfo;
-  Buffer       : array [0..79] of char;
+  LMenuInfo: TMenuItemInfo;
+  Buffer: array [0..79] of char;
 begin
   try
     LMenuInfo.cbSize := sizeof(LMenuInfo);
@@ -577,7 +577,7 @@ begin
     else
       log('TDelphiDevShellToolsContextMenu.AddMenuSeparatorEx SysErrorMessage ' + SysErrorMessage(GetLastError));
   except
-   on  E : Exception do
+   on  E: Exception do
    log(Format('TDelphiDevShellToolsContextMenu.AddMenuSeparatorEx Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
@@ -614,7 +614,7 @@ begin
       FMethodsDict.Items[LVerb].Method(FMethodsDict.Items[LVerb]);
       Result:=NOERROR;
     end;
-  except on  E : Exception do
+  except on  E: Exception do
     begin
      log(Format('TDelphiDevShellToolsContextMenu.InvokeCommand Message %s  Trace %s',[E.Message, e.StackTrace]));
      Result := E_FAIL;
@@ -637,9 +637,9 @@ var
   i, Lx,Ly :Integer;
   LCanvas: TCanvas;
   SaveIndex: Integer;
-  LIcon : TIcon;
-  //LCurrentDelphiVersionData : TDelphiVersionData;
-  Found : Boolean;
+  LIcon: TIcon;
+  //LCurrentDelphiVersionData: TDelphiVersionData;
+  Found: Boolean;
 begin
   try
     log('TDelphiDevShellToolsContextMenu.MenuMessageHandler');
@@ -927,7 +927,7 @@ begin
     end;
     Result:=S_OK;
 
-  except on  E : Exception do
+  except on  E: Exception do
     begin
      log(Format('TDelphiDevShellToolsContextMenu.MenuMessageHandler Message %s  Trace %s',[E.Message, e.StackTrace]));
      Result := E_FAIL;
@@ -938,7 +938,7 @@ end;
 //IContextMenu2
 function TDelphiDevShellToolsContextMenu.HandleMenuMsg(uMsg: UINT; WParam: WPARAM; LParam: LPARAM): HResult; stdcall;
 var
- res : Winapi.Windows.LPARAM;
+ res: Winapi.Windows.LPARAM;
 begin
  //log('HandleMenuMsg');
  Result:=MenuMessageHandler ( uMsg, wParam, lParam, res);
@@ -956,11 +956,11 @@ procedure TDelphiDevShellToolsContextMenu.AddCheckSumTasks(hMenu: HMENU;
   var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
   const SupportedExts: array of string);
 var
-  LMethodInfo : TMethodInfo;
-  LSubMenuIndex : Integer;
+  LMethodInfo: TMethodInfo;
+  LSubMenuIndex: Integer;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  sSubMenuCaption : string;
+  sSubMenuCaption: string;
 begin
   try
    if not MatchText(FFileExt, SupportedExts) then exit;
@@ -1071,17 +1071,17 @@ begin
        MenuIndex:=LSubMenuIndex;
      }
   except
-    on  E : Exception do
+    on  E: Exception do
      log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
-procedure TDelphiDevShellToolsContextMenu.AddCommonTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+procedure TDelphiDevShellToolsContextMenu.AddCommonTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
 var
-  LMethodInfo : TMethodInfo;
-  LSubMenuIndex : Integer;
+  LMethodInfo: TMethodInfo;
+  LSubMenuIndex: Integer;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  sSubMenuCaption : string;
+  sSubMenuCaption: string;
 begin
   try
    if not MatchText(FFileExt, SupportedExts) then exit;
@@ -1197,7 +1197,7 @@ begin
        end;
 
      except
-       on  E : Exception do
+       on  E: Exception do
        log('GetAssocAppByExt '+E.Message);
      end;
 
@@ -1225,20 +1225,20 @@ begin
        MenuIndex:=LSubMenuIndex;
 
   except
-    on  E : Exception do
+    on  E: Exception do
      log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
-procedure TDelphiDevShellToolsContextMenu.AddOpenRADCmdTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+procedure TDelphiDevShellToolsContextMenu.AddOpenRADCmdTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
 var
-  Found : Boolean;
-  LSubMenuIndex : Integer;
+  Found: Boolean;
+  LSubMenuIndex: Integer;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  LCurrentDelphiVersionData  : TDelphiVersionData;
-  sSubMenuCaption : string;
-  LMethodInfo : TMethodInfo;
+  LCurrentDelphiVersionData: TDelphiVersionData;
+  sSubMenuCaption: string;
+  LMethodInfo: TMethodInfo;
 begin
  try
     if not MatchText(FFileExt, SupportedExts) then exit;
@@ -1305,7 +1305,7 @@ begin
        MenuIndex:=LSubMenuIndex;
     end;
  except
-   on  E : Exception do
+   on  E: Exception do
    log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
  end;
 
@@ -1315,14 +1315,14 @@ procedure TDelphiDevShellToolsContextMenu.AddExternalToolsTasks(hMenu: HMENU;
   var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
   const SupportedExts: array of string);
 var
-  LClientDataSet : TClientDataSet;
-  LSubMenuIndex : Integer;
+  LClientDataSet: TClientDataSet;
+  LSubMenuIndex: Integer;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  s, sSubMenuCaption : string;
+  s, sSubMenuCaption: string;
 
-  LMethodInfo : TMethodInfo;
-  LArray : TStringDynArray;
+  LMethodInfo: TMethodInfo;
+  LArray: TStringDynArray;
 begin
   try
     if not MatchText(FFileExt, SupportedExts) then exit;
@@ -1408,7 +1408,7 @@ begin
        MenuIndex:=LSubMenuIndex;
                }
   except
-    on  E : Exception do
+    on  E: Exception do
     log(Format('TDelphiDevShellToolsContextMenu.AddFPCToolsTasks Message %s Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
@@ -1419,14 +1419,14 @@ procedure TDelphiDevShellToolsContextMenu.AddFPCToolsTasks(hMenu: HMENU;
   var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
   const SupportedExts: array of string);
 var
-  LClientDataSet : TClientDataSet;
-  LSubMenuIndex : Integer;
+  LClientDataSet: TClientDataSet;
+  LSubMenuIndex: Integer;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  s, sSubMenuCaption : string;
+  s, sSubMenuCaption: string;
 
-  LMethodInfo : TMethodInfo;
-  LArray : TStringDynArray;
+  LMethodInfo: TMethodInfo;
+  LArray: TStringDynArray;
 begin
   try
     if not MatchText(FFileExt, SupportedExts) then exit;
@@ -1512,22 +1512,22 @@ begin
        MenuIndex:=LSubMenuIndex;
                }
   except
-    on  E : Exception do
+    on  E: Exception do
     log(Format('TDelphiDevShellToolsContextMenu.AddFPCToolsTasks Message %s Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
 
-procedure TDelphiDevShellToolsContextMenu.AddMSBuildRAD_SpecificTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+procedure TDelphiDevShellToolsContextMenu.AddMSBuildRAD_SpecificTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
 var
-  Found : Boolean;
+  Found: Boolean;
   LSubMenu: Winapi.Windows.HMENU;
-  LSubMenuIndex : Integer;
+  LSubMenuIndex: Integer;
   LMenuItem: TMenuItemInfo;
-  LCurrentDelphiVersionData  : TDelphiVersionData;
-  LCurrentDelphiVersion      : TDelphiVersions;
-  LFileName, sPlatform, sSubMenuCaption, sBuildConfiguration : string;
-  LMethodInfo : TMethodInfo;
+  LCurrentDelphiVersionData: TDelphiVersionData;
+  LCurrentDelphiVersion: TDelphiVersions;
+  LFileName, sPlatform, sSubMenuCaption, sBuildConfiguration: string;
+  LMethodInfo: TMethodInfo;
 begin
   try
      if not MatchText(FFileExt, SupportedExts) then exit;
@@ -1653,7 +1653,7 @@ begin
 
        end;
   except
-   on  E : Exception do
+   on  E: Exception do
    log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
@@ -1662,14 +1662,14 @@ procedure TDelphiDevShellToolsContextMenu.AddMSBuildPAClientTasks(hMenu: HMENU;
   var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
   const SupportedExts: array of string);
 var
-  Found : Boolean;
+  Found: Boolean;
   LSubMenu: Winapi.Windows.HMENU;
-  i, LSubMenuIndex : Integer;
+  i, LSubMenuIndex: Integer;
   LMenuItem: TMenuItemInfo;
-  LCurrentDelphiVersionData  : TDelphiVersionData;
-  LFileName, sSubMenuCaption : string;
-  LMethodInfo : TMethodInfo;
-  LPAClientProfile : TPAClientProfile;
+  LCurrentDelphiVersionData: TDelphiVersionData;
+  LFileName, sSubMenuCaption: string;
+  LMethodInfo: TMethodInfo;
+  LPAClientProfile: TPAClientProfile;
 begin
   try
      if not MatchText(FFileExt, SupportedExts) then exit;
@@ -1727,7 +1727,7 @@ begin
              if FPAClientProfiles.Profiles[i].RADStudioVersion=LCurrentDelphiVersionData.Version then
              begin
                LPAClientProfile:=FPAClientProfiles.Profiles[i];
-               sSubMenuCaption:='Test Profile '+LPAClientProfile.Name+Format(' (Platform : %s - Host : %s - Port : %d)',[LPAClientProfile.Platform, LPAClientProfile.Host, LPAClientProfile.Port]);
+               sSubMenuCaption:='Test Profile '+LPAClientProfile.Name+Format(' (Platform: %s - Host: %s - Port: %d)',[LPAClientProfile.Platform, LPAClientProfile.Host, LPAClientProfile.Port]);
 
                  if StartsText('Win', LPAClientProfile.Platform) then
                    InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption), 'win')
@@ -1773,21 +1773,21 @@ begin
 
        end;
   except
-   on  E : Exception do
+   on  E: Exception do
    log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
 
-procedure TDelphiDevShellToolsContextMenu.AddMSBuildRAD_AllTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+procedure TDelphiDevShellToolsContextMenu.AddMSBuildRAD_AllTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
 var
-  Found : Boolean;
-  LSubMenuIndex : Integer;
-  LCurrentDelphiVersionData  : TDelphiVersionData;
+  Found: Boolean;
+  LSubMenuIndex: Integer;
+  LCurrentDelphiVersionData: TDelphiVersionData;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  sSubMenuCaption, sValue : string;
-  LMethodInfo : TMethodInfo;
+  sSubMenuCaption, sValue: string;
+  LMethodInfo: TMethodInfo;
 begin
   try
     if not MatchText(FFileExt, SupportedExts) then exit;
@@ -1866,20 +1866,20 @@ begin
 
     end;
   except
-   on  E : Exception do
+   on  E: Exception do
     log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
-procedure TDelphiDevShellToolsContextMenu.AddOpenVclStyleTask(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+procedure TDelphiDevShellToolsContextMenu.AddOpenVclStyleTask(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
 var
-  Found : Boolean;
-  LSubMenuIndex : Integer;
-  LCurrentDelphiVersionData  : TDelphiVersionData;
+  Found: Boolean;
+  LSubMenuIndex: Integer;
+  LCurrentDelphiVersionData: TDelphiVersionData;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  sSubMenuCaption : string;
-  LMethodInfo : TMethodInfo;
+  sSubMenuCaption: string;
+  LMethodInfo: TMethodInfo;
 begin
   try
     if not MatchText(FFileExt, SupportedExts) then exit;
@@ -1948,19 +1948,19 @@ begin
        MenuIndex:=LSubMenuIndex;
     end;
   except
-    on  E : Exception do
+    on  E: Exception do
     log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
 
-procedure TDelphiDevShellToolsContextMenu.AddLazarusTasks(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+procedure TDelphiDevShellToolsContextMenu.AddLazarusTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
 var
-  LSubMenuIndex : Integer;
+  LSubMenuIndex: Integer;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  sSubMenuCaption : string;
-  LMethodInfo : TMethodInfo;
+  sSubMenuCaption: string;
+  LMethodInfo: TMethodInfo;
 begin
   try
     if not MatchText(FFileExt, SupportedExts) then exit;
@@ -2028,21 +2028,21 @@ begin
        MenuIndex:=LSubMenuIndex;
 
   except
-    on  E : Exception do
+    on  E: Exception do
     log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
 
-procedure TDelphiDevShellToolsContextMenu.AddOpenWithDelphi(hMenu : HMENU; var MenuIndex : Integer; var uIDNewItem :UINT; idCmdFirst : UINT; const SupportedExts: array of string);
+procedure TDelphiDevShellToolsContextMenu.AddOpenWithDelphi(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
 var
-  LSubMenuIndex : Integer;
+  LSubMenuIndex: Integer;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  Found : Boolean;
-  LCurrentDelphiVersionData  : TDelphiVersionData;
-  LCurrentDelphiVersion      : TDelphiVersions;
-  sValue, sSubMenuCaption : string;
-  LMethodInfo : TMethodInfo;
+  Found: Boolean;
+  LCurrentDelphiVersionData: TDelphiVersionData;
+  LCurrentDelphiVersion: TDelphiVersions;
+  sValue, sSubMenuCaption: string;
+  LMethodInfo: TMethodInfo;
 begin
   try
      if (FInstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
@@ -2153,7 +2153,7 @@ begin
      if not FSettings.SubMenuOpenDelphi then
       MenuIndex:=LSubMenuIndex;
   except
-    on  E : Exception do
+    on  E: Exception do
     log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
@@ -2162,14 +2162,14 @@ procedure TDelphiDevShellToolsContextMenu.AddOpenWithDelphi_GroupProject(
   hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
   const SupportedExts: array of string);
 var
-  LSubMenuIndex : Integer;
+  LSubMenuIndex: Integer;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  Found : Boolean;
-  LCurrentDelphiVersionData  : TDelphiVersionData;
-  LCurrentDelphiVersion      : TDelphiVersions;
-  sSubMenuCaption : string;
-  LMethodInfo : TMethodInfo;
+  Found: Boolean;
+  LCurrentDelphiVersionData: TDelphiVersionData;
+  LCurrentDelphiVersion: TDelphiVersions;
+  sSubMenuCaption: string;
+  LMethodInfo: TMethodInfo;
 begin
   try
      if (FInstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
@@ -2248,7 +2248,7 @@ begin
      if not FSettings.SubMenuOpenDelphi then
       MenuIndex:=LSubMenuIndex;
   except
-    on  E : Exception do
+    on  E: Exception do
     log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
@@ -2257,14 +2257,14 @@ procedure TDelphiDevShellToolsContextMenu.AddRADStudioToolsTasks(hMenu: HMENU;
   var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT;
   const SupportedExts: array of string);
 var
-  LCurrentDelphiVersionData  : TDelphiVersionData;
-  LClientDataSet : TClientDataSet;
-  LSubMenuIndex : Integer;
+  LCurrentDelphiVersionData: TDelphiVersionData;
+  LClientDataSet: TClientDataSet;
+  LSubMenuIndex: Integer;
   LSubMenu: Winapi.Windows.HMENU;
   LMenuItem: TMenuItemInfo;
-  s, sSubMenuCaption : string;
-  LMethodInfo : TMethodInfo;
-  LArray : TStringDynArray;
+  s, sSubMenuCaption: string;
+  LMethodInfo: TMethodInfo;
+  LArray: TStringDynArray;
 begin
   try
     if (FInstalledDelphiVersions.Count=0) or (not MatchText(FFileExt, SupportedExts)) then exit;
@@ -2355,7 +2355,7 @@ begin
          LClientDataSet.Free;
        end;
   except
-    on  E : Exception do
+    on  E: Exception do
     log(Format('TDelphiDevShellToolsContextMenu.AddFPCToolsTasks Message %s Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
@@ -2366,15 +2366,15 @@ function TDelphiDevShellToolsContextMenu.QueryContextMenu(Menu: HMENU;
   indexMenu, idCmdFirst, idCmdLast, uFlags: UINT): HResult;
 var
   LMenuItem: TMenuItemInfo;
-  sValue, sSubMenuCaption, LMenuCaption : String;
-  hSubMenu : HMENU;
+  sValue, sSubMenuCaption, LMenuCaption: String;
+  hSubMenu: HMENU;
   uIDNewItem: UINT;
-  //LCurrentDelphiVersionData  : TDelphiVersionData;
-  LCurrentDelphiVersion      : TDelphiVersions;
-  hSubMenuIndex  : Integer;
-  Found : Boolean;
-  LMethodInfo : TMethodInfo;
-  LMenuInfo    : TMenuInfo;
+  //LCurrentDelphiVersionData: TDelphiVersionData;
+  LCurrentDelphiVersion: TDelphiVersions;
+  hSubMenuIndex: Integer;
+  Found: Boolean;
+  LMethodInfo: TMethodInfo;
+  LMenuInfo: TMenuInfo;
 begin
  try
   log('TDelphiDevShellToolsContextMenu.QueryContextMenu Init');
@@ -2604,7 +2604,7 @@ begin
 
     log('uIDNewItem-idCmdFirst '+IntToStr(uIDNewItem-idCmdFirst));
     Result := MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, uIDNewItem-idCmdFirst);
- except on  E : Exception do
+ except on  E: Exception do
     begin
      log(Format('TDelphiDevShellToolsContextMenu.QueryContextMenu Message %s  Trace %s',[E.Message, E.StackTrace]));
      Result := E_FAIL;
@@ -2616,10 +2616,10 @@ end;
 function TDelphiDevShellToolsContextMenu.ShellExtInitialize(pidlFolder: PItemIDList;
   lpdobj: IDataObject; hKeyProgID: HKEY): HResult;
 var
-  formatetcIn : TFormatEtc;
-  medium      : TStgMedium;
-  LFileName   : Array [0 .. MAX_PATH] of Char;
-  LProjName   : string;
+  formatetcIn: TFormatEtc;
+  medium: TStgMedium;
+  LFileName: Array [0 .. MAX_PATH] of Char;
+  LProjName: string;
 begin
   Result := E_FAIL;
  try
@@ -2694,7 +2694,7 @@ begin
     end;
     ReleaseStgMedium(medium);
    log('TDelphiDevShellToolsContextMenu.ShellExtInitialize Done');
- except on  E : Exception do
+ except on  E: Exception do
     begin
      log(Format('TDelphiDevShellToolsContextMenu.ShellExtInitialize Message %s  Trace %s',[E.Message, e.StackTrace]));
      Result := E_FAIL;

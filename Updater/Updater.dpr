@@ -17,8 +17,8 @@ uses
 
 Procedure SetStyle;
 var
- i : integer;
- StylefileName : string;
+ i: integer;
+ StylefileName: string;
 begin
    if ParamCount>=1 then
    begin

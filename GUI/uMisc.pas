@@ -15,7 +15,7 @@
 { The Original Code is uMisc.pas.                                                                  }
 {                                                                                                  }
 { The Initial Developer of the Original Code is Rodrigo Ruz V.                                     }
-{ Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2015 Rodrigo Ruz V.                    }
+{ Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.                    }
 { All Rights Reserved.                                                                             }
 {                                                                                                  }
 {**************************************************************************************************}
@@ -33,7 +33,7 @@ uses
  System.Classes;
 
 type
-  TProcLog    = procedure (const  Log : string) of object;
+  TProcLog    = procedure (const  Log: string) of object;
 
 procedure CaptureConsoleOutput(const lpCommandLine: string; OutPutList: TStrings);
 procedure MsgWarning(const Msg: string);
@@ -41,12 +41,12 @@ procedure MsgInformation(const Msg: string);
 function  MsgQuestion(const Msg: string):Boolean;
 function  GetFileVersion(const FileName: string): string;
 function  GetTempDirectory: string;
-function  GetWindowsDirectory : string;
-function  GetSpecialFolder(const CSIDL: integer) : string;
+function  GetWindowsDirectory: string;
+function  GetSpecialFolder(const CSIDL: integer): string;
 function  IsWow64: boolean;
 function  CopyDir(const fromDir, toDir: string): boolean;
 procedure SetGridColumnWidths(DbGrid: TDBGrid);
-function  Ping(const Address:string;Retries,BufferSize:Word;Log : TStrings) : Boolean;
+function  Ping(const Address:string;Retries,BufferSize:Word;Log: TStrings): Boolean;
 
 
 implementation
@@ -152,7 +152,7 @@ begin
   Result := StrPas(lpBuffer);
 end;
 
-function GetWindowsDirectory : string;
+function GetWindowsDirectory: string;
 var
   lpBuffer: array[0..MAX_PATH] of Char;
 begin
@@ -160,9 +160,9 @@ begin
   Result := StrPas(lpBuffer);
 end;
 
-function GetSpecialFolder(const CSIDL: integer) : string;
+function GetSpecialFolder(const CSIDL: integer): string;
 var
-  lpszPath : PWideChar;
+  lpszPath: PWideChar;
 begin
   lpszPath := StrAlloc(MAX_PATH);
   try
@@ -178,7 +178,7 @@ end;
 
 function GetFileVersion(const FileName: string): string;
 var
-  FSO  : OleVariant;
+  FSO: OleVariant;
 begin
   FSO    := CreateOleObject('Scripting.FileSystemObject');
   Result := FSO.GetFileVersion(FileName);
@@ -203,18 +203,18 @@ procedure CaptureConsoleOutput(const lpCommandLine: string; OutPutList: TStrings
 const
   ReadBuffer = 1024*1024;
 var
-  lpPipeAttributes      : TSecurityAttributes;
-  ReadPipe              : THandle;
-  WritePipe             : THandle;
-  lpStartupInfo         : TStartUpInfo;
-  lpProcessInformation  : TProcessInformation;
-  Buffer                : PAnsiChar;
-  TotalBytesRead        : DWORD;
-  BytesRead             : DWORD;
-  Apprunning            : integer;
-  n                     : integer;
-  BytesLeftThisMessage  : integer;
-  TotalBytesAvail       : integer;
+  lpPipeAttributes: TSecurityAttributes;
+  ReadPipe: THandle;
+  WritePipe: THandle;
+  lpStartupInfo: TStartUpInfo;
+  lpProcessInformation: TProcessInformation;
+  Buffer: PAnsiChar;
+  TotalBytesRead: DWORD;
+  BytesRead: DWORD;
+  Apprunning: integer;
+  n: integer;
+  BytesLeftThisMessage: integer;
+  TotalBytesAvail: integer;
 begin
   with lpPipeAttributes do
   begin
@@ -281,49 +281,49 @@ begin
   end;
 end;
 
-function GetStatusCodeStr(statusCode:integer) : string;
+function GetStatusCodeStr(statusCode:integer): string;
 begin
   case statusCode of
-    0     : Result:='Success';
-    11001 : Result:='Buffer Too Small';
-    11002 : Result:='Destination Net Unreachable';
-    11003 : Result:='Destination Host Unreachable';
-    11004 : Result:='Destination Protocol Unreachable';
-    11005 : Result:='Destination Port Unreachable';
-    11006 : Result:='No Resources';
-    11007 : Result:='Bad Option';
-    11008 : Result:='Hardware Error';
-    11009 : Result:='Packet Too Big';
-    11010 : Result:='Request Timed Out';
-    11011 : Result:='Bad Request';
-    11012 : Result:='Bad Route';
-    11013 : Result:='TimeToLive Expired Transit';
-    11014 : Result:='TimeToLive Expired Reassembly';
-    11015 : Result:='Parameter Problem';
-    11016 : Result:='Source Quench';
-    11017 : Result:='Option Too Big';
-    11018 : Result:='Bad Destination';
-    11032 : Result:='Negotiating IPSEC';
-    11050 : Result:='General Failure'
+    0: Result:='Success';
+    11001: Result:='Buffer Too Small';
+    11002: Result:='Destination Net Unreachable';
+    11003: Result:='Destination Host Unreachable';
+    11004: Result:='Destination Protocol Unreachable';
+    11005: Result:='Destination Port Unreachable';
+    11006: Result:='No Resources';
+    11007: Result:='Bad Option';
+    11008: Result:='Hardware Error';
+    11009: Result:='Packet Too Big';
+    11010: Result:='Request Timed Out';
+    11011: Result:='Bad Request';
+    11012: Result:='Bad Route';
+    11013: Result:='TimeToLive Expired Transit';
+    11014: Result:='TimeToLive Expired Reassembly';
+    11015: Result:='Parameter Problem';
+    11016: Result:='Source Quench';
+    11017: Result:='Option Too Big';
+    11018: Result:='Bad Destination';
+    11032: Result:='Negotiating IPSEC';
+    11050: Result:='General Failure'
     else
     result:='Unknow';
   end;
 end;
 
-function  Ping(const Address:string;Retries,BufferSize:Word;Log : TStrings) : Boolean;
+function  Ping(const Address:string;Retries,BufferSize:Word;Log: TStrings): Boolean;
 var
-  FSWbemLocator : OLEVariant;
-  FWMIService   : OLEVariant;
+  FSWbemLocator: OLEVariant;
+  FWMIService: OLEVariant;
   FWbemObjectSet: OLEVariant;
-  FWbemObject   : OLEVariant;
-  oEnum         : IEnumvariant;
-  iValue        : LongWord;
-  i             : Integer;
+  FWbemObject: OLEVariant;
+  oEnum: IEnumvariant;
+  iValue: LongWord;
+  i: Integer;
 
-  PacketsReceived : Integer;
-  Minimum         : Integer;
-  Maximum         : Integer;
-  Average         : Integer;
+  PacketsReceived: Integer;
+  Minimum: Integer;
+  Maximum: Integer;
+  Average: Integer;
 begin;
   Result:=False;
   PacketsReceived:=0;
