@@ -26,9 +26,10 @@
     <ROW Version="15" Name="RAD Studio XE7"/>
     <ROW Version="16" Name="RAD Studio XE8"/>
     <ROW Version="17" Name="RAD Studio 10 Seattle"/>
-    <ROW Version="18" Name="RAD Studio 10 Berlin"/>
-    <ROW Version="19" Name="RAD Studio 10 Tokyo"/>
-    <ROW Version="20" Name="RAD Studio 10 Rio"/>
-    <ROW Version="21" Name="RAD Studio 10 Sydney"/>
+    <ROW Version="18" Name="RAD Studio 10.1 Berlin"/>
+    <ROW Version="19" Name="RAD Studio 10.2 Tokyo"/>
+    <ROW Version="20" Name="RAD Studio 10.3 Rio"/>
+    <ROW Version="21" Name="RAD Studio 10.4 Sydney"/>
+    <ROW Version="22" Name="RAD Studio 11 Alexandria"/>
   </ROWDATA>
 </DATAPACKET>
