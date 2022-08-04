@@ -1,1 +1,3 @@
-regsvr32 "DelphiDevShellTools.dll" /U
+@echo off
+set dll=%CD%\DelphiDevShellTools.dll
+powershell -Command "start-process cmd \"/c regsvr32 /U %dll%\" -Verb RunAs"
