@@ -5,7 +5,7 @@
 * Supports Delphi 5, 6, 7, 2005, BDS/Turbo 2006
 * RAD Studio 2007, 2009, 2010
 * RAD Studio XE-XE8 
-* RAD Studio 10 Seattle, [RAD Studio 10.1 Berlin](https://www.embarcadero.com/es/app-development-tools-store/rad-studio)
+* RAD Studio 10 Seattle to [11.1 Alexandria](https://www.embarcadero.com/products/rad-studio/whats-new-in-11-alexandria)
 * Appmethod
 * [Lazarus 1.6](http://www.lazarus-ide.org/)
 * Works in Windows 10/8/7/XP. (x86 and x64 versions)
