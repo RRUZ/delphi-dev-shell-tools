@@ -276,7 +276,7 @@ const
     '\Embarcadero\BDS\37.0'
     );
 
-  function  GetListInstalledDelphiVersions: TInstalledDelphiVerions;
+  function  GetListInstalledDelphiVersions(TargetSize: Integer = 16): TInstalledDelphiVerions;
   {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
   function DelphiIsOldVersion(DelphiVersion:TDelphiVersions): Boolean;
   {$ENDIF}
@@ -658,9 +658,8 @@ begin
  ReplaceColor(ABitmap, ColorLeftCorner, ColorBackMenu);
 end;
 
-function  GetListInstalledDelphiVersions: TInstalledDelphiVerions;
+function  GetListInstalledDelphiVersions(TargetSize: Integer): TInstalledDelphiVerions;
 Var
-  Factor: Double;
   VersionData: TDelphiVersionData;
   DelphiComp: TDelphiVersions;
   FileName: string;
@@ -668,13 +667,11 @@ Var
   Installations: TArray<TIDEInstallation>;
   Installation, SelectedInstallation: TIDEInstallation;
   ColorLeftCorner, ColorBackMenu: TColor;
-  TempBitmap: TBitmap;
-  CX: Integer;
 begin
   Result:=TInstalledDelphiVerions.Create;
   Installations := DiscoverInstallations;
   ColorBackMenu := GetSysColor(COLOR_MENU);
-  CX:=GetSystemMetrics(SM_CXMENUCHECK);
+  if TargetSize < 1 then TargetSize := MenuImageLogicalSize;
 
   for DelphiComp := Low(TDelphiVersions) to High(TDelphiVersions) do
   begin
@@ -719,23 +716,8 @@ begin
       VersionData.Icon    :=TIcon.Create;
       ExtractIconFile(VersionData.FIcon, Filename, SHGFI_SMALLICON);
 
-      if CX>=16 then
-      begin
-        VersionData.FBitmap := Graphics.TBitmap.Create;
-        ExtractBitmapFile32(VersionData.FBitmap, Filename, SHGFI_SMALLICON);
-      end
-      else
-      begin
-        TempBitmap:=TBitmap.Create;
-        try
-          VersionData.FBitmap := Graphics.TBitmap.Create;
-          ExtractBitmapFile32(TempBitmap, Filename, SHGFI_SMALLICON);
-          Factor:= CX/16;
-          ScaleImage32(TempBitmap, VersionData.FBitmap, Factor);
-        finally
-          TempBitmap.Free;
-        end;
-      end;
+      VersionData.FBitmap := Graphics.TBitmap.Create;
+      ExtractBitmapFile32(VersionData.FBitmap, Filename, SHGFI_SMALLICON, TargetSize);
 
       ColorLeftCorner := VersionData.FBitmap.Canvas.Pixels[0, 0];
       ReplaceColor(VersionData.FBitmap, ColorLeftCorner, ColorBackMenu);

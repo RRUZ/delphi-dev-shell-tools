@@ -53,7 +53,7 @@
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <Manifest_File>None</Manifest_File>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
+        <Icon_MainIcon>GUIDelphiDevShell_Icon.ico</Icon_MainIcon>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
         <DCC_E>false</DCC_E>
         <DCC_N>false</DCC_N>
@@ -104,7 +104,6 @@
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <Debugger_RunParams>-Settings</Debugger_RunParams>
-        <Icon_MainIcon>GUIDelphiDevShell_Icon.ico</Icon_MainIcon>
         <Manifest_File>None</Manifest_File>
         <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
     </PropertyGroup>
@@ -134,7 +133,6 @@
         <DCCReference Include="DelphiDevShellTools.GUI.CheckSum.pas">
             <Form>FrmCheckSum</Form>
         </DCCReference>
-        <DCCReference Include="Vcl.Styles.Utils.Menus.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

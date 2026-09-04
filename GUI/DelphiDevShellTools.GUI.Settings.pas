@@ -206,24 +206,25 @@ end;
 procedure TFrmSettings.DBComboBoxImageDrawItem(Control: TWinControl;
   Index: Integer; Rect: TRect; State: TOwnerDrawState);
 var
-  LIcon: TIcon;
+  IconHandle: HICON;
   IconFile: string;
+  TargetSize: Integer;
 begin
+  TargetSize := ImagePixelsForDpi(MenuImageLogicalSize, CurrentPPI);
   with TDBComboBox(Control).Canvas do
   begin
     FillRect(Rect);
-    TextRect(Rect, Rect.Left+22, Rect.Top+1,  ChangeFileExt(TDBComboBox(Control).Items[Index],''));
-    LIcon:=TIcon.Create;
+    TextRect(Rect, Rect.Left + TargetSize + 6, Rect.Top + 1,
+      ChangeFileExt(TDBComboBox(Control).Items[Index], ''));
+    IconFile := GetDevShellToolsImagesFolder + TDBComboBox(Control).Items[Index];
+    IconHandle := LoadIconFileAtSize(IconFile, TargetSize);
+    if IconHandle <> 0 then
     try
-      IconFile:=GetDevShellToolsImagesFolder+TDBComboBox(Control).Items[Index];
-      if FileExists(IconFile) then
-      begin
-        LIcon.LoadFromFile(IconFile);
-        //DrawIconEx(hDC,rcItem.Left-16, rcItem.Top + (rcItem.Bottom - rcItem.Top - 16) div 2,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-        DrawIconEx(TDBComboBox(Control).Canvas.Handle,Rect.Location.X+3, Rect.Location.Y, LIcon.Handle, 16, 16, 0, 0, DI_NORMAL);
-      end;
+      DrawIconEx(TDBComboBox(Control).Canvas.Handle, Rect.Left + 3,
+        Rect.Top + (Rect.Height - TargetSize) div 2, IconHandle,
+        TargetSize, TargetSize, 0, 0, DI_NORMAL);
     finally
-      LIcon.Free;
+      DestroyIcon(IconHandle);
     end;
   end;
 end;
@@ -238,6 +239,7 @@ var
  s: string;
  ReviewLabel: TLabel;
 begin
+  DBComboBoxImage.ItemHeight := ImagePixelsForDpi(MenuImageLogicalSize, CurrentPPI) + 6;
   DBComboBoxGroup.DataField:='Group';
   DBEditName.DataField:='Name';
   DBEditMenu.DataField:='Menu';

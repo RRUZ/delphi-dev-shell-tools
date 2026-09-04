@@ -82,6 +82,8 @@ for %%C in (%DDS_CONFIGS%) do (
     call :build_config %%C
     if errorlevel 1 goto failed
 )
+call :cleanup_transient_resources
+if errorlevel 1 goto failed
 if /i "%DDS_ACTION%"=="test" goto tests
 goto success
 
@@ -129,6 +131,17 @@ rem Delete only staged files beneath the validated platform/configuration output
 for %%F in (GUIDelphiDevShell.exe libeay32.dll ssleay32.dll) do (
     if exist "%DDS_OUTPUT%\%%F" del /q "%DDS_OUTPUT%\%%F"
     if exist "%DDS_OUTPUT%\%%F" exit /b 1
+)
+exit /b 0
+
+:cleanup_transient_resources
+rem MSBuild emits these duplicate project resources outside the configured output directories.
+for %%R in ("%DDS_ROOT%\images.res" "%DDS_ROOT%\GUI\GUIDelphiDevShell.res") do (
+    if exist "%%~fR" del /q "%%~fR"
+    if exist "%%~fR" (
+        echo ERROR: Could not remove transient resource "%%~fR".
+        exit /b 1
+    )
 )
 exit /b 0
 
@@ -194,6 +207,8 @@ if errorlevel 1 (
     goto failed
 )
 call :build_config %DDS_CONFIG%
+if errorlevel 1 goto failed
+call :cleanup_transient_resources
 if errorlevel 1 goto failed
 if not exist "%DDS_RELOAD_BACKUP%\" mkdir "%DDS_RELOAD_BACKUP%"
 if not exist "%DDS_RELOAD_BACKUP%\" goto failed

@@ -33,6 +33,9 @@ uses
  System.Types,
  ImgList;
 
+const
+  MenuImageLogicalSize = 16;
+
 type
 
   TMethodInfo=class
@@ -90,7 +93,12 @@ type
   procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
   procedure ExtractIconFile(Icon: TIcon; const Filename: string;IconType: Cardinal);
   procedure ExtractBitmapFile(Bmp: TBitmap; const Filename: string;IconType: Cardinal);
-  procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType: Cardinal);
+  procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType: Cardinal); overload;
+  procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType: Cardinal; TargetSize: Integer); overload;
+  function LoadIconFileAtSize(const FileName: string; TargetSize: Integer): HICON;
+  function ImagePixelsForDpi(LogicalSize, Dpi: Integer): Integer;
+  function ImageCacheKey(const Name: string; LogicalSize, Dpi: Integer): string;
+  function ResolveAssociatedEditorIcon(const ExeName: string): string;
 
   function  GetFileVersion(const FileName: string): string;
   function  IsAppRunning(const FileName: string): boolean;
@@ -571,23 +579,67 @@ begin
 end;
 
 
-procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType: Cardinal);
-var
- Icon: TIcon;
+function ImagePixelsForDpi(LogicalSize, Dpi: Integer): Integer;
 begin
-  Icon:=TIcon.Create;
+  if Dpi <= 0 then Dpi := 96;
+  Result := MulDiv(LogicalSize, Dpi, 96);
+  if Result < 1 then Result := 1;
+end;
+
+function ImageCacheKey(const Name: string; LogicalSize, Dpi: Integer): string;
+begin
+  Result := LowerCase(Name) + ':' + IntToStr(LogicalSize) + ':' +
+    IntToStr(Dpi) + ':' + IntToStr(ImagePixelsForDpi(LogicalSize, Dpi));
+end;
+
+function ResolveAssociatedEditorIcon(const ExeName: string): string;
+begin
+  if (ExeName <> '') and FileExists(ExeName) then
+    Result := ExeName
+  else
+    Result := '';
+end;
+
+function LoadIconFileAtSize(const FileName: string; TargetSize: Integer): HICON;
+begin
+  Result := 0;
+  if (TargetSize > 0) and FileExists(FileName) then
+    Result := HICON(LoadImage(0, PChar(FileName), IMAGE_ICON, TargetSize, TargetSize,
+      LR_LOADFROMFILE or LR_DEFAULTCOLOR));
+end;
+
+procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType: Cardinal);
+begin
+  ExtractBitmapFile32(Bmp, Filename, IconType, GetSystemMetrics(SM_CXSMICON));
+end;
+
+procedure ExtractBitmapFile32(Bmp: TBitmap; const Filename: string;IconType: Cardinal; TargetSize: Integer);
+var
+  EffectiveType: Cardinal;
+  Icon: TIcon;
+  TempBitmap: TBitmap;
+begin
+  if (Bmp = nil) or (TargetSize <= 0) or not FileExists(Filename) then Exit;
+  if Abs(TargetSize - GetSystemMetrics(SM_CXSMICON)) <
+     Abs(TargetSize - GetSystemMetrics(SM_CXICON)) then
+    EffectiveType := SHGFI_SMALLICON
+  else
+    EffectiveType := SHGFI_LARGEICON;
+  Icon := TIcon.Create;
+  TempBitmap := TBitmap.Create;
   try
-    ExtractIconFile(Icon, Filename, SHGFI_SMALLICON);
-    Bmp.PixelFormat:=pf32bit;  {
-    Bmp.Width := Icon.Width;
-    Bmp.Height := Icon.Height;
-    Bmp.Canvas.Draw(0, 0, Icon);
-    }
-    Bmp.Assign(Icon);
+    ExtractIconFile(Icon, Filename, EffectiveType);
+    if Icon.Handle = 0 then Exit;
+    TempBitmap.Assign(Icon);
+    TempBitmap.PixelFormat := pf32bit;
+    if (TempBitmap.Width = TargetSize) and (TempBitmap.Height = TargetSize) then
+      Bmp.Assign(TempBitmap)
+    else
+      ScaleImage32(TempBitmap, Bmp, TargetSize / TempBitmap.Width);
   finally
+    TempBitmap.Free;
     Icon.Free;
   end;
-
 end;
 procedure ExtractIconFileToImageList(ImageList: TCustomImageList; const Filename: string);
 var

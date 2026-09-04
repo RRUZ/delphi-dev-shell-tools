@@ -43,8 +43,7 @@ uses
   Vcl.Styles,
   DelphiDevShellTools.GUI.Settings in 'DelphiDevShellTools.GUI.Settings.pas' {FrmSettings},
   DelphiDevShellTools.Misc in '..\units\DelphiDevShellTools.Misc.pas',
-  DelphiDevShellTools.GUI.CheckSum in 'DelphiDevShellTools.GUI.CheckSum.pas' {FrmCheckSum},
-  Vcl.Styles.Utils.Menus in 'Vcl.Styles.Utils.Menus.pas';
+  DelphiDevShellTools.GUI.CheckSum in 'DelphiDevShellTools.GUI.CheckSum.pas' {FrmCheckSum};
 
 {$R 'GUIResources.res' 'GUIResources.rc'}
 {$R 'GUIManifest.res' 'GUIManifest.rc'}

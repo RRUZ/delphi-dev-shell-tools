@@ -48,6 +48,8 @@ type
     FInstalledDelphiVersions: TInstalledDelphiVerions;
     FPAClientProfiles: TPAClientProfileList;
     FBitmapsDict: TObjectDictionary<string, TBitmap>;
+    FMenuDpi, FMenuImageSize: Integer;
+    FImageCacheKey: string;
     FIconsExternals: TObjectDictionary<string, TIcon>;//TIcon is a instance
     FIconsDictExternal: TDictionary<Integer, TIcon>;//TIcon is only a reference
     FIconsDictResources: TDictionary<Integer, string>;
@@ -133,12 +135,13 @@ procedure TShellMenu.FreeResources;
 begin
   log('FreeResources init');
   FreeAndNil(FInfoPanel);
-  FSettings.Free;
-  FBitmapsDict.Free;
-  FInstalledDelphiVersions.Free;
-  FPAClientProfiles.Free;
-  FIconsDictResources.Free;
-  FIconsDictExternal.Free;
+  FreeAndNil(FSettings);
+  FreeAndNil(FBitmapsDict);
+  FreeAndNil(FInstalledDelphiVersions);
+  FreeAndNil(FPAClientProfiles);
+  FreeAndNil(FIconsDictResources);
+  FreeAndNil(FIconsDictExternal);
+  FreeAndNil(FIconsExternals);
   log('FreeResources done');
 end;
 
@@ -150,120 +153,92 @@ end;
 
 procedure TShellMenu.RegisterBitmap(const ResourceName: string;const DictName:string='');
 var
-  Factor: Double;
-  CX: Integer;
-  TempBitmap: TBitmap;
   LDictName: string;
+  SourceBitmap: TBitmap;
   LPng: TPngImage;
 begin
- try
-    LDictName:=ResourceName;
-    if DictName<>'' then
-      LDictName:=DictName;
-
-    CX:=GetSystemMetrics(SM_CXMENUCHECK);
-    if CX>=16 then
-    begin
-      FBitmapsDict.Add(LDictName,TBitmap.Create);
-      LPng:=TPngImage.Create;
-      try
-        LPng.LoadFromResourceName(HInstance, ResourceName);
-        FBitmapsDict.Items[LDictName].Assign(LPng);
-      finally
-        LPng.Free;
-      end;
-    end
-    else
-    begin
-      Factor:= CX/16;
-      TempBitmap:=TBitmap.Create;
-      try
-        FBitmapsDict.Add(LDictName,TBitmap.Create);
-        LPng:=TPngImage.Create;
-        try
-          LPng.LoadFromResourceName(HInstance, ResourceName);
-          TempBitmap.Assign(LPng);
-        finally
-          LPng.Free;
-        end;
-
-        ScaleImage32(TempBitmap, FBitmapsDict.Items[LDictName], Factor);
-      finally
-        TempBitmap.Free;
-      end;
+  try
+    LDictName := ResourceName;
+    if DictName <> '' then LDictName := DictName;
+    SourceBitmap := TBitmap.Create;
+    LPng := TPngImage.Create;
+    try
+      LPng.LoadFromResourceName(HInstance, ResourceName);
+      SourceBitmap.Assign(LPng);
+      FBitmapsDict.Add(LDictName, TBitmap.Create);
+      if (SourceBitmap.Width = FMenuImageSize) and (SourceBitmap.Height = FMenuImageSize) then
+        FBitmapsDict.Items[LDictName].Assign(SourceBitmap)
+      else
+        ScaleImage32(SourceBitmap, FBitmapsDict.Items[LDictName],
+          FMenuImageSize / SourceBitmap.Width);
+    finally
+      LPng.Free;
+      SourceBitmap.Free;
     end;
- except
-   on  E: Exception do
-     log(Format('RegisterBitmap Message %s Trace %s',[E.Message, e.StackTrace]));
- end;
-
+  except
+    on E: Exception do
+      log(Format('RegisterBitmap Message %s Trace %s', [E.Message, E.StackTrace]));
+  end;
 end;
 
 procedure TShellMenu.RegisterBitmap32(const ResourceName: string);
 var
-  TempBitmap: TBitmap;
-  CX: Integer;
   LPicture: TPicture;
-  s: string;
-  Factor: Double;
+  SourceBitmap: TBitmap;
+  FileName: string;
 begin
- try
-    CX:=GetSystemMetrics(SM_CXMENUCHECK);
-    s:=GetDevShellToolsImagesFolder+ResourceName;
+  try
+    FileName := GetDevShellToolsImagesFolder + ResourceName;
     if IsVistaOrLater then
     begin
-        if (not FBitmapsDict.ContainsKey(ResourceName)) and FileExists(s) then
-        begin
-          LPicture := TPicture.Create;
-          try
-             LPicture.LoadFromFile(s);
-
-             if CX>=16 then
-             begin
-              FBitmapsDict.Add(ResourceName, TBitmap.Create);
-              FBitmapsDict.Items[ResourceName].Assign(LPicture.Graphic);
-             end
-             else
-             begin
-                Factor:= CX/16;
-                TempBitmap:=TBitmap.Create;
-                try
-                  FBitmapsDict.Add(ResourceName,TBitmap.Create);
-                  FBitmapsDict.Items[ResourceName].PixelFormat:=pf32bit;
-                  TempBitmap.Assign(LPicture.Graphic);
-                  ScaleImage32(TempBitmap, FBitmapsDict.Items[ResourceName], Factor);
-                finally
-                  TempBitmap.Free;
-                end;
-             end;
-          finally
-            LPicture.Free;
-          end;
+      if (not FBitmapsDict.ContainsKey(ResourceName)) and FileExists(FileName) then
+      begin
+        LPicture := TPicture.Create;
+        SourceBitmap := TBitmap.Create;
+        try
+          LPicture.LoadFromFile(FileName);
+          SourceBitmap.Assign(LPicture.Graphic);
+          FBitmapsDict.Add(ResourceName, TBitmap.Create);
+          if (SourceBitmap.Width = FMenuImageSize) and (SourceBitmap.Height = FMenuImageSize) then
+            FBitmapsDict.Items[ResourceName].Assign(SourceBitmap)
+          else
+            ScaleImage32(SourceBitmap, FBitmapsDict.Items[ResourceName],
+              FMenuImageSize / SourceBitmap.Width);
+        finally
+          SourceBitmap.Free;
+          LPicture.Free;
         end;
+      end;
     end
-    else
-    if (not FIconsExternals.ContainsKey(ResourceName)) and FileExists(s) then
+    else if (not FIconsExternals.ContainsKey(ResourceName)) and FileExists(FileName) then
     begin
-        FIconsExternals.Add(ResourceName, TIcon.Create);
-        FIconsExternals.Items[ResourceName].LoadFromFile(s);
+      FIconsExternals.Add(ResourceName, TIcon.Create);
+      FIconsExternals.Items[ResourceName].LoadFromFile(FileName);
     end;
- except
-   on  E: Exception do
-   log(Format('RegisterBitmap32 Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
+  except
+    on E: Exception do
+      log(Format('RegisterBitmap32 Message %s Trace %s', [E.Message, E.StackTrace]));
+  end;
 end;
 
 procedure TShellMenu.InitResources;
 var
- CX: Integer;
- Factor: Double;
- LCurrentDelphiVersionData: TDelphiVersionData;
- TempBitmap: TBitmap;
+  LCurrentDelphiVersionData: TDelphiVersionData;
+  SourceBitmap: TBitmap;
+  NewDpi: Integer;
+  NewCacheKey: string;
+  EditorIconFile: string;
 begin
   try
-    CX:=GetSystemMetrics(SM_CXMENUCHECK);
+    NewDpi := MenuDpi;
+    NewCacheKey := ImageCacheKey('shell-menu', MenuImageLogicalSize, NewDpi);
+    if (FBitmapsDict <> nil) and SameText(FImageCacheKey, NewCacheKey) then Exit;
+    if FBitmapsDict <> nil then FreeResources;
+    FMenuDpi := NewDpi;
+    FMenuImageSize := ImagePixelsForDpi(MenuImageLogicalSize, FMenuDpi);
+    FImageCacheKey := NewCacheKey;
     FSettings:=TSettings.Create;
-    FInstalledDelphiVersions:=GetListInstalledDelphiVersions;
+    FInstalledDelphiVersions:=GetListInstalledDelphiVersions(FMenuImageSize);
     FPAClientProfiles:=TPAClientProfileList.Create(FInstalledDelphiVersions);
     FBitmapsDict        :=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
     FIconsExternals     :=TObjectDictionary<string, TIcon>.Create([doOwnsValues]);
@@ -290,6 +265,7 @@ begin
     RegisterBitmap('msbuild');
     RegisterBitmap('firemonkey');
     RegisterBitmap('firemonkey', 'firemonkey2');
+    RegisterBitmap('vcl');
     RegisterBitmap('vcl', 'vcl2');
     RegisterBitmap('lazarusmenu');
     RegisterBitmap('lazbuild');
@@ -308,23 +284,18 @@ begin
     RegisterBitmap('fpc_tools');
     RegisterBitmap('wrench');
 
-     if CX>=16 then
-     begin
-       FBitmapsDict.Add('logo24',TBitmap.Create);
-       FBitmapsDict.Items['logo24'].LoadFromResourceName(HInstance,'logo24');
-     end
-     else
-     begin
-        Factor:= CX/16;
-        TempBitmap:=TBitmap.Create;
-        try
-          FBitmapsDict.Add('logo24',TBitmap.Create);
-          TempBitmap.LoadFromResourceName(HInstance,'logo24');
-          ScaleImage(TempBitmap, FBitmapsDict.Items['logo24'], Factor);
-        finally
-          TempBitmap.Free;
-        end;
-     end;
+    SourceBitmap := TBitmap.Create;
+    try
+      SourceBitmap.LoadFromResourceName(HInstance, 'logo24');
+      FBitmapsDict.Add('logo24', TBitmap.Create);
+      if (SourceBitmap.Width = FMenuImageSize) and (SourceBitmap.Height = FMenuImageSize) then
+        FBitmapsDict.Items['logo24'].Assign(SourceBitmap)
+      else
+        ScaleImage32(SourceBitmap, FBitmapsDict.Items['logo24'],
+          FMenuImageSize / SourceBitmap.Width);
+    finally
+      SourceBitmap.Free;
+    end;
     MakeBitmapMenuTransparent(FBitmapsDict.Items['logo24']);
 
     for LCurrentDelphiVersionData in FInstalledDelphiVersions.Values do
@@ -335,26 +306,18 @@ begin
        end;
 
      try
-       FBitmapsDict.Add('txt',TBitmap.Create);
+       FBitmapsDict.Add('txt', TBitmap.Create);
        GetAssocAppByExt('foo.txt', FExeNameTxt, FFriendlyAppNameTxt);
-       if (FExeNameTxt<>'') and TFile.Exists(FExeNameTxt)  then
+       EditorIconFile := ResolveAssociatedEditorIcon(FExeNameTxt);
+       if EditorIconFile <> '' then
        begin
          if IsVistaOrLater then
-         begin
-           if CX<16 then
-           begin
-             FBitmapsDict.Add('txt2',TBitmap.Create);
-             ExtractBitmapFile32(FBitmapsDict.Items['txt2'], FExeNameTxt, SHGFI_SMALLICON);
-             Factor:= CX/16;
-             ScaleImage32( FBitmapsDict.Items['txt2'], FBitmapsDict.Items['txt'], Factor);
-           end
-           else
-             ExtractBitmapFile32(FBitmapsDict.Items['txt'], GetLazarusIDEFileName, SHGFI_SMALLICON);
-         end
+           ExtractBitmapFile32(FBitmapsDict.Items['txt'], EditorIconFile,
+             SHGFI_SMALLICON, FMenuImageSize)
          else
          begin
            FIconsExternals.Add('txt', TIcon.Create);
-           ExtractIconFile( FIconsExternals['txt'] , FExeNameTxt, SHGFI_SMALLICON);
+           ExtractIconFile(FIconsExternals['txt'], EditorIconFile, SHGFI_SMALLICON);
          end;
        end;
      except
@@ -382,19 +345,10 @@ begin
      begin
        try
          FPCToolsExts:=GetGroupToolsExtensions('FPC Tools');
-         FBitmapsDict.Add('lazarus',TBitmap.Create);
+         FBitmapsDict.Add('lazarus', TBitmap.Create);
          if IsVistaOrLater then
-         begin
-           if CX<16 then
-           begin
-             FBitmapsDict.Add('lazarus2',TBitmap.Create);
-             ExtractBitmapFile32(FBitmapsDict.Items['lazarus2'], GetLazarusIDEFileName, SHGFI_SMALLICON);
-             Factor:= CX/16;
-             ScaleImage32( FBitmapsDict.Items['lazarus2'], FBitmapsDict.Items['lazarus'], Factor);
-           end
-           else
-             ExtractBitmapFile32(FBitmapsDict.Items['lazarus'], GetLazarusIDEFileName, SHGFI_SMALLICON);
-         end
+           ExtractBitmapFile32(FBitmapsDict.Items['lazarus'], GetLazarusIDEFileName,
+             SHGFI_SMALLICON, FMenuImageSize)
          else
          begin
            FIconsExternals.Add('lazarus', TIcon.Create);
@@ -647,8 +601,8 @@ begin
     if uMsg = WM_MEASUREITEM then
     begin
       Inc(PMeasureItemStruct(lParam)^.itemWidth, 2);
-      if PMeasureItemStruct(lParam)^.itemHeight < 16 then
-        PMeasureItemStruct(lParam)^.itemHeight := 16;
+      if Integer(PMeasureItemStruct(lParam)^.itemHeight) < FMenuImageSize then
+        PMeasureItemStruct(lParam)^.itemHeight := FMenuImageSize;
     end
     else
     begin
@@ -659,9 +613,9 @@ begin
           LIcon.LoadFromResourceName(HInstance, FIconsDictResources[ItemId])
         else
           LIcon.Assign(FIconsDictExternal[ItemId]);
-        DrawIconEx(Draw^.hDC, Draw^.rcItem.Left - 16,
-          Draw^.rcItem.Top + (Draw^.rcItem.Bottom - Draw^.rcItem.Top - 16) div 2,
-          LIcon.Handle, 16, 16, 0, 0, DI_NORMAL);
+        DrawIconEx(Draw^.hDC, Draw^.rcItem.Left - FMenuImageSize,
+          Draw^.rcItem.Top + (Draw^.rcItem.Bottom - Draw^.rcItem.Top - FMenuImageSize) div 2,
+          LIcon.Handle, FMenuImageSize, FMenuImageSize, 0, 0, DI_NORMAL);
       finally
         LIcon.Free;
       end;
@@ -725,7 +679,9 @@ begin
     LMenuCaption := 'Delphi Dev Shell Tools';
 
   if FMethodsDict=nil then
-    FMethodsDict:=TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues]);
+    FMethodsDict:=TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues])
+  else
+    FMethodsDict.Clear;
 
 
   if (not MatchText(FFileExt,[

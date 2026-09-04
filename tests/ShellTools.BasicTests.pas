@@ -58,9 +58,19 @@ type
     [Test] procedure DllExportsRequiredEntryPoints;
     [Test] procedure DllEmbedsShellManifest;
     [Test] procedure GuiEmbedsDpiManifest;
+    [Test] procedure ResourceMappingsAndGuiIconMetadataAreStable;
+    [TestCase('96 DPI', '96,16')]
+    [TestCase('120 DPI', '120,20')]
+    [TestCase('144 DPI', '144,24')]
+    [TestCase('192 DPI', '192,32')]
+    procedure MenuImageDpiContract(Dpi, ExpectedPixels: Integer);
+    [Test] procedure ImageCacheIdentityAndIcoSelectionFollowDpi;
+    [Test] procedure AssociatedEditorProviderHasNoLazarusFallback;
+    [Test] procedure PanelDpiResourcesAreReleased;
     [Test] procedure DllMenuCallbacksAllowNullResult;
     [Test] procedure PanelReadsUnmappedProjectMetadata;
     [TestCase('96 DPI', '96')]
+    [TestCase('120 DPI', '120')]
     [TestCase('144 DPI', '144')]
     [TestCase('192 DPI', '192')]
     procedure PanelPaintPreservesHostDCAndBounds(Dpi: Integer);
@@ -74,7 +84,27 @@ uses
   System.SysUtils, System.IOUtils, System.Classes, Xml.XMLDoc, Xml.XMLIntf,
   Winapi.Windows, Winapi.Messages, Winapi.ActiveX,
   Winapi.ShlObj, Vcl.Graphics, System.Types, DelphiDevShellTools.ProjectInfoPanel,
-  DelphiDevShellTools.Tasks, DelphiDevShellTools.DelphiVersions, ShellTools.TestSupport;
+  DelphiDevShellTools.Tasks, DelphiDevShellTools.DelphiVersions, DelphiDevShellTools.Misc,
+  ShellTools.TestSupport;
+
+function RepositoryFile(const RelativeName: string): string;
+begin
+  Result := TPath.GetFullPath(TPath.Combine(ExtractFilePath(ParamStr(0)),
+    '..\..\..\' + RelativeName));
+end;
+
+function CountText(const Needle, Haystack: string): Integer;
+var
+  Offset: Integer;
+begin
+  Result := 0;
+  Offset := Pos(Needle, Haystack);
+  while Offset > 0 do
+  begin
+    Inc(Result);
+    Offset := Pos(Needle, Haystack, Offset + Length(Needle));
+  end;
+end;
 
 procedure TBasicTests.Setup;
 begin
@@ -432,6 +462,98 @@ begin
   CheckEmbeddedDpiManifest(TestDllPath, 2);
 end;
 
+procedure TBasicTests.ResourceMappingsAndGuiIconMetadataAreStable;
+var
+  ProjectText, ResourceText: string;
+begin
+  ResourceText := TFile.ReadAllText(RepositoryFile('Icons\images.RC'));
+  Assert.IsTrue(Pos('settings_ico  ICON "settings.ico"', ResourceText) > 0);
+  Assert.IsTrue(Pos('platforms_ico ICON "platforms.ico"', ResourceText) > 0);
+  Assert.IsFalse(Pos('settings_ico  ICON "platforms.ico"', ResourceText) > 0);
+  ResourceText := TFile.ReadAllText(RepositoryFile('GUI\GUIResources.rc'));
+  Assert.IsTrue(Pos('MAINICON ICON "GUIDelphiDevShell_Icon.ico"', ResourceText) > 0);
+  ProjectText := TFile.ReadAllText(RepositoryFile('GUI\GUIDelphiDevShell.dproj'));
+  Assert.AreEqual(1, CountText('<Icon_MainIcon>', ProjectText));
+  Assert.IsTrue(Pos('<Icon_MainIcon>GUIDelphiDevShell_Icon.ico</Icon_MainIcon>', ProjectText) > 0);
+end;
+
+procedure TBasicTests.MenuImageDpiContract(Dpi, ExpectedPixels: Integer);
+begin
+  Assert.AreEqual(ExpectedPixels, ImagePixelsForDpi(MenuImageLogicalSize, Dpi));
+end;
+
+procedure TBasicTests.ImageCacheIdentityAndIcoSelectionFollowDpi;
+var
+  Dpi, Expected, KeyIndex: Integer;
+  Icon: HICON;
+  Info: TIconInfo;
+  Bitmap: Winapi.Windows.TBitmap;
+  Keys: array[0..3] of string;
+begin
+  KeyIndex := 0;
+  for Dpi in [96, 120, 144, 192] do
+  begin
+    Expected := ImagePixelsForDpi(MenuImageLogicalSize, Dpi);
+    Keys[KeyIndex] := ImageCacheKey('menu', MenuImageLogicalSize, Dpi);
+    Icon := LoadIconFileAtSize(RepositoryFile('GUI\GUIDelphiDevShell_Icon.ico'), Expected);
+    Assert.IsTrue(Icon <> 0);
+    try
+      Assert.IsTrue(GetIconInfo(Icon, Info));
+      try
+        Assert.IsTrue(GetObject(Info.hbmColor, SizeOf(Bitmap), @Bitmap) <> 0);
+        Assert.AreEqual(Expected, Bitmap.bmWidth);
+        Assert.AreEqual(Expected, Bitmap.bmHeight);
+      finally
+        if Info.hbmColor <> 0 then DeleteObject(Info.hbmColor);
+        if Info.hbmMask <> 0 then DeleteObject(Info.hbmMask);
+      end;
+    finally
+      DestroyIcon(Icon);
+    end;
+    Inc(KeyIndex);
+  end;
+  Assert.AreNotEqual(Keys[0], Keys[1]);
+  Assert.AreNotEqual(Keys[1], Keys[2]);
+  Assert.AreNotEqual(Keys[2], Keys[3]);
+end;
+
+procedure TBasicTests.AssociatedEditorProviderHasNoLazarusFallback;
+var
+  EditorFile: string;
+begin
+  EditorFile := TPath.Combine(FDirectory, 'associated-editor.exe');
+  TFile.WriteAllBytes(EditorFile, TBytes.Create($4D, $5A));
+  Assert.AreEqual(EditorFile, ResolveAssociatedEditorIcon(EditorFile));
+  Assert.AreEqual('', ResolveAssociatedEditorIcon(TPath.Combine(FDirectory, 'missing.exe')));
+end;
+
+procedure TBasicTests.PanelDpiResourcesAreReleased;
+var
+  BeforeGdi, BeforeUser, AfterGdi, AfterUser: DWORD;
+  Dpi, Iteration: Integer;
+  Module: HMODULE;
+  Panel: TProjectInfoPanel;
+begin
+  Module := LoadLibraryEx(PChar(TestDllPath), 0, LOAD_LIBRARY_AS_DATAFILE);
+  Assert.IsTrue(Module <> 0);
+  try
+    BeforeGdi := GetGuiResources(GetCurrentProcess, 0);
+    BeforeUser := GetGuiResources(GetCurrentProcess, 1);
+    for Iteration := 1 to 10 do
+      for Dpi in [96, 120, 144, 192] do
+      begin
+        Panel := TProjectInfoPanel.Create(WriteProject('999.0'), Dpi, Module);
+        Panel.Free;
+      end;
+    AfterGdi := GetGuiResources(GetCurrentProcess, 0);
+    AfterUser := GetGuiResources(GetCurrentProcess, 1);
+    Assert.IsTrue(AfterGdi <= BeforeGdi + 1, 'GDI objects must be released');
+    Assert.IsTrue(AfterUser <= BeforeUser + 1, 'Icon handles must be released');
+  finally
+    FreeLibrary(Module);
+  end;
+end;
+
 procedure TBasicTests.GuiEmbedsDpiManifest;
 begin
   CheckEmbeddedDpiManifest(ExtractFilePath(TestDllPath) + 'GUIDelphiDevShell.exe', 1);
@@ -495,7 +617,8 @@ var
   FontBefore: HGDIOBJ;
   Background, Foreground: COLORREF;
   Bounds: TRect;
-  Dark, HasIconPixels: Boolean;
+  HasIconPixels: Boolean;
+  Palette: Integer;
   Module: HMODULE;
   Row: TProjectInfoRow;
   IconInfo: TIconInfo;
@@ -535,7 +658,7 @@ begin
     Bitmap.PixelFormat := pf32bit;
     Bitmap.SetSize(Panel.Width + 8, Panel.Height + 8);
     Bounds := Rect(4, 4, Panel.Width + 4, Panel.Height + 4);
-    for Dark in [False, True] do
+    for Palette := 0 to 2 do
     begin
       Bitmap.Canvas.Brush.Color := clFuchsia;
       Bitmap.Canvas.FillRect(Rect(0, 0, Bitmap.Width, Bitmap.Height));
@@ -544,13 +667,18 @@ begin
       SetBkColor(DC, RGB(78, 90, 12));
       SetBkMode(DC, OPAQUE);
       FontBefore := GetCurrentObject(DC, OBJ_FONT);
-      if Dark then
-      begin
-        Background := RGB(43, 43, 43);
-        Foreground := RGB(245, 245, 245);
-      end
+      case Palette of
+        1:
+          begin
+            Background := RGB(43, 43, 43);
+            Foreground := RGB(245, 245, 245);
+          end;
+        2:
+          begin
+            Background := GetSysColor(COLOR_HIGHLIGHT);
+            Foreground := GetSysColor(COLOR_HIGHLIGHTTEXT);
+          end;
       else
-      begin
         Background := RGB(250, 250, 250);
         Foreground := RGB(20, 20, 20);
       end;
@@ -572,7 +700,7 @@ begin
       // Save only when an explicit local rendering check requests artifacts.
       if GetEnvironmentVariable('DDS_PANEL_PREVIEW') <> '' then
         Bitmap.SaveToFile(TPath.Combine(GetEnvironmentVariable('DDS_PANEL_PREVIEW'),
-          Format('panel-%d-%s.bmp', [Dpi, BoolToStr(Dark, True)])));
+          Format('panel-%d-palette-%d.bmp', [Dpi, Palette])));
     end;
   finally
     Bitmap.Free;
