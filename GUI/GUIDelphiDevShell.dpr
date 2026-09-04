@@ -23,8 +23,14 @@
 program GUIDelphiDevShell;
 
 uses
+  DelphiDevShellTools.SettingsStore in '..\units\DelphiDevShellTools.SettingsStore.pas',
   {$IFDEF DEBUG}
   {$ENDIF }
+  DelphiDevShellTools.Commands in '..\units\DelphiDevShellTools.Commands.pas',
+  DelphiDevShellTools.Installations in '..\units\DelphiDevShellTools.Installations.pas',
+  DelphiDevShellTools.Execution in '..\units\DelphiDevShellTools.Execution.pas',
+  DelphiDevShellTools.DelphiVersions in '..\units\DelphiDevShellTools.DelphiVersions.pas',
+  DelphiDevShellTools.GUI.Execution in 'DelphiDevShellTools.GUI.Execution.pas',
   Vcl.Forms,
   Vcl.Dialogs,
   SysUtils,
@@ -71,6 +77,11 @@ begin
 
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
+  if (ParamCount = 2) and SameText(ParamStr(1), '--execute') then
+  begin
+    ExitCode := RunCommandRequest(ParamStr(2));
+    Exit;
+  end;
   //TStyleManager.TrySetStyle('Jet');
   if ParamCount>0 then
   begin

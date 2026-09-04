@@ -17,6 +17,6 @@ echo ShellExtension.bat register [Win64^|Win32] [Release^|Debug]
 echo ShellExtension.bat unregister [Win64^|Win32^|All]
 echo ShellExtension.bat status [Win64^|Win32^|All]
 echo.
-echo Defaults: Win64 Release. Registration changes request UAC when needed.
+echo Defaults: Win64 Release. Registration changes require an Administrator Command Prompt.
 echo Unregister uses the currently registered DLL; runtime data is preserved.
 exit /b 0

@@ -1,10 +1,14 @@
 library DelphiDevShellTools;
 
 uses
+  DelphiDevShellTools.SettingsStore in 'units\DelphiDevShellTools.SettingsStore.pas',
   {.$IFDEF MADEXCEPTS}
   {$IFDEF DEBUG}
   {$ENDIF DEBUG}
   {.$ENDIF MADEXCEPTS}
+  DelphiDevShellTools.Commands in 'units\DelphiDevShellTools.Commands.pas',
+  DelphiDevShellTools.Installations in 'units\DelphiDevShellTools.Installations.pas',
+  DelphiDevShellTools.Execution in 'units\DelphiDevShellTools.Execution.pas',
   System.Win.ComServ,
   DelphiDevShellTools_TLB in 'DelphiDevShellTools_TLB.pas',
   DelphiDevShellToolsImpl in 'DelphiDevShellToolsImpl.pas',

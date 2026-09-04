@@ -1,355 +1,367 @@
 @echo off
-setlocal
-set "DDS_BUILD_SCRIPT=%~f0"
-set "DDS_ARG1=%~1"
-set "DDS_ARG2=%~2"
-set "DDS_ARG3=%~3"
-if not "%~4"=="" (
-  echo ERROR: Too many arguments. Run Build.bat help.
-  exit /b 2
+setlocal EnableExtensions DisableDelayedExpansion
+set "DDS_ACTION=build"
+set "DDS_PLATFORM=Win64"
+set "DDS_CONFIG=Release"
+if not "%~1"=="" set "DDS_ACTION=%~1"
+if not "%~2"=="" set "DDS_PLATFORM=%~2"
+if not "%~3"=="" set "DDS_CONFIG=%~3"
+if not "%~4"=="" goto usage_error
+if /i "%DDS_ACTION%"=="help" goto help
+set "DDS_VALID="
+for %%A in (build rebuild clean test test-registration register unregister status) do if /i "%DDS_ACTION%"=="%%A" set "DDS_VALID=1"
+if not defined DDS_VALID goto usage_error
+set "DDS_PLATFORMS="
+for %%A in (Win32 Win64) do if /i "%DDS_PLATFORM%"=="%%A" set "DDS_PLATFORMS=%%A"
+if /i "%DDS_PLATFORM%"=="All" set "DDS_PLATFORMS=Win32 Win64"
+if not defined DDS_PLATFORMS goto usage_error
+set "DDS_CONFIGS="
+for %%C in (Debug Release) do if /i "%DDS_CONFIG%"=="%%C" set "DDS_CONFIGS=%%C"
+if /i "%DDS_CONFIG%"=="All" set "DDS_CONFIGS=Debug Release"
+if not defined DDS_CONFIGS goto usage_error
+if /i "%DDS_ACTION%"=="register" if /i "%DDS_PLATFORM%"=="All" goto usage_error
+if /i "%DDS_ACTION%"=="register" if /i "%DDS_CONFIG%"=="All" goto usage_error
+set "DDS_64BIT="
+if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" set "DDS_64BIT=1"
+if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "DDS_64BIT=1"
+if defined PROCESSOR_ARCHITEW6432 set "DDS_64BIT=1"
+if not defined DDS_64BIT if /i not "%DDS_PLATFORM%"=="Win32" (
+    echo ERROR: Win64 requires a 64-bit Windows host. Use Win32.
+    exit /b 1
 )
-set "DDS_POWERSHELL=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
-if exist "%SystemRoot%\Sysnative\WindowsPowerShell\v1.0\powershell.exe" set "DDS_POWERSHELL=%SystemRoot%\Sysnative\WindowsPowerShell\v1.0\powershell.exe"
-"%DDS_POWERSHELL%" -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "try {$a=@(); foreach($n in 1..3){$v=[Environment]::GetEnvironmentVariable('DDS_ARG'+$n); if($v){$a+=$v}}; $body=([IO.File]::ReadAllText($env:DDS_BUILD_SCRIPT) -split '(?m)^# POWERSHELL\r?$',2)[1]; & ([scriptblock]::Create($body)) @a} catch {[Console]::Error.WriteLine('ERROR: '+$_.Exception.Message); exit 2}"
+for %%R in ("%~dp0.") do set "DDS_ROOT=%%~fR"
+set "DDS_SYSTEM=%SystemRoot%\System32"
+if exist "%SystemRoot%\Sysnative\reg.exe" set "DDS_SYSTEM=%SystemRoot%\Sysnative"
+set "DDS_CLASS={45DCA61E-3762-45B1-939D-2446C0DCAC25}"
+set "DDS_CLASSKEY=Software\Classes\CLSID\%DDS_CLASS%\InprocServer32"
+set "DDS_HANDLERKEY=Software\Classes\*\shellex\ContextMenuHandlers\DelphiDevShellToolsContextMenu"
+pushd "%DDS_ROOT%"
+if errorlevel 1 exit /b 1
+if /i "%DDS_ACTION%"=="status" goto status
+if /i "%DDS_ACTION%"=="register" goto registration
+if /i "%DDS_ACTION%"=="unregister" goto registration
+if /i "%DDS_ACTION%"=="test-registration" goto registration_tests
+if not defined DUNITX_ROOT set "DUNITX_ROOT=C:\dev\DUnitX-0.4.1"
+if /i "%DDS_ACTION%"=="test" if not exist "%DUNITX_ROOT%\Source\DUnitX.TestFramework.pas" (
+    echo ERROR: DUnitX source is missing. Set DUNITX_ROOT.
+    goto failed
+)
+call :initialize_compiler
+if errorlevel 1 goto failed
+call :logs
+if errorlevel 1 goto failed
+set "DDS_TARGET=Build"
+if /i "%DDS_ACTION%"=="rebuild" set "DDS_TARGET=Clean;Build"
+if /i "%DDS_ACTION%"=="clean" set "DDS_TARGET=Clean"
+set "DDS_OPENSSL=%DDS_ROOT%\OpenSSL\openssl-1.0.1g-i386-win32"
+if /i "%DDS_ACTION%"=="clean" goto build_configs
+for %%F in (libeay32.dll ssleay32.dll) do if not exist "%DDS_OPENSSL%\%%F" (
+    echo ERROR: Missing "%DDS_OPENSSL%\%%F". Restore it from Git.
+    goto failed
+)
+"%DDS_DELPHI%\bin\brcc32.exe" "%DDS_ROOT%\VersionInfo.rc"
+if errorlevel 1 goto failed
+:build_configs
+for %%C in (%DDS_CONFIGS%) do (
+    call :build_config %%C
+    if errorlevel 1 goto failed
+)
+if /i "%DDS_ACTION%"=="test" goto tests
+goto success
+
+:build_config
+set "DDS_CURRENT_CONFIG=%~1"
+set "DDS_PROJECT=GUI\GUIDelphiDevShell.dproj"
+set "DDS_ARCH=Win32"
+set "DDS_OUTPUT=%DDS_ROOT%\GUI\Win32\%~1"
+call :project_build
+if errorlevel 1 exit /b 1
+for %%A in (%DDS_PLATFORMS%) do (
+    call :build_shell %%A
+    if errorlevel 1 exit /b 1
+)
+exit /b 0
+
+:build_shell
+set "DDS_ARCH=%~1"
+set "DDS_PROJECT=DelphiDevShellTools.dproj"
+set "DDS_OUTPUT=%DDS_ROOT%\%DDS_ARCH%\%DDS_CURRENT_CONFIG%"
+call :project_build
+if errorlevel 1 exit /b 1
+if /i "%DDS_ACTION%"=="clean" goto clean_staged
+set "DDS_DLL=%DDS_OUTPUT%\DelphiDevShellTools.dll"
+call :check_dll
+if errorlevel 1 exit /b 1
+copy /y "%DDS_ROOT%\GUI\Win32\%DDS_CURRENT_CONFIG%\GUIDelphiDevShell.exe" "%DDS_OUTPUT%\GUIDelphiDevShell.exe" >nul
+if errorlevel 1 exit /b 1
+for %%F in (libeay32.dll ssleay32.dll) do (
+    copy /y "%DDS_OPENSSL%\%%F" "%DDS_OUTPUT%\%%F" >nul
+    if errorlevel 1 exit /b 1
+)
+echo Ready: "%DDS_DLL%"
+if /i not "%DDS_ACTION%"=="test" exit /b 0
+set "DDS_PROJECT=tests\ShellTools.Tests.dproj"
+set "DDS_OUTPUT=%DDS_ROOT%\tests\%DDS_ARCH%\%DDS_CURRENT_CONFIG%"
+call :project_build
 exit /b %errorlevel%
-# POWERSHELL
-# One-file batch/PowerShell build tool. The batch header forwards data, not code.
-param(
-    [ValidateSet('build', 'rebuild', 'clean', 'test', 'test-registration', 'register', 'unregister', 'status', 'help')]
-    [string] $Action = 'build',
-    [ValidateSet('Win32', 'Win64', 'All')]
-    [string] $Platform = 'Win64',
-    [ValidateSet('Debug', 'Release', 'All')]
-    [string] $Configuration = 'Release'
+
+:clean_staged
+rem Delete only staged files beneath the validated platform/configuration output.
+for %%F in (GUIDelphiDevShell.exe libeay32.dll ssleay32.dll) do (
+    if exist "%DDS_OUTPUT%\%%F" del /q "%DDS_OUTPUT%\%%F"
+    if exist "%DDS_OUTPUT%\%%F" exit /b 1
 )
+exit /b 0
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
-$scriptFile = $env:DDS_BUILD_SCRIPT
-$root = Split-Path -Parent $scriptFile
-$classId = '{45DCA61E-3762-45B1-939D-2446C0DCAC25}'
-$handlerKey = 'Software\Classes\*\shellex\ContextMenuHandlers\DelphiDevShellToolsContextMenu'
+:project_build
+for %%F in ("%DDS_PROJECT%") do set "DDS_PROJECT_NAME=%%~nF"
+set "DDS_LOG=%DDS_ROOT%\build\logs\%DDS_PROJECT_NAME%-%DDS_ARCH%-%DDS_CURRENT_CONFIG%.log"
+echo %DDS_TARGET% %DDS_PROJECT_NAME% / %DDS_ARCH% / %DDS_CURRENT_CONFIG%
+"%DDS_MSBUILD%" "%DDS_ROOT%\%DDS_PROJECT%" /nologo /v:minimal "/t:%DDS_TARGET%" "/p:Platform=%DDS_ARCH%" "/p:Config=%DDS_CURRENT_CONFIG%" /p:VerInfo_AutoIncVersion=false "/p:DCC_ExeOutput=%DDS_OUTPUT%" "/p:DCC_DcuOutput=%DDS_OUTPUT%" "/p:DUnitXRoot=%DUNITX_ROOT%" "/flp:LogFile=%DDS_LOG%;Verbosity=normal"
+if not errorlevel 1 exit /b 0
+echo ERROR: Build failed. Log: "%DDS_LOG%". A loaded shell DLL must be unloaded before rebuilding.
+exit /b 1
 
-function Show-Help {
-    @'
-Delphi Dev. Shell Tools (Delphi 13)
+:find_delphi
+set "DDS_DELPHI=%DELPHI_ROOT%"
+if defined DDS_DELPHI goto delphi_found
+for %%H in (HKCU HKLM) do for %%V in (32 64) do (
+    call :find_delphi_registry %%H %%V
+)
+if not defined DDS_DELPHI set "DDS_DELPHI=%ProgramFiles(x86)%\Embarcadero\Studio\37.0"
+:delphi_found
+if exist "%DDS_DELPHI%\bin\rsvars.bat" exit /b 0
+echo ERROR: Delphi 13 is missing. Set DELPHI_ROOT to its installation folder.
+exit /b 1
 
-  Build.bat [build|rebuild|clean] [Win64|Win32|All] [Release|Debug|All]
-  Build.bat test [Win64|Win32|All] [Release|Debug|All]
-  Build.bat test-registration [Win64|Win32|All] [Release|Debug|All]
-  Build.bat register   [Win64|Win32] [Release|Debug]
-  Build.bat unregister [Win64|Win32|All]
-  Build.bat status     [Win64|Win32|All]
+:find_delphi_registry
+if defined DDS_DELPHI exit /b 0
+for /f "tokens=2,*" %%A in ('reg query "%~1\Software\Embarcadero\BDS\37.0" /v RootDir /reg:%~2 2^>nul') do if /i "%%A"=="REG_SZ" if exist "%%B\bin\rsvars.bat" set "DDS_DELPHI=%%B"
+exit /b 0
 
-Defaults: build Win64 Release. Paths are relative to this script, not your cwd.
-Build/rebuild compiles the shell DLL and Win32 GUI, then stages GUI + OpenSSL
-beside each DLL. The updater and installer are not built or changed.
-Set DELPHI_ROOT to override Delphi 13 discovery (the folder containing bin).
-Register/unregister request UAC when needed; they never restart Explorer.
-Unregister uses the currently registered DLL, regardless of configuration.
-Status reports actual registration. Registration never happens during a build.
-Build logs: build\logs. Output: Win32|Win64\Debug|Release.
-Test builds/runs DUnitX tests without registration changes. Set DUNITX_ROOT
-to override C:\dev\DUnitX-0.4.1. Test-registration runs already-built tests
-with UAC and restores the previous registration; run test first.
-'@ | Write-Host
-}
+:initialize_compiler
+call :find_delphi
+if errorlevel 1 exit /b 1
+call "%DDS_DELPHI%\bin\rsvars.bat"
+if errorlevel 1 exit /b 1
+set "DDS_MSBUILD=%FrameworkDir%\MSBuild.exe"
+if not exist "%DDS_MSBUILD%" (
+    echo ERROR: MSBuild is missing: "%DDS_MSBUILD%".
+    exit /b 1
+)
+if not exist "%DDS_DELPHI%\bin\brcc32.exe" exit /b 1
+echo Compiler: "%DDS_DELPHI%"
+exit /b 0
 
-function Get-RegistryValue([Microsoft.Win32.RegistryHive] $Hive,
-                           [string] $TargetPlatform, [string] $Key, [string] $Name = '') {
-    $view = [Microsoft.Win32.RegistryView]::Registry32
-    if ($TargetPlatform -eq 'Win64') { $view = [Microsoft.Win32.RegistryView]::Registry64 }
-    $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey($Hive, $view)
-    try {
-        $entry = $base.OpenSubKey($Key)
-        if ($null -eq $entry) { return $null }
-        try { return $entry.GetValue($Name) } finally { $entry.Dispose() }
-    } finally { $base.Dispose() }
-}
+:check_dll
+if not exist "%DDS_DLL%" (
+    echo ERROR: Missing DLL: "%DDS_DLL%".
+    exit /b 1
+)
+if not exist "%DDS_DELPHI%\bin\tdump.exe" (
+    echo ERROR: Delphi tdump.exe is required to verify DLL architecture.
+    exit /b 1
+)
+set "DDS_CPU=80386"
+if /i "%DDS_ARCH%"=="Win64" set "DDS_CPU=AMD64"
+"%DDS_DELPHI%\bin\tdump.exe" -ns -q -eiHDR "%DDS_DLL%" >"%DDS_ROOT%\build\logs\architecture-%DDS_ARCH%.log" 2>&1
+if errorlevel 1 exit /b 1
+findstr /r /c:"^CPU type  *%DDS_CPU%$" "%DDS_ROOT%\build\logs\architecture-%DDS_ARCH%.log" >nul
+if not errorlevel 1 exit /b 0
+echo ERROR: DLL architecture does not match %DDS_ARCH%: "%DDS_DLL%".
+exit /b 1
 
-function Get-RegisteredDll([string] $TargetPlatform) {
-    Get-RegistryValue LocalMachine $TargetPlatform "Software\Classes\CLSID\$classId\InprocServer32"
-}
+:registration_tests
+call :require_admin
+if errorlevel 1 goto failed
+call :logs
+if errorlevel 1 goto failed
+:tests
+set "DDS_TEST_REGISTRATION=0"
+if /i "%DDS_ACTION%"=="test-registration" set "DDS_TEST_REGISTRATION=1"
+for %%C in (%DDS_CONFIGS%) do for %%A in (%DDS_PLATFORMS%) do (
+    call :run_tests %%A %%C
+    if errorlevel 1 goto failed
+)
+goto success
 
-function Get-OutputFolder([string] $TargetPlatform, [string] $Config) {
-    Join-Path $root "$TargetPlatform\$Config"
-}
+:run_tests
+set "DDS_TEST_DLL=%DDS_ROOT%\%~1\%~2\DelphiDevShellTools.dll"
+set "DDS_TEST_EXE=%DDS_ROOT%\tests\%~1\%~2\ShellTools.Tests.exe"
+if not exist "%DDS_TEST_DLL%" goto tests_missing
+if not exist "%DDS_TEST_EXE%" goto tests_missing
+echo Running %DDS_ACTION% / %~1 / %~2
+"%DDS_TEST_EXE%" "--xml:%DDS_ROOT%\build\logs\%DDS_ACTION%-%~1-%~2.xml"
+if not errorlevel 1 exit /b 0
+echo ERROR: Tests failed. Report: "build\logs\%DDS_ACTION%-%~1-%~2.xml".
+exit /b 1
+:tests_missing
+echo ERROR: Tests or DLL missing. Run Build.bat test %~1 %~2 first.
+exit /b 1
 
-function Assert-DllArchitecture([string] $Path, [string] $TargetPlatform) {
-    $stream = [IO.File]::OpenRead($Path)
-    $reader = New-Object IO.BinaryReader($stream)
-    try {
-        if ($reader.ReadUInt16() -ne 0x5A4D) { throw "Not a Windows executable: $Path" }
-        $stream.Position = 0x3C
-        $offset = $reader.ReadInt32()
-        $stream.Position = $offset
-        if ($reader.ReadUInt32() -ne 0x4550) { throw "Invalid PE header: $Path" }
-        $machine = $reader.ReadUInt16()
-        $expected = 0x14C
-        if ($TargetPlatform -eq 'Win64') { $expected = 0x8664 }
-        if ($machine -ne $expected) { throw "DLL architecture does not match $TargetPlatform`: $Path" }
-    } finally { $reader.Dispose() }
-}
+:require_admin
+"%DDS_SYSTEM%\fltmc.exe" >nul 2>&1
+if not errorlevel 1 exit /b 0
+echo ERROR: Run this command from an Administrator Command Prompt.
+exit /b 1
 
-function Find-DelphiRoot {
-    if ($env:DELPHI_ROOT) { return $env:DELPHI_ROOT }
-    foreach ($hive in @('CurrentUser', 'LocalMachine')) {
-        foreach ($arch in @('Win32', 'Win64')) {
-            $candidate = Get-RegistryValue $hive $arch 'Software\Embarcadero\BDS\37.0' 'RootDir'
-            if ($candidate -and (Test-Path -LiteralPath (Join-Path $candidate 'bin\rsvars.bat'))) {
-                return $candidate
-            }
-        }
-    }
-    return Join-Path ${env:ProgramFiles(x86)} 'Embarcadero\Studio\37.0'
-}
+:status
+for %%A in (%DDS_PLATFORMS%) do call :show_status %%A
+goto success
+:show_status
+set "DDS_ARCH=%~1"
+call :registry_view
+call :read_registered
+if defined DDS_REGISTERED (echo %~1 registered: "%DDS_REGISTERED%") else echo %~1 not registered.
+exit /b 0
 
-function Initialize-Compiler {
-    $delphi = Find-DelphiRoot
-    $vars = Join-Path $delphi 'bin\rsvars.bat'
-    if (-not (Test-Path -LiteralPath $vars)) {
-        throw "Delphi 13 was not found. Set DELPHI_ROOT to its installation folder. Missing: $vars"
-    }
-    $environmentLines = & $env:ComSpec /d /c ('call "{0}" >nul && set' -f $vars)
-    if ($LASTEXITCODE -ne 0) { throw "rsvars.bat failed (exit $LASTEXITCODE)." }
-    foreach ($line in $environmentLines) {
-        if ($line -match '^([^=]+)=(.*)$') {
-            [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
-        }
-    }
-    $script:msbuild = Join-Path $env:FrameworkDir 'MSBuild.exe'
-    $script:resourceCompiler = Join-Path $env:BDS 'bin\brcc32.exe'
-    foreach ($tool in @($script:msbuild, $script:resourceCompiler)) {
-        if (-not (Test-Path -LiteralPath $tool)) { throw "Missing build tool: $tool" }
-    }
-    Write-Host "Compiler: $env:BDS"
-}
+:registry_view
+set "DDS_VIEW=32"
+if /i "%DDS_ARCH%"=="Win64" set "DDS_VIEW=64"
+exit /b 0
+:read_registered
+set "DDS_REGISTERED="
+for /f "tokens=2,*" %%A in ('reg query "HKLM\%DDS_CLASSKEY%" /ve /reg:%DDS_VIEW% 2^>nul') do if /i "%%A"=="REG_SZ" set "DDS_REGISTERED=%%B"
+exit /b 0
+:read_other_registered
+set "DDS_OTHER_VIEW=64"
+if "%DDS_VIEW%"=="64" set "DDS_OTHER_VIEW=32"
+set "DDS_OTHER_REGISTERED="
+for /f "tokens=2,*" %%A in ('reg query "HKLM\%DDS_CLASSKEY%" /ve /reg:%DDS_OTHER_VIEW% 2^>nul') do if /i "%%A"=="REG_SZ" set "DDS_OTHER_REGISTERED=%%B"
+exit /b 0
 
-function Invoke-ProjectBuild([string] $Project, [string] $TargetPlatform,
-                             [string] $Config, [string] $Target, [string] $Output = '') {
-    $name = [IO.Path]::GetFileNameWithoutExtension($Project)
-    $log = Join-Path $root "build\logs\$name-$TargetPlatform-$Config.log"
-    $arguments = @((Join-Path $root $Project), '/nologo', '/v:minimal', "/t:$Target",
-        "/p:Platform=$TargetPlatform", "/p:Config=$Config", '/p:VerInfo_AutoIncVersion=false', "/flp:LogFile=$log;Verbosity=normal")
-    if ($Output) {
-        $arguments += "/p:DCC_ExeOutput=$Output"
-        $arguments += "/p:DCC_DcuOutput=$Output"
-    }
-    if ($Project -eq 'tests\ShellTools.Tests.dproj' -and $env:DUNITX_ROOT) {
-        $arguments += "/p:DUnitXRoot=$env:DUNITX_ROOT"
-    }
-    Write-Host "`n$Target $name / $TargetPlatform / $Config"
-    & $script:msbuild @arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "Build failed (exit $LASTEXITCODE). Log: $log. If the DLL is locked, unregister it and close the shell host holding it before rebuilding."
-    }
-}
+:read_handler
+set "DDS_HANDLER="
+for /f "tokens=2,*" %%A in ('reg query "HKLM\%DDS_HANDLERKEY%" /ve /reg:%DDS_VIEW% 2^>nul') do if /i "%%A"=="REG_SZ" set "DDS_HANDLER=%%B"
+exit /b 0
 
-function Invoke-Build {
-    Initialize-Compiler
-    $null = New-Item -ItemType Directory -Force -Path (Join-Path $root 'build\logs')
-    $target = 'Build'
-    if ($Action -eq 'rebuild') { $target = 'Clean;Build' }
-    if ($Action -eq 'clean') { $target = 'Clean' }
-    $openssl = Join-Path $root 'OpenSSL\openssl-1.0.1g-i386-win32'
-    if ($Action -ne 'clean') {
-        foreach ($name in @('libeay32.dll', 'ssleay32.dll')) {
-            if (-not (Test-Path -LiteralPath (Join-Path $openssl $name))) {
-                throw "Missing GUI checksum dependency: $openssl\$name. Restore the GUI checksum libraries in the OpenSSL folder."
-            }
-        }
-        & $script:resourceCompiler (Join-Path $root 'VersionInfo.rc')
-        if ($LASTEXITCODE -ne 0) { throw "VersionInfo resource compilation failed (exit $LASTEXITCODE)." }
-    }
-    foreach ($config in $configs) {
-        $guiOutput = Join-Path $root "GUI\Win32\$config"
-        Invoke-ProjectBuild 'GUI\GUIDelphiDevShell.dproj' 'Win32' $config $target $guiOutput
-        foreach ($arch in $platforms) {
-            Invoke-ProjectBuild 'DelphiDevShellTools.dproj' $arch $config $target
-            $output = Get-OutputFolder $arch $config
-            if ($Action -eq 'clean') {
-                # Remove only the three files staged by this script; never delete a tree.
-                foreach ($name in @('GUIDelphiDevShell.exe', 'libeay32.dll', 'ssleay32.dll')) {
-                    $file = Join-Path $output $name
-                    if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file }
-                }
-            } else {
-                $dll = Join-Path $output 'DelphiDevShellTools.dll'
-                Assert-DllArchitecture $dll $arch
-                Copy-Item -LiteralPath (Join-Path $guiOutput 'GUIDelphiDevShell.exe') -Destination $output -Force
-                foreach ($name in @('libeay32.dll', 'ssleay32.dll')) {
-                    Copy-Item -LiteralPath (Join-Path $openssl $name) -Destination $output -Force
-                }
-                Write-Host "Ready: $dll"
-            }
-        }
-    }
-}
+:registration
+call :require_admin
+if errorlevel 1 goto failed
+call :find_delphi
+if errorlevel 1 goto failed
+call :logs
+if errorlevel 1 goto failed
+for %%A in (%DDS_PLATFORMS%) do (
+    call :register_one %%A
+    if errorlevel 1 goto failed
+)
+goto success
 
-function Initialize-Defaults {
-    $data = Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) 'DelphiDevShellTools'
-    $isNew = -not (Test-Path -LiteralPath $data)
-    $null = New-Item -ItemType Directory -Force -Path $data
-    if ($isNew) {
-        # The legacy app writes here. Grant Modify only to the requesting user,
-        # retaining inherited SYSTEM/Administrators permissions, not Everyone Full.
-        $sid = $env:DDS_REQUESTING_SID
-        if (-not $sid) { $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value }
-        $acl = Get-Acl -LiteralPath $data
-        $identity = New-Object Security.Principal.SecurityIdentifier($sid)
-        $rule = New-Object Security.AccessControl.FileSystemAccessRule($identity, 'Modify', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
-        $acl.AddAccessRule($rule)
-        Set-Acl -LiteralPath $data -AclObject $acl
-    }
-    foreach ($name in @('Settings.ini', 'Tools.db', 'DelphiVersions.db', 'macros.xml')) {
-        $destination = Join-Path $data $name
-        if (-not (Test-Path -LiteralPath $destination)) {
-            if ($name -eq 'Settings.ini') {
-                # The updater is intentionally excluded from this development build.
-                $settings = [IO.File]::ReadAllText((Join-Path $root $name))
-                $settings = $settings -replace '(?m)^CheckForUpdates=1\r?$', 'CheckForUpdates=0'
-                [IO.File]::WriteAllText($destination, $settings, [Text.Encoding]::ASCII)
-            } else { Copy-Item -LiteralPath (Join-Path $root $name) -Destination $destination }
-        }
-    }
-    $icons = Join-Path $data 'ico'
-    $null = New-Item -ItemType Directory -Force -Path $icons
-    foreach ($icon in Get-ChildItem -LiteralPath (Join-Path $root 'ico') -Filter '*.ico' -File) {
-        $destination = Join-Path $icons $icon.Name
-        if (-not (Test-Path -LiteralPath $destination)) { Copy-Item -LiteralPath $icon.FullName -Destination $destination }
-    }
-    Write-Host "Runtime data ready: $data (existing files preserved)."
-}
+:register_one
+set "DDS_ARCH=%~1"
+call :registry_view
+call :read_registered
+set "DDS_DLL=%DDS_REGISTERED%"
+if /i "%DDS_ACTION%"=="unregister" goto unregister_one
+set "DDS_OUTPUT=%DDS_ROOT%\%DDS_ARCH%\%DDS_CONFIG%"
+set "DDS_DLL=%DDS_OUTPUT%\DelphiDevShellTools.dll"
+for %%F in (DelphiDevShellTools.dll GUIDelphiDevShell.exe libeay32.dll ssleay32.dll) do if not exist "%DDS_OUTPUT%\%%F" (
+    echo ERROR: Missing "%DDS_OUTPUT%\%%F". Run Build.bat build %DDS_ARCH% %DDS_CONFIG% first.
+    exit /b 1
+)
+set "DDS_OVERRIDE="
+for /f "tokens=2,*" %%A in ('reg query "HKCU\%DDS_CLASSKEY%" /ve /reg:%DDS_VIEW% 2^>nul') do if /i "%%A"=="REG_SZ" set "DDS_OVERRIDE=%%B"
+if defined DDS_OVERRIDE (
+    echo ERROR: A per-user COM registration overrides this class: "%DDS_OVERRIDE%".
+    exit /b 1
+)
+call :check_dll
+if errorlevel 1 exit /b 1
+call :initialize_defaults
+if errorlevel 1 exit /b 1
+set "DDS_REG_OPTIONS=/s"
+goto run_regsvr
+:unregister_one
+if defined DDS_DLL goto unregister_dll
+call :read_handler
+call :read_other_registered
+if not defined DDS_OTHER_REGISTERED if defined DDS_HANDLER (
+    echo ERROR: Context-menu registration exists without a COM server. Repair registration first.
+    exit /b 1
+)
+echo %DDS_ARCH% is already unregistered.
+exit /b 0
+:unregister_dll
+call :check_dll
+if errorlevel 1 exit /b 1
+set "DDS_REG_OPTIONS=/s /u"
+:run_regsvr
+set "DDS_REGSVR=%DDS_SYSTEM%\regsvr32.exe"
+if defined DDS_64BIT if /i "%DDS_ARCH%"=="Win32" set "DDS_REGSVR=%SystemRoot%\SysWOW64\regsvr32.exe"
+start "" /wait "%DDS_REGSVR%" %DDS_REG_OPTIONS% "%DDS_DLL%"
+if errorlevel 1 (
+    echo ERROR: regsvr32 failed for "%DDS_DLL%".
+    exit /b 1
+)
+call :read_registered
+call :read_handler
+if /i "%DDS_ACTION%"=="unregister" goto verify_unregistered
+if /i not "%DDS_REGISTERED%"=="%DDS_DLL%" goto registration_failed
+if /i not "%DDS_HANDLER%"=="%DDS_CLASS%" goto registration_failed
+echo Registered %DDS_ARCH%: "%DDS_REGISTERED%"
+exit /b 0
+:verify_unregistered
+if defined DDS_REGISTERED goto registration_failed
+call :read_other_registered
+if defined DDS_OTHER_REGISTERED (
+    if /i not "%DDS_HANDLER%"=="%DDS_CLASS%" goto registration_failed
+) else if defined DDS_HANDLER goto registration_failed
+echo Unregistered %DDS_ARCH%.
+exit /b 0
+:registration_failed
+echo ERROR: COM server or context-menu registration verification failed.
+exit /b 1
 
-function Invoke-Tests {
-    foreach ($config in $configs) {
-        foreach ($arch in $platforms) {
-            $exe = Join-Path $root "tests\$arch\$config\ShellTools.Tests.exe"
-            $dll = Join-Path (Get-OutputFolder $arch $config) 'DelphiDevShellTools.dll'
-            if (-not (Test-Path -LiteralPath $exe) -or -not (Test-Path -LiteralPath $dll)) {
-                throw "Tests or DLL are missing. Run Build.bat test $arch $config first."
-            }
-            $env:DDS_TEST_DLL = $dll
-            $env:DDS_TEST_REGISTRATION = '0'
-            if ($Action -eq 'test-registration') { $env:DDS_TEST_REGISTRATION = '1' }
-            $report = Join-Path $root "build\logs\$Action-$arch-$config.xml"
-            Write-Host "`nRunning $Action / $arch / $config"
-            & $exe "--xml:$report"
-            if ($LASTEXITCODE -ne 0) { throw "DUnitX failed (exit $LASTEXITCODE). Report: $report" }
-            Write-Host "Passed. Report: $report"
-        }
-    }
-}
+:initialize_defaults
+set "DDS_DATA=%ProgramData%\DelphiDevShellTools"
+if exist "%DDS_DATA%\" goto copy_defaults
+mkdir "%DDS_DATA%"
+if errorlevel 1 exit /b 1
+set "DDS_SID="
+for /f "tokens=2 delims=," %%S in ('whoami /user /fo csv /nh') do set "DDS_SID=%%~S"
+if not defined DDS_SID exit /b 1
+icacls "%DDS_DATA%" /grant "*%DDS_SID%:(OI)(CI)M" >nul
+if errorlevel 1 exit /b 1
+:copy_defaults
+if exist "%DDS_DATA%\Settings.ini" goto copy_catalogs
+findstr /v /x /c:"CheckForUpdates=1" "%DDS_ROOT%\Settings.ini" >"%DDS_DATA%\Settings.ini"
+if errorlevel 1 exit /b 1
+>>"%DDS_DATA%\Settings.ini" echo CheckForUpdates=0
+if errorlevel 1 exit /b 1
+:copy_catalogs
+for %%F in (Tools.db DelphiVersions.db macros.xml) do if not exist "%DDS_DATA%\%%F" (
+    copy "%DDS_ROOT%\%%F" "%DDS_DATA%\%%F" >nul
+    if errorlevel 1 exit /b 1
+)
+if not exist "%DDS_DATA%\ico\" mkdir "%DDS_DATA%\ico"
+if not exist "%DDS_DATA%\ico\" exit /b 1
+for %%F in ("%DDS_ROOT%\ico\*.ico") do if not exist "%DDS_DATA%\ico\%%~nxF" (
+    copy "%%~fF" "%DDS_DATA%\ico\%%~nxF" >nul
+    if errorlevel 1 exit /b 1
+)
+exit /b 0
 
-function Invoke-Registration([string] $TargetPlatform) {
-    $dll = Get-RegisteredDll $TargetPlatform
-    if ($Action -eq 'register') {
-        $dll = Join-Path (Get-OutputFolder $TargetPlatform $Configuration) 'DelphiDevShellTools.dll'
-        foreach ($name in @('DelphiDevShellTools.dll', 'GUIDelphiDevShell.exe', 'libeay32.dll', 'ssleay32.dll')) {
-            if (-not (Test-Path -LiteralPath (Join-Path (Split-Path $dll) $name))) {
-                throw "Missing $name. Run Build.bat build $TargetPlatform $Configuration first."
-            }
-        }
-        $userOverride = Get-RegistryValue CurrentUser $TargetPlatform "Software\Classes\CLSID\$classId\InprocServer32"
-        if ($userOverride) { throw "A per-user COM registration overrides this class: $userOverride. Remove that override before machine registration." }
-    } elseif (-not $dll) {
-        Write-Host "$TargetPlatform is already unregistered."
-        return
-    }
-    if (-not (Test-Path -LiteralPath $dll)) {
-        throw "Registered DLL is missing: $dll. Rebuild that configuration before unregistering."
-    }
-    Assert-DllArchitecture $dll $TargetPlatform
-    if ($Action -eq 'register') { Initialize-Defaults }
-    $systemFolder = 'System32'
-    if ($TargetPlatform -eq 'Win32' -and [Environment]::Is64BitOperatingSystem) { $systemFolder = 'SysWOW64' }
-    $regsvr = Join-Path $env:SystemRoot "$systemFolder\regsvr32.exe"
-    $arguments = '/s "{0}"' -f $dll
-    if ($Action -eq 'unregister') { $arguments = '/s /u "{0}"' -f $dll }
-    $process = Start-Process -FilePath $regsvr -ArgumentList $arguments -WindowStyle Hidden -Wait -PassThru
-    if ($process.ExitCode -ne 0) { throw "regsvr32 failed (exit $($process.ExitCode)): $dll" }
-    $registered = Get-RegisteredDll $TargetPlatform
-    $handler = Get-RegistryValue LocalMachine $TargetPlatform $handlerKey
-    if ($Action -eq 'register') {
-        if ($registered -ne $dll -or $handler -ne $classId) { throw 'Registration verification failed: COM server or context-menu handler is missing.' }
-        Write-Host "Registered $TargetPlatform`: $registered"
-    } else {
-        if ($registered -or $handler) { throw 'Unregistration verification failed: COM server or context-menu handler remains.' }
-        Write-Host "Unregistered $TargetPlatform. Runtime data was preserved."
-    }
-    if (-not ('DevShellBuild.ShellNotify' -as [type])) {
-        Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; namespace DevShellBuild { public static class ShellNotify { [DllImport("shell32.dll")] public static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2); } }'
-    }
-    [DevShellBuild.ShellNotify]::SHChangeNotify(0x08000000, 0, [IntPtr]::Zero, [IntPtr]::Zero)
-}
-
-function Invoke-Elevated {
-    $null = New-Item -ItemType Directory -Force -Path (Join-Path $root 'build\logs')
-    $log = Join-Path $root ('build\logs\{0}-{1}.log' -f $Action, [guid]::NewGuid().ToString('N'))
-    $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-    # Values embedded below are single-quoted PowerShell literals, escaped explicitly.
-    $fileLiteral = $scriptFile.Replace("'", "''")
-    $logLiteral = $log.Replace("'", "''")
-    $command = "`$env:DDS_BUILD_SCRIPT='$fileLiteral'; `$env:DDS_REQUESTING_SID='$sid'; `$body=([IO.File]::ReadAllText(`$env:DDS_BUILD_SCRIPT) -split '(?m)^# POWERSHELL\r?$',2)[1]; & ([scriptblock]::Create(`$body)) '$Action' '$Platform' '$Configuration' *> '$logLiteral'"
-    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
-    Write-Host "Requesting administrator permission for $Action $Platform..."
-    $powershell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-    $process = Start-Process -FilePath $powershell -ArgumentList "-NoLogo -NoProfile -ExecutionPolicy Bypass -EncodedCommand $encoded" -Verb RunAs -WindowStyle Hidden -Wait -PassThru
-    if (Test-Path -LiteralPath $log) { Get-Content -LiteralPath $log | Write-Host }
-    if ($process.ExitCode -ne 0) { throw "Elevated $Action failed (exit $($process.ExitCode)). Log: $log" }
-}
-
-try {
-    if ($Action -eq 'help') { Show-Help; exit 0 }
-    if ($Action -eq 'register' -and ($Platform -eq 'All' -or $Configuration -eq 'All')) {
-        throw 'Register exactly one architecture/configuration at a time.'
-    }
-    $platforms = @($Platform)
-    if ($Platform -eq 'All') { $platforms = @('Win32', 'Win64') }
-    if (-not [Environment]::Is64BitOperatingSystem -and $platforms -contains 'Win64') {
-        throw 'Win64 requires a 64-bit Windows host. Use Win32.'
-    }
-    $configs = @($Configuration)
-    if ($Configuration -eq 'All') { $configs = @('Debug', 'Release') }
-    Push-Location -LiteralPath $root
-    try {
-        if ($Action -eq 'status') {
-            foreach ($arch in $platforms) {
-                $registered = Get-RegisteredDll $arch
-                if ($registered) { Write-Host "$arch registered: $registered" }
-                else { Write-Host "$arch not registered." }
-            }
-        } elseif ($Action -in @('register', 'unregister', 'test-registration')) {
-            $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-            $principal = New-Object Security.Principal.WindowsPrincipal($identity)
-            if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-                Invoke-Elevated
-            } elseif ($Action -eq 'test-registration') {
-                Invoke-Tests
-            } else {
-                foreach ($arch in $platforms) { Invoke-Registration $arch }
-            }
-        } else {
-            if ($Action -eq 'test') {
-                $dunit = $env:DUNITX_ROOT
-                if (-not $dunit) { $dunit = 'C:\dev\DUnitX-0.4.1' }
-                if (-not (Test-Path -LiteralPath (Join-Path $dunit 'Source\DUnitX.TestFramework.pas'))) {
-                    throw "DUnitX source not found: $dunit. Set DUNITX_ROOT."
-                }
-            }
-            Invoke-Build
-            if ($Action -eq 'test') {
-                foreach ($config in $configs) {
-                    foreach ($arch in $platforms) {
-                        Invoke-ProjectBuild 'tests\ShellTools.Tests.dproj' $arch $config 'Build'
-                    }
-                }
-                Invoke-Tests
-            }
-        }
-    } finally { Pop-Location }
-    exit 0
-} catch {
-    Write-Host "ERROR: $($_.Exception.Message)" -ForegroundColor Red
-    exit 1
-}
+:logs
+if not exist "%DDS_ROOT%\build\logs\" mkdir "%DDS_ROOT%\build\logs"
+if not exist "%DDS_ROOT%\build\logs\" exit /b 1
+exit /b 0
+:success
+popd
+exit /b 0
+:failed
+echo ERROR: %DDS_ACTION% failed.
+popd
+exit /b 1
+:usage_error
+echo ERROR: Invalid arguments. Run Build.bat help.
+exit /b 2
+:help
+echo Build.bat [build^|rebuild^|clean^|test^|test-registration] [Win64^|Win32^|All] [Release^|Debug^|All]
+echo Build.bat register [Win64^|Win32] [Release^|Debug]
+echo Build.bat [unregister^|status] [Win64^|Win32^|All]
+echo Defaults: build Win64 Release. Overrides: DELPHI_ROOT, DUNITX_ROOT.
+echo DUnitX default: C:\dev\DUnitX-0.4.1. Logs: build\logs.
+echo Register/unregister/test-registration require an Administrator Command Prompt.
+echo Run test before test-registration; registration tests restore prior state.
+exit /b 0

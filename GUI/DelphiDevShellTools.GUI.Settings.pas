@@ -103,7 +103,7 @@ type
     procedure ClientDataSet1AfterScroll(DataSet: TDataSet);
   private
     FSettings: TSettings;
-    procedure CreateStructure;
+    procedure NewCommand(Data: TDataSet);
     procedure LoadMacros;
   public
     property Settings: TSettings Read FSettings Write FSettings;
@@ -116,6 +116,7 @@ var
 implementation
 
 Uses
+  DelphiDevShellTools.SettingsStore,
   DelphiDevShellTools.GUI.MiscGUI,
   StrUtils,
   System.Types,
@@ -170,6 +171,7 @@ begin
     FSettings.OpenDelphiExt              := EditOpenDelphiExt.Text;
     FSettings.OpenLazarusExt             := EditOpenLazarusExt.Text;
     FSettings.CheckSumExt                := EditCheckSumExt.Text;
+    StoreTools(ClientDataSet1, FSettings.Document);
     WriteSettings(FSettings);
     Close();
     //LoadVCLStyle(ComboBoxVCLStyle.Text);
@@ -184,7 +186,8 @@ end;
 procedure TFrmSettings.ClientDataSet1AfterScroll(DataSet: TDataSet);
 begin
  if ClientDataSet1.Active then
-  if not StartsText('Delphi', ClientDataSet1.FieldByName('Group').AsString) then
+  if not StartsText('Delphi', ClientDataSet1.FieldByName('Group').AsString) and
+     (ClientDataSet1.FieldByName('Review').AsString = '') then
   begin
     DBLookupComboBoxDelphi.Visible:=False;
     LabelDelphi.Visible:=False;
@@ -198,21 +201,12 @@ begin
   end;
 end;
 
-procedure TFrmSettings.CreateStructure;
+procedure TFrmSettings.NewCommand(Data: TDataSet);
 begin
-  if ClientDataSet1.Active then ClientDataSet1.Close;
-  ClientDataSet1.FieldDefs.Clear;
-  ClientDataSet1.FieldDefs.Add('Name', ftString, 40, True);
-  ClientDataSet1.FieldDefs.Add('Group', ftString, 40, True);
-  ClientDataSet1.FieldDefs.Add('Menu', ftString, 100, True);
-  ClientDataSet1.FieldDefs.Add('Extensions', ftString, 512, True);
-  ClientDataSet1.FieldDefs.Add('Script', ftString, 4096, True);
-
-  ClientDataSet1.IndexDefs.Add('Name','Name',[ixPrimary, ixUnique, ixCaseInsensitive]);
-  ClientDataSet1.IndexName:='Name';
-  ClientDataSet1.CreateDataSet;
+  Data.FieldByName('Id').AsString := 'command:' + TGUID.NewGuid.ToString;
+  Data.FieldByName('VersionId').AsString := '*';
+  Data.FieldByName('RunAs').AsBoolean := False;
 end;
-
 
 procedure TFrmSettings.DBComboBoxImageDrawItem(Control: TWinControl;
   Index: Integer; Rect: TRect; State: TOwnerDrawState);
@@ -239,19 +233,15 @@ begin
   end;
 end;
 
-function ExistevShellToolsDb: Boolean;
-begin
-  Result:=TFile.Exists(GetDevShellToolsDbName);
-end;
-
 procedure TFrmSettings.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
- ClientDataSet1.SaveToFile(GetDevShellToolsDbName, dfXML);
+ // Only Apply writes the settings snapshot; Cancel and closing discard edits.
 end;
 
 procedure TFrmSettings.FormCreate(Sender: TObject);
 var
  s: string;
+ ReviewLabel: TLabel;
 begin
   DBComboBoxGroup.DataField:='Group';
   DBEditName.DataField:='Name';
@@ -260,21 +250,36 @@ begin
   DBMemoScript.DataField:='Script';
   DBComboBoxImage.DataField:='Image';
   DBCheckBoxRunAs.DataField:='RunAs';
-  DBLookupComboBoxDelphi.DataField:='DelphiVersion';
+  DBLookupComboBoxDelphi.DataField:='VersionId';
   DBLookupComboBoxDelphi.ListField:='Name';
-  DBLookupComboBoxDelphi.KeyField:='Version';
+  DBLookupComboBoxDelphi.KeyField:='VersionId';
+  LabelDelphi.Caption := 'Minimum Delphi';
 
-  if not ExistevShellToolsDb then
-    CreateStructure
-  else
+  FSettings := TSettings.Create;
+  LoadSettings;
+  LoadTools(ClientDataSet1, FSettings.Document);
+  LoadVersionChoices(ClientDataSet2);
+  ClientDataSet1.FieldByName('Id').Visible := False;
+  ClientDataSet1.FieldByName('Script').Visible := False;
+  ClientDataSet1.FieldByName('Review').ReadOnly := True;
+  ClientDataSet1.FieldByName('Review').DisplayLabel := 'Assignment review';
+  ClientDataSet1.FieldByName('VersionId').DisplayLabel := 'Minimum Delphi ID';
+  for s in ['Name', 'Group', 'Menu', 'Extensions', 'Image', 'VersionId', 'Review'] do
+    ClientDataSet1.FieldByName(s).DisplayWidth := 24;
+  ClientDataSet1.OnNewRecord := NewCommand;
+  ReviewLabel := TLabel.Create(Self);
+  ReviewLabel.Parent := TabSheet3;
+  ReviewLabel.Align := alTop;
+  ReviewLabel.WordWrap := True;
+  ReviewLabel.Caption := 'Commands with an assignment review are disabled. Select their minimum Delphi version, then Apply.';
+  ReviewLabel.Visible := False;
+  ClientDataSet1.First;
+  while not ClientDataSet1.Eof do
   begin
-    ClientDataSet1.LoadFromFile(GetDevShellToolsDbName);
-    ClientDataSet1.IndexDefs.Add('Name','Name',[ixPrimary, ixUnique, ixCaseInsensitive]);
-    ClientDataSet1.IndexName:='Name';
+    if ClientDataSet1.FieldByName('Review').AsString <> '' then ReviewLabel.Visible := True;
+    ClientDataSet1.Next;
   end;
-
-  ClientDataSet2.LoadFromFile(GetDevShellToolsDbDelphi);
-  ClientDataSet2.Open;
+  ClientDataSet1.First;
 
   ClientDataSet1.Open;
   ClientDataSet1.LogChanges:=False;
@@ -284,8 +289,7 @@ begin
 
 
   LoadMacros;
-  FSettings:=TSettings.Create;
-  LoadSettings;
+
 end;
 
 procedure TFrmSettings.FormDestroy(Sender: TObject);
@@ -306,6 +310,7 @@ begin
   if LocalFolder <> '' then
   begin
     FileName := IncludeTrailingPathDelimiter(LocalFolder)+'macros.xml';
+    if not FileExists(FileName) then Exit;
     begin
       XmlDoc := CreateOleObject('Msxml2.DOMDocument.6.0');
       try

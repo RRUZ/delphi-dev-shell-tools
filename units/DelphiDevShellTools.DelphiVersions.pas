@@ -24,6 +24,8 @@ unit DelphiDevShellTools.DelphiVersions;
 interface
 
 uses
+  DelphiDevShellTools.Installations,
+  DelphiDevShellTools.Commands,
   Generics.Defaults,
   Generics.Collections,
   DelphiDevShellTools.SupportedIDEs,
@@ -35,7 +37,7 @@ uses
 {$DEFINE DELPHI_OLDER_VERSIONS_SUPPORT}
 
 type
-  // Append new versions: existing ordinals are persisted in command settings.
+  // Append versions for legacy import compatibility; persisted settings use stable IDs.
   TDelphiVersions =
     (
   {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
@@ -75,6 +77,7 @@ type
 
   TDelphiVersionData=Class
   private
+    FInstallation: TIDEInstallation;
     FVersion: TDelphiVersions;
     FName: string;
     FPath: string;
@@ -82,6 +85,7 @@ type
     FIDEType: TSupportedIDEs;
     FBitmap: TBitmap;
   public
+    property Installation: TIDEInstallation read FInstallation;
     property Version: TDelphiVersions read FVersion;
     property Path: string read FPath write FPath;
     property Name: string read FName write FName;
@@ -280,6 +284,10 @@ const
   procedure MakeBitmapMenuTransparent(ABitmap: TBitmap);
   function GetDelphiVersions(const ProjectFile: string): SetDelphiVersions;
 
+function DelphiVersionID(Version: TDelphiVersions): string;
+function TryDelphiVersionID(const ID: string; out Version: TDelphiVersions): Boolean;
+function TryDelphiVersionName(const Name: string; out Version: TDelphiVersions): Boolean;
+
 implementation
 
 uses
@@ -300,6 +308,39 @@ uses
   DelphiDevShellTools.Registry,
   System.Types,
   Registry;
+
+function DelphiVersionID(Version: TDelphiVersions): string;
+const IDs: array[TDelphiVersions] of string = (
+  'delphi:5', 'delphi:6', 'delphi:7', 'delphi:8', 'delphi:2005', 'delphi:2006',
+  'delphi:2007', 'delphi:2009', 'delphi:2010', 'delphi:xe', 'delphi:xe2',
+  'delphi:xe3', 'delphi:xe4', 'delphi:xe5', 'appmethod:1.13', 'delphi:xe6',
+  'delphi:xe7', 'delphi:xe8', 'delphi:10', 'delphi:10.1', 'delphi:10.2',
+  'delphi:10.3', 'delphi:10.4', 'delphi:11', 'delphi:12', 'delphi:13');
+begin
+  Result := IDs[Version];
+end;
+
+function TryDelphiVersionID(const ID: string; out Version: TDelphiVersions): Boolean;
+var Candidate: TDelphiVersions;
+begin
+  for Candidate := Low(TDelphiVersions) to High(TDelphiVersions) do
+    if SameText(ID, DelphiVersionID(Candidate)) then begin Version := Candidate; Exit(True); end;
+  Result := False;
+end;
+
+function TryDelphiVersionName(const Name: string; out Version: TDelphiVersions): Boolean;
+var LabelText: string; Candidate: TDelphiVersions;
+begin
+  for Candidate := Low(TDelphiVersions) to High(TDelphiVersions) do
+  begin
+    Version := Candidate;
+    LabelText := DelphiVersionsNames[Candidate];
+    if SameText(Name, LabelText) then Exit(True);
+    if Pos('/', LabelText) > 0 then
+      if SameText(Name, Copy(LabelText, 1, Pos('/', LabelText) - 1)) then Exit(True);
+  end;
+  Result := False;
+end;
 
 constructor TMSBuildDProj.Create(const _ProjectFile: string);
 begin
@@ -624,30 +665,53 @@ Var
   DelphiComp: TDelphiVersions;
   FileName: string;
   Found: boolean;
+  Installations: TArray<TIDEInstallation>;
+  Installation, SelectedInstallation: TIDEInstallation;
   ColorLeftCorner, ColorBackMenu: TColor;
   TempBitmap: TBitmap;
   CX: Integer;
 begin
   Result:=TInstalledDelphiVerions.Create;
+  Installations := DiscoverInstallations;
   ColorBackMenu := GetSysColor(COLOR_MENU);
   CX:=GetSystemMetrics(SM_CXMENUCHECK);
 
   for DelphiComp := Low(TDelphiVersions) to High(TDelphiVersions) do
   begin
-    Found := RegKeyExists(DelphiRegPaths[DelphiComp], HKEY_CURRENT_USER);
-    if Found then
-      Found := RegReadStr(DelphiRegPaths[DelphiComp], 'App', FileName, HKEY_CURRENT_USER) and FileExists(FileName);
-
+    SelectedInstallation := Default(TIDEInstallation);
+    Found := False;
+    for Installation in Installations do
+      if (Pos('\BDS\', DelphiRegPaths[DelphiComp]) > 0) and
+         SameText(Installation.RegistryVersion, ExtractFileName(DelphiRegPaths[DelphiComp])) then
+      begin
+        SelectedInstallation := Installation;
+        FileName := Installation.IDE32;
+        if FileName = '' then FileName := Installation.IDE64;
+        Found := True;
+        Break;
+      end;
     if not Found then
     begin
-      Found := RegKeyExists(DelphiRegPaths[DelphiComp], HKEY_LOCAL_MACHINE);
+      Found := RegKeyExists(DelphiRegPaths[DelphiComp], HKEY_CURRENT_USER);
       if Found then
-        Found := RegReadStr(DelphiRegPaths[DelphiComp], 'App', FileName, HKEY_LOCAL_MACHINE) and FileExists(FileName);
+        Found := RegReadStr(DelphiRegPaths[DelphiComp], 'App', FileName, HKEY_CURRENT_USER) and FileExists(FileName);
+      if not Found then
+      begin
+        Found := RegKeyExists(DelphiRegPaths[DelphiComp], HKEY_LOCAL_MACHINE);
+        if Found then
+          Found := RegReadStr(DelphiRegPaths[DelphiComp], 'App', FileName, HKEY_LOCAL_MACHINE) and FileExists(FileName);
+      end;
     end;
-
     if Found then
     begin
+      if SelectedInstallation.Id = '' then
+      begin
+        SelectedInstallation.IDE32 := FileName;
+        SelectedInstallation.RootDirectory := ExtractFileDir(ExtractFileDir(FileName));
+        SelectedInstallation.EnvironmentScript := ExtractFilePath(FileName) + 'rsvars.bat';
+      end;
       VersionData:=TDelphiVersionData.Create;
+      VersionData.FInstallation := SelectedInstallation;
       VersionData.FPath:=Filename;
       VersionData.FVersion:=DelphiComp;
       VersionData.FName   :=DelphiVersionsNames[DelphiComp];

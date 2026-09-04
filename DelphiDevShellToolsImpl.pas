@@ -15,7 +15,7 @@
 // The Original Code is DelphiDevShellToolsImpl.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2026 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
@@ -32,11 +32,13 @@ uses
   Generics.Defaults,
   Generics.Collections,
   System.Win.ComObj,
+  DelphiDevShellTools.SettingsStore,
   DelphiDevShellTools.DelphiVersions,
   Winapi.ActiveX,
   DelphiDevShellTools_TLB,
   System.Types,
   System.Rtti,
+  DelphiDevShellTools.Commands,
   Winapi.Windows,
   Vcl.Graphics,
   Winapi.ShlObj,
@@ -72,6 +74,7 @@ type
     procedure AddOpenRADCmdTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
     procedure AddMSBuildRAD_SpecificTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
     procedure AddMSBuildRAD_AllTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
+    procedure AddPreferredTasks(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT);
     procedure AddOpenWithDelphi(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
     procedure AddOpenWithDelphi_GroupProject(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
 
@@ -299,6 +302,7 @@ begin
     FIconsExternals     :=TObjectDictionary<string, TIcon>.Create([doOwnsValues]);
     FIconsDictExternal  :=TDictionary<Integer, TIcon>.Create;
     FIconsDictResources := TDictionary<Integer, string>.Create;
+    ReadSettings(FSettings);
     RegisterBitmap('logo');
     RegisterBitmap('notepad');
     RegisterBitmap('cmd');
@@ -1143,9 +1147,9 @@ begin
        LClientDataSet:= TClientDataSet.Create(nil);
        try
            LClientDataSet.ReadOnly:=True;
-           LClientDataSet.LoadFromFile(GetDelphiDevShellToolsFolder+'tools.db');
+           LoadTools(LClientDataSet, FSettings.Document);
            LClientDataSet.Open;
-           LClientDataSet.Filter:='Group = '+QuotedStr('External Tools');
+           LClientDataSet.Filter:='Group = '+QuotedStr('External Tools')+' AND Review = '+QuotedStr('');
            LClientDataSet.Filtered:=True;
 
             while not LClientDataSet.eof do
@@ -1168,7 +1172,8 @@ begin
 
               LMethodInfo:=TMethodInfo.Create;
               LMethodInfo.Method:=TDelphiDevShellTasks.ExternalTools;
-              LMethodInfo.Value1:=TDelphiDevShellTasks.ParseMacros(LClientDataSet.FieldByName('Script').AsString, nil, FFileName);
+              LMethodInfo.Value1:=LClientDataSet.FieldByName('Script').AsString;
+              LMethodInfo.Value3:=FFileName;
               LMethodInfo.Value2:=False;
               if (not LClientDataSet.FieldByName('RunAs').IsNull) then
                LMethodInfo.Value2:=LClientDataSet.FieldByName('RunAs').AsBoolean;
@@ -1247,9 +1252,9 @@ begin
        LClientDataSet:= TClientDataSet.Create(nil);
        try
            LClientDataSet.ReadOnly:=True;
-           LClientDataSet.LoadFromFile(GetDelphiDevShellToolsFolder+'tools.db');
+           LoadTools(LClientDataSet, FSettings.Document);
            LClientDataSet.Open;
-           LClientDataSet.Filter:='Group = '+QuotedStr('FPC Tools');
+           LClientDataSet.Filter:='Group = '+QuotedStr('FPC Tools')+' AND Review = '+QuotedStr('');
            LClientDataSet.Filtered:=True;
 
             while not LClientDataSet.eof do
@@ -1272,7 +1277,8 @@ begin
 
               LMethodInfo:=TMethodInfo.Create;
               LMethodInfo.Method:=TDelphiDevShellTasks.FPCTools;
-              LMethodInfo.Value1:=TDelphiDevShellTasks.ParseMacros(LClientDataSet.FieldByName('Script').AsString, nil, FFileName);
+              LMethodInfo.Value1:=LClientDataSet.FieldByName('Script').AsString;
+              LMethodInfo.Value3:=FFileName;
               LMethodInfo.Value2:=False;
               if (not LClientDataSet.FieldByName('RunAs').IsNull) then
                LMethodInfo.Value2:=LClientDataSet.FieldByName('RunAs').AsBoolean;
@@ -1313,7 +1319,7 @@ begin
   try
      if not MatchText(FFileExt, SupportedExts) then exit;
 
-     if (Length(FDProjectVersion)=0) then exit;
+     if (Length(FDProjectVersion)=0) or (FInstalledDelphiVersions.Count=0) then exit;
 
 
      LCurrentDelphiVersion:=FDProjectVersion[0];
@@ -1369,6 +1375,7 @@ begin
          for LCurrentDelphiVersion in FDProjectVersion do
          for sPlatform in FMSBuildDProj.TargetPlatforms do
          begin
+           if not LCurrentDelphiVersionData.Installation.SupportsPlatform(sPlatform) then Continue;
 
 
            for sBuildConfiguration in FMSBuildDProj.BuildConfigurations do
@@ -1814,6 +1821,38 @@ begin
   end;
 end;
 
+procedure TDelphiDevShellToolsContextMenu.AddPreferredTasks(hMenu: HMENU;
+  var MenuIndex: Integer; var uIDNewItem: UINT; idCmdFirst: UINT);
+var Kind: TCommandKind; Choose: Boolean; Caption: string; Info: TMethodInfo;
+begin
+  if not MatchText(FFileExt, SplitString(FSettings.OpenDelphiExt, ',')) then Exit;
+  for Kind in [ckOpenIDE, ckBuild] do
+  begin
+    if (Kind = ckBuild) and not MatchText(FFileExt, ['.dpr','.dproj','.groupproj','.proj']) then Continue;
+    for Choose := False to True do
+    begin
+      if Kind = ckOpenIDE then
+      begin
+        Caption := 'Open with preferred Delphi';
+        if Choose then Caption := 'Choose Delphi...';
+      end
+      else
+      begin
+        Caption := 'Build with preferred Delphi';
+        if Choose then Caption := 'Build with options...';
+      end;
+      InsertMenuDevShell(hMenu, MenuIndex, uIDNewItem, PChar(Caption), 'delphi');
+      Info := TMethodInfo.Create;
+      Info.Method := TDelphiDevShellTasks.ExecuteRequest;
+      Info.Request := TDelphiDevShellTasks.IDECommand(Kind, FFileName, nil);
+      Info.Request.ChooseIDE := Choose;
+      FMethodsDict.Add(uIDNewItem - idCmdFirst, Info);
+      Inc(uIDNewItem);
+      Inc(MenuIndex);
+    end;
+  end;
+end;
+
 procedure TDelphiDevShellToolsContextMenu.AddOpenWithDelphi(hMenu: HMENU; var MenuIndex: Integer; var uIDNewItem :UINT; idCmdFirst: UINT; const SupportedExts: array of string);
 var
   LSubMenuIndex: Integer;
@@ -2086,9 +2125,9 @@ begin
        LClientDataSet:= TClientDataSet.Create(nil);
        try
            LClientDataSet.ReadOnly:=True;
-           LClientDataSet.LoadFromFile(GetDelphiDevShellToolsFolder+'tools.db');
+           LoadTools(LClientDataSet, FSettings.Document);
            LClientDataSet.Open;
-           LClientDataSet.Filter:='Group = '+QuotedStr('Delphi Tools');
+           LClientDataSet.Filter:='Group = '+QuotedStr('Delphi Tools')+' AND Review = '+QuotedStr('');
            LClientDataSet.Filtered:=True;
 
            for LCurrentDelphiVersionData in FInstalledDelphiVersions.ValuesSorted do
@@ -2097,7 +2136,7 @@ begin
 
             while not LClientDataSet.eof do
             begin
-             if (LClientDataSet.FieldByName('DelphiVersion').IsNull) or (LCurrentDelphiVersionData.Version>=TDelphiVersions(LClientDataSet.FieldByName('DelphiVersion').AsInteger)) then
+             if CommandAllowsVersion(LClientDataSet, LCurrentDelphiVersionData.Version) then
              begin
                LArray:= SplitString(LClientDataSet.FieldByName('Extensions').AsString, ',');
                if MatchText(FFileExt, LArray) then
@@ -2116,7 +2155,9 @@ begin
 
                 LMethodInfo:=TMethodInfo.Create;
                 LMethodInfo.Method:=TDelphiDevShellTasks.RADTools;
-                LMethodInfo.Value1:=TDelphiDevShellTasks.ParseMacros(LClientDataSet.FieldByName('Script').AsString, LCurrentDelphiVersionData, FFileName);
+                LMethodInfo.Value1:=LClientDataSet.FieldByName('Script').AsString;
+                LMethodInfo.Value3:=FFileName;
+                LMethodInfo.Value4:=LCurrentDelphiVersionData;
                 LMethodInfo.Value2:=False;
                 if (not LClientDataSet.FieldByName('RunAs').IsNull) then
                  LMethodInfo.Value2:=LClientDataSet.FieldByName('RunAs').AsBoolean;
@@ -2291,6 +2332,7 @@ begin
 
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
 
+    AddPreferredTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst);
     AddMSBuildRAD_SpecificTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     //AddAuditsCLITasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
@@ -2405,7 +2447,7 @@ function TDelphiDevShellToolsContextMenu.ShellExtInitialize(pidlFolder: PItemIDL
 var
   formatetcIn: TFormatEtc;
   medium: TStgMedium;
-  LFileName: Array [0 .. MAX_PATH] of Char;
+  FileNameLength: UINT;
   LProjName: string;
 begin
   Result := E_FAIL;
@@ -2426,9 +2468,10 @@ begin
 
     if DragQueryFile(medium.hGlobal, $FFFFFFFF, nil, 0) = 1 then
     begin
-      SetLength(FFileName, MAX_PATH);
-      DragQueryFile(medium.hGlobal, 0, @LFileName, SizeOf(LFileName));
-      FFileName := LFileName;
+      FileNameLength := DragQueryFile(medium.hGlobal, 0, nil, 0);
+      SetLength(FFileName, FileNameLength + 1);
+      DragQueryFile(medium.hGlobal, 0, PChar(FFileName), FileNameLength + 1);
+      SetLength(FFileName, FileNameLength);
       FFileExt:=ExtractFileExt(FFileName);
 
       if FMSBuildDProj<>nil then
@@ -2448,11 +2491,11 @@ begin
       if SameText(FFileExt, '.dpr') then
       begin
        LProjName:=ChangeFileExt(FFileName,'.dproj');
-       if not TFile.Exists(LFileName) then
+       if not TFile.Exists(LProjName) then
         LProjName:=FFileName;
       end;
 
-      if MatchText(FFileExt,['.dproj','.dpr']) and TFile.Exists(LProjName) then
+      if SameText(ExtractFileExt(LProjName), '.dproj') and TFile.Exists(LProjName) then
         FMSBuildDProj:=TMSBuildDProj.Create(LProjName);
 
       if MatchText(FFileExt,['.groupproj']) and TFile.Exists(FFileName) then
@@ -2498,9 +2541,27 @@ end;
 procedure TDelphiDevShellObjectFactory.UpdateRegistry(Register: Boolean);
 var
   LRegistry: TRegistry;
+  OtherArchitectureRegistered: Boolean;
 begin
   log('TDelphiDevShellObjectFactory.UpdateRegistry Init');
   inherited UpdateRegistry(Register);
+  // The context-menu key is shared by Win32 and Win64; Approved is per view.
+  OtherArchitectureRegistered := False;
+  if not Register then
+  begin
+    {$IFDEF WIN64}
+    LRegistry := TRegistry.Create(KEY_READ or KEY_WOW64_32KEY);
+    {$ELSE}
+    LRegistry := TRegistry.Create(KEY_READ or KEY_WOW64_64KEY);
+    {$ENDIF}
+    try
+      LRegistry.RootKey := HKEY_LOCAL_MACHINE;
+      if LRegistry.OpenKeyReadOnly('Software\Classes\CLSID\' + GUIDToString(ClassID) + '\InprocServer32') then
+        OtherArchitectureRegistered := LRegistry.ValueExists('') and (LRegistry.ReadString('') <> '');
+    finally
+      LRegistry.Free;
+    end;
+  end;
   LRegistry := TRegistry.Create;
   try
     LRegistry.RootKey := HKEY_LOCAL_MACHINE;
@@ -2517,9 +2578,10 @@ begin
 
   if Register then
     CreateRegKey(Format('*\shellex\ContextMenuHandlers\%s', [ClassName]), '', GUIDToString(ClassID), HKEY_CLASSES_ROOT)
-  else
+  else if not OtherArchitectureRegistered then
     DeleteRegKey(Format('*\shellex\ContextMenuHandlers\%s', [ClassName]));
 
+  SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nil, nil);
   log('TDelphiDevShellObjectFactory.UpdateRegistry Done');
 end;
 

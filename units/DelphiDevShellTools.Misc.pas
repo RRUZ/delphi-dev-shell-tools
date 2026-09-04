@@ -26,6 +26,8 @@ interface
 {$DEFINE ENABLELOG}
 
 uses
+ System.JSON,
+ DelphiDevShellTools.Commands,
  Windows,
  Vcl.Graphics,
  Rtti,
@@ -35,6 +37,7 @@ uses
 type
 
   TMethodInfo=class
+   Request: TCommandRequest;
    hwnd: HWND;
    Value1: TValue;
    Value2: TValue;
@@ -46,6 +49,7 @@ type
 
   TSettings =class
   private
+    FDocument: TJSONObject;
     FSubMenuOpenCmdRAD: Boolean;
     FShowInfoDProj: Boolean;
     FSubMenuLazarus: Boolean;
@@ -62,6 +66,8 @@ type
     FCheckForUpdates: Boolean;
     FCheckSumExt, FOpenLazarusExt, FOpenDelphiExt, FCommonTaskExt: string;
   public
+    destructor Destroy; override;
+    property Document: TJSONObject read FDocument;
     property SubMenuOpenCmdRAD: Boolean read FSubMenuOpenCmdRAD write FSubMenuOpenCmdRAD;
     property SubMenuLazarus: Boolean read FSubMenuLazarus write FSubMenuLazarus;
     property SubMenuCommonTasks: Boolean read FSubMenuCommonTasks write FSubMenuCommonTasks;
@@ -124,6 +130,7 @@ type
 implementation
 
 uses
+  DelphiDevShellTools.SettingsStore,
   ActiveX,
   ShlObj,
   PsAPI,
@@ -217,9 +224,9 @@ Result:=nil;
    List:=TStringList.Create;
    try
      LClientDataSet.ReadOnly:=True;
-     LClientDataSet.LoadFromFile(GetDelphiDevShellToolsFolder+'tools.db');
+     LoadTools(LClientDataSet);
      LClientDataSet.Open;
-     LClientDataSet.Filter:='Group = '+QuotedStr(GroupName);
+     LClientDataSet.Filter:='Group = '+QuotedStr(GroupName)+' AND Review = '+QuotedStr('');
      LClientDataSet.Filtered:=True;
       while not LClientDataSet.eof do
       begin
@@ -336,9 +343,7 @@ end;
 
 function GetDelphiDevShellToolsFolder: string;
 begin
- Result:=IncludeTrailingPathDelimiter(GetSpecialFolder(CSIDL_COMMON_APPDATA))+ 'DelphiDevShellTools\';
- //C:\ProgramData\DelphiDevShellTools
- ForceDirectories(Result);
+  Result := IncludeTrailingPathDelimiter(UserSettingsDirectory);
 end;
 
 function GetDevShellToolsDbName: String;
@@ -358,67 +363,53 @@ end;
 
 
 
-procedure ReadSettings(var Settings: TSettings);
-var
-  iniFile: TIniFile;
-  LCtx: TRttiContext;
-  LProp: TRttiProperty;
-  BooleanValue: Boolean;
-  StringValue: string;
+destructor TSettings.Destroy;
 begin
-  iniFile := TIniFile.Create(GetDelphiDevShellToolsFolder + 'Settings.ini');
+  FDocument.Free;
+  inherited;
+end;
+
+procedure ReadSettings(var Settings: TSettings);
+var Context: TRttiContext; Prop: TRttiProperty; Globals: TJSONObject; Value: string;
+begin
+  FreeAndNil(Settings.FDocument);
+  Settings.FDocument := LoadUserConfiguration;
+  Globals := Settings.FDocument.GetValue<TJSONObject>('settings');
+  Context := TRttiContext.Create;
   try
-   LCtx:=TRttiContext.Create;
-   try
-    for LProp in LCtx.GetType(TypeInfo(TSettings)).GetProperties do
-    if LProp.PropertyType.TypeKind=tkEnumeration then
-    begin
-      BooleanValue:= iniFile.ReadBool('Global', LProp.Name, True);
-      LProp.SetValue(Settings, BooleanValue);
-    end
-    else
-    if (LProp.PropertyType.TypeKind=tkString) or  (LProp.PropertyType.TypeKind=tkUString) then
-    begin
-      StringValue:= iniFile.ReadString('Global', LProp.Name, '');
-      LProp.SetValue(Settings, StringValue);
-    end;
-   finally
-     LCtx.Free;
-   end;
+    for Prop in Context.GetType(TypeInfo(TSettings)).GetProperties do
+      if Prop.PropertyType.TypeKind = tkEnumeration then
+      begin
+        Value := Globals.GetValue<string>(Prop.Name, '1');
+        // A missing legacy setting must not opt a new user into network checks.
+        if (Prop.Name = 'CheckForUpdates') and (Globals.GetValue(Prop.Name) = nil) then Value := '0';
+        Prop.SetValue(Settings, (Value = '1') or SameText(Value, 'True'));
+      end
+      else if Prop.PropertyType.TypeKind in [tkString, tkUString] then
+        Prop.SetValue(Settings, Globals.GetValue<string>(Prop.Name, ''));
   finally
-    iniFile.Free;
+    Context.Free;
   end;
 end;
 
 procedure WriteSettings(const Settings: TSettings);
-var
-  iniFile: TIniFile;
-  LCtx: TRttiContext;
-  LProp: TRttiProperty;
-  BooleanValue: Boolean;
-  StringValue: string;
+var Context: TRttiContext; Prop: TRttiProperty; Globals: TJSONObject; Value: string;
 begin
-  iniFile := TIniFile.Create(GetDelphiDevShellToolsFolder + 'Settings.ini');
+  Globals := Settings.FDocument.GetValue<TJSONObject>('settings');
+  Context := TRttiContext.Create;
   try
-   LCtx:=TRttiContext.Create;
-   try
-    for LProp in LCtx.GetType(TypeInfo(TSettings)).GetProperties do
-    if LProp.PropertyType.TypeKind=tkEnumeration then
+    for Prop in Context.GetType(TypeInfo(TSettings)).GetProperties do
     begin
-       BooleanValue:= LProp.GetValue(Settings).AsBoolean;
-       iniFile.WriteBool('Global', LProp.Name, BooleanValue);
-    end
-    else
-    if (LProp.PropertyType.TypeKind=tkString) or  (LProp.PropertyType.TypeKind=tkUString) then
-    begin
-       StringValue:= LProp.GetValue(Settings).AsString;
-       iniFile.WriteString('Global', LProp.Name, StringValue);
+      if Prop.PropertyType.TypeKind = tkEnumeration then
+        Value := IntToStr(Ord(Prop.GetValue(Settings).AsBoolean))
+      else if Prop.PropertyType.TypeKind in [tkString, tkUString] then
+        Value := Prop.GetValue(Settings).AsString
+      else Continue;
+      PutJSON(Globals, Prop.Name, TJSONString.Create(Value));
     end;
-   finally
-     LCtx.Free;
-   end;
+    SaveConfiguration(UserSettingsDirectory, Settings.FDocument);
   finally
-    iniFile.Free;
+    Context.Free;
   end;
 end;
 

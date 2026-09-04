@@ -17,7 +17,7 @@ type
 
 function TestDllPath: string;
 function LoadTestDll: HMODULE;
-function ReadRegistryString(Root: HKEY; const Key: string; const Name: string = ''): string;
+function ReadRegistryString(Root: HKEY; const Key: string; const Name: string = ''; RegistryView: REGSAM = 0): string;
 function IsElevated: Boolean;
 procedure CheckHR(Value: HResult; const Operation: string);
 
@@ -40,16 +40,17 @@ begin
     RaiseLastOSError;
 end;
 
-function ReadRegistryString(Root: HKEY; const Key, Name: string): string;
+function ReadRegistryString(Root: HKEY; const Key, Name: string; RegistryView: REGSAM): string;
 var
   Registry: TRegistry;
 begin
   Result := '';
   {$IFDEF WIN64}
-  Registry := TRegistry.Create(KEY_READ or KEY_WOW64_64KEY);
+  if RegistryView = 0 then RegistryView := KEY_WOW64_64KEY;
   {$ELSE}
-  Registry := TRegistry.Create(KEY_READ or KEY_WOW64_32KEY);
+  if RegistryView = 0 then RegistryView := KEY_WOW64_32KEY;
   {$ENDIF}
+  Registry := TRegistry.Create(KEY_READ or RegistryView);
   try
     Registry.RootKey := Root;
     if Registry.OpenKeyReadOnly(Key) and Registry.ValueExists(Name) then

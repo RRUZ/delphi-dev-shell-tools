@@ -27,7 +27,14 @@
     <DCC_DebugInformation>0</DCC_DebugInformation>
   </PropertyGroup>
   <ItemGroup>
+        <DCCReference Include="..\units\DelphiDevShellTools.SettingsStore.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.Commands.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.Installations.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.Execution.pas"/>
+
     <DelphiCompile Include="$(MainSource)"><MainSource>MainSource</MainSource></DelphiCompile>
+    <DCCReference Include="ShellTools.ExecutionTests.pas"/>
+    <DCCReference Include="ShellTools.SettingsTests.pas"/>
     <DCCReference Include="ShellTools.BasicTests.pas"/>
     <DCCReference Include="ShellTools.RegistrationTests.pas"/>
     <DCCReference Include="ShellTools.TestSupport.pas"/>

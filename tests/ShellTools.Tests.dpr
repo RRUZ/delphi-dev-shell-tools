@@ -4,6 +4,9 @@ program ShellTools.Tests;
 {$STRONGLINKTYPES ON}
 
 uses
+  ShellTools.SettingsTests in 'ShellTools.SettingsTests.pas',
+  DelphiDevShellTools.SettingsStore in '..\units\DelphiDevShellTools.SettingsStore.pas',
+  ShellTools.ExecutionTests in 'ShellTools.ExecutionTests.pas',
   System.SysUtils,
   System.Win.ComObj,
   Winapi.ActiveX,
@@ -18,11 +21,20 @@ var
   Runner: ITestRunner;
   Results: IRunResults;
 begin
+  if (ParamCount >= 2) and SameText(ParamStr(1), '--argument-probe') then
+  begin
+    WriteArgumentProbe;
+    Exit;
+  end;
   try
     OleCheck(CoInitialize(nil));
     try
       TDUnitX.CheckCommandLine;
       TDUnitX.RegisterTestFixture(TBasicTests);
+      TDUnitX.RegisterTestFixture(TExecutionTests);
+      TDUnitX.RegisterTestFixture(TSettingsTests);
+      if GetEnvironmentVariable('DDS_TEST_UNC_ROOT') <> '' then
+        TDUnitX.RegisterTestFixture(TUNCExecutionTests);
       // This class intentionally has no TestFixture attribute: opt-in only.
       if GetEnvironmentVariable('DDS_TEST_REGISTRATION') = '1' then
         TDUnitX.RegisterTestFixture(TRegistrationTests);

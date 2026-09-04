@@ -24,6 +24,7 @@ unit DelphiDevShellTools.Tasks;
 interface
 
 uses
+   DelphiDevShellTools.Commands,
    DelphiDevShellTools.Misc,
    DelphiDevShellTools.DelphiVersions,
    Winapi.Windows,
@@ -34,6 +35,9 @@ type
   TDelphiDevShellTasks=class
   private
   public
+    class function ProgramCommand(const Executable, FileName: string; const Arguments: TArray<string>): TCommandRequest;
+    class function IDECommand(Kind: TCommandKind; const FileName: string; Version: TDelphiVersionData): TCommandRequest;
+    class procedure ExecuteRequest(Info: TMethodInfo);
     class function ParseMacros(const Data: string; DelphiVersionData: TDelphiVersionData; const  FileName: string): string;
     class procedure OpenWithDelphi(Info: TMethodInfo);
     class procedure OpenRADStudio(Info: TMethodInfo);
@@ -72,6 +76,7 @@ type
 implementation
 
 uses
+  DelphiDevShellTools.Execution,
   DelphiDevShellTools.LazarusVersions,
   Vcl.Clipbrd,
   System.IOUtils,
@@ -82,55 +87,67 @@ uses
 { TDelphiDevShellTasks }
 
 
-//procedure TDelphiDevShellTasks.BuildWithDelphi(Info: TMethodInfo);//incomplete
-//var
-//  LDelphiVersion: TDelphiVersionData;
-//  CompilerPath, Params, BatchFileName: string;
-//  BatchFile: TStrings;
-//begin
-//  log('BuildWithDelphi');
-//  LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
-//  CompilerPath:=ExtractFilePath(LDelphiVersion.Path)+'DCC32.exe';
-//  //Params:=Format('/K "%s" -B -NSsystem;vcl;Winapi;System.Win "%s"',[CompilerPath, FFileName]);
-//  //log('BuildWithDelphi cmd.exe '+Params);
-//  //ShellExecute(Info.hwnd, 'open', PChar('"'+CompilerPath+'"'), PChar(Format('-B -NSsystem;vcl;Winapi;System.Win "%s"',[FFileName])) , nil , SW_SHOWNORMAL);
-//  //ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-//  BatchFile:=TStringList.Create;
-//  try
-//    BatchFile.Add(Format('"%s" -B -NSsystem;vcl;Winapi;System.Win "%s"',[CompilerPath, FFileName]));
-//    BatchFile.Add('Pause');
-//    BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
-//    BatchFile.SaveToFile(BatchFileName);
-//    Params:='/C "'+BatchFileName+'"';
-//    ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-//  finally
-//    BatchFile.Free;
-//  end;
-//end;
-
-class procedure TDelphiDevShellTasks.BuildWithLazBuild(Info: TMethodInfo);
-var
-  LazBuild, BatchFileName, Params: string;
-  BatchFile: TStrings;
+class function TDelphiDevShellTasks.ProgramCommand(const Executable, FileName: string;
+  const Arguments: TArray<string>): TCommandRequest;
 begin
-  try
-    LazBuild:=IncludeTrailingPathDelimiter(Info.Value1.AsString)+'lazbuild.exe';
-    //log('BuildWithLazBuild '+LazBuild+' '+Format(' "%s"',[FFileName]));
-    BatchFile:=TStringList.Create;
-    try
-      BatchFile.Add(Format('"%s" "%s"',[LazBuild, Info.Value2.AsString]));
-      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
-      BatchFile.SaveToFile(BatchFileName);
-      Params:='/K "'+BatchFileName+'"';
-      ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-    finally
-      BatchFile.Free;
+  Result := TCommandRequest.Create(ckProgram, FileName);
+  Result.Executable := Executable;
+  if Result.WorkingDirectory = '' then Result.WorkingDirectory := ExtractFileDir(Executable);
+  Result.Arguments := Arguments;
+end;
+
+class function TDelphiDevShellTasks.IDECommand(Kind: TCommandKind; const FileName: string;
+  Version: TDelphiVersionData): TCommandRequest;
+begin
+  Result := TCommandRequest.Create(Kind, FileName);
+  if SameText(ExtractFileExt(FileName), '.dpr') and FileExists(ChangeFileExt(FileName, '.dproj')) then
+    Result.FileName := ChangeFileExt(FileName, '.dproj');
+  if Version <> nil then
+  begin
+    Result.ProfileId := Version.Installation.Id;
+    if Kind in [ckBuild, ckTerminal] then
+      Result.EnvironmentScript := Version.Installation.EnvironmentScript;
+    Result.Executable := Version.Path;
+    if (Kind = ckOpenIDE) and (Result.ProfileId = '') then
+    begin
+      Result.Kind := ckProgram;
+      Result.Arguments := [Result.FileName];
+      if Version.Version >= Delphi2005 then Result.Arguments := ['-pDelphi', Result.FileName];
     end;
-  except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.BuildWithLazBuild Message %s  Trace %s',[E.Message, e.StackTrace]));
   end;
 end;
+
+class procedure TDelphiDevShellTasks.ExecuteRequest(Info: TMethodInfo);
+begin
+  DispatchCommand(Info.Request);
+end;
+
+procedure SendScript(Info: TMethodInfo);
+var Request: TCommandRequest; Version: TDelphiVersionData;
+begin
+  Request := TCommandRequest.Create(ckScript, Info.Value3.AsString);
+  Request.Script := Info.Value1.AsString;
+  Request.Elevate := Info.Value2.AsBoolean;
+  if not Info.Value4.IsEmpty then
+  begin
+    Version := TDelphiVersionData(Info.Value4.AsObject);
+    Request.MacroBin := ExtractFilePath(Version.Path);
+    if Version.Installation.RootDirectory <> '' then
+      Request.MacroBin := IncludeTrailingPathDelimiter(Version.Installation.RootDirectory) + 'bin\';
+  end;
+  if IsLazarusInstalled then Request.MacroFPC := GetFPCPath;
+  DispatchCommand(Request);
+end;
+
+class procedure TDelphiDevShellTasks.BuildWithLazBuild(Info: TMethodInfo);
+var Request: TCommandRequest;
+begin
+  Request := ProgramCommand(IncludeTrailingPathDelimiter(Info.Value1.AsString) + 'lazbuild.exe',
+    Info.Value2.AsString, [Info.Value2.AsString]);
+  Request.WaitForExit := True;
+  DispatchCommand(Request);
+end;
+
 
 class procedure TDelphiDevShellTasks.CopyFileContentClipboard(Info: TMethodInfo);
 begin
@@ -196,29 +213,8 @@ begin
 end;
 
 class procedure TDelphiDevShellTasks.ExternalTools(Info: TMethodInfo);
-var
-  BatchFileName, Params: string;
-  BatchFile: TStrings;
 begin
-  try
-    //log('ExternalTools');
-    BatchFile:=TStringList.Create;
-    try
-      BatchFile.Text:=Info.Value1.AsString;
-      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
-      BatchFile.SaveToFile(BatchFileName);
-      Params:='/C "'+BatchFileName+'"';
-      if Info.Value2.AsBoolean then
-        ShellExecute(Info.hwnd, 'runas', PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL)
-      else
-        ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-    finally
-      BatchFile.Free;
-    end;
-  except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.FPCTools Message %s  Trace %s',[E.Message, e.StackTrace]));
-  end;
+  SendScript(Info);
 end;
 
 
@@ -241,317 +237,112 @@ end;
 
 
 class procedure TDelphiDevShellTasks.FPCTools(Info: TMethodInfo);
-var
-  BatchFileName, Params: string;
-  BatchFile: TStrings;
 begin
-  try
-    //log('FPCTools');
-    BatchFile:=TStringList.Create;
-    try
-      BatchFile.Text:=Info.Value1.AsString;
-      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
-      BatchFile.SaveToFile(BatchFileName);
-      Params:='/C "'+BatchFileName+'"';
-      if Info.Value2.AsBoolean then
-        ShellExecute(Info.hwnd, 'runas', PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL)
-      else
-        ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-    finally
-      BatchFile.Free;
-    end;
-  except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.FPCTools Message %s  Trace %s',[E.Message, e.StackTrace]));
-  end;
+  SendScript(Info);
 end;
+
 
 class procedure TDelphiDevShellTasks.MSBuildWithDelphi(Info: TMethodInfo);
-var
-  LDelphiVersion: TDelphiVersionData;
-  LFileName, RsvarsPath, Params, BatchFileName, sPlatform, sConfig: string;
-  BatchFile: TStrings;
+var Request: TCommandRequest;
 begin
- try
-  //log('MSBuildWithDelphi');
-  LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
-  sPlatform:=Info.Value2.AsString;
-  sConfig:=Info.Value3.AsString;
-  LFileName:=Info.Value4.AsString;
-
-  RsvarsPath  :=ExtractFilePath(LDelphiVersion.Path)+'rsvars.bat';
-  BatchFile:=TStringList.Create;
-  try
-    BatchFile.Add(Format('call "%s"',[RsvarsPath]));
-    BatchFile.Add(Format('msbuild.exe "%s" /target:build /p:Platform="%s" /p:config="%s"', [LFileName, sPlatform, sConfig]));
-    BatchFile.Add('Pause');
-    BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
-    BatchFile.SaveToFile(BatchFileName);
-    Params:='/C "'+BatchFileName+'"';
-    ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-  finally
-    BatchFile.Free;
-  end;
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.MSBuildWithDelphi Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
+  Request := IDECommand(ckBuild, Info.Value4.AsString, TDelphiVersionData(Info.Value1.AsObject));
+  Request.Platform := Info.Value2.AsString;
+  Request.Configuration := Info.Value3.AsString;
+  DispatchCommand(Request);
 end;
+
 
 class procedure TDelphiDevShellTasks.MSBuildWithDelphi_Default(Info: TMethodInfo);
-var
-  LDelphiVersion: TDelphiVersionData;
-  LFileName, RsvarsPath, CompilerPath, Params, BatchFileName: string;
-  BatchFile: TStrings;
 begin
- try
-  //log('MSBuildWithDelphi_Default');
-  LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
-
-  LFileName:=Info.Value2.AsString;
-
-  RsvarsPath  :=ExtractFilePath(LDelphiVersion.Path)+'rsvars.bat';
-  CompilerPath:=ExtractFilePath(LDelphiVersion.Path)+'DCC32.exe';
-  BatchFile:=TStringList.Create;
-  try
-    BatchFile.Add(Format('call "%s"',[RsvarsPath]));
-    BatchFile.Add(Format('msbuild.exe "%s"', [LFileName]));
-    BatchFile.Add('Pause');
-    BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
-    BatchFile.SaveToFile(BatchFileName);
-    Params:='/C "'+BatchFileName+'"';
-    ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-  finally
-    BatchFile.Free;
-  end;
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.MSBuildWithDelphi_Default Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
-
+  DispatchCommand(IDECommand(ckBuild, Info.Value2.AsString, TDelphiVersionData(Info.Value1.AsObject)));
 end;
 
-class procedure TDelphiDevShellTasks.OpenCmdHere(Info: TMethodInfo);
-var
-  FilePath, BatchFileName, Params: string;
-  BatchFile: TStrings;
-begin
- try
-    //log('OpenCmdHere');
-    FilePath:=ExtractFilePath(Info.Value2.AsString);
-    BatchFile:=TStringList.Create;
-    try
-      BatchFile.Add(Format('%s',[FilePath[1]+':']));
-      BatchFile.Add(Format('cd "%s"',[FilePath]));
-      BatchFile.Add('cls');
-      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
-      BatchFile.SaveToFile(BatchFileName);
-      Params:='/K "'+BatchFileName+'"';
 
-      if Info.Value1.AsBoolean then
-       ShellExecute(Info.hwnd, 'runas', PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL)
-      else
-       ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-    finally
-      BatchFile.Free;
-    end;
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.OpenCmdHere Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
+class procedure TDelphiDevShellTasks.OpenCmdHere(Info: TMethodInfo);
+var Request: TCommandRequest;
+begin
+  Request := TCommandRequest.Create(ckTerminal, Info.Value2.AsString);
+  Request.Elevate := Info.Value1.AsBoolean;
+  DispatchCommand(Request);
 end;
 
 
 class procedure TDelphiDevShellTasks.OpenGUI(Info: TMethodInfo);
 begin
- try
-  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(DelphiDevShellTools.Misc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString) , nil , SW_SHOWNORMAL);
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.OpenGUI Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
+  DispatchCommand(ProgramCommand(ExtractFilePath(DelphiDevShellTools.Misc.GetModuleName) + 'GUIDelphiDevShell.exe', '', [Info.Value1.AsString]));
 end;
+
 
 class procedure TDelphiDevShellTasks.OpenGUICheckSum(Info: TMethodInfo);
 begin
- try
-  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(DelphiDevShellTools.Misc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString+' "'+Info.Value2.AsString+'"'), nil , SW_SHOWNORMAL);
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.OpenGUI Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
+  DispatchCommand(ProgramCommand(ExtractFilePath(DelphiDevShellTools.Misc.GetModuleName) + 'GUIDelphiDevShell.exe', Info.Value2.AsString,
+    [Info.Value1.AsString, Info.Value2.AsString]));
 end;
+
 
 class procedure TDelphiDevShellTasks.OpenRADCmd(Info: TMethodInfo);
-var
-  LDelphiVersion: TDelphiVersionData;
-  RsvarsPath, FilePath, BatchFileName, Params: string;
-  BatchFile: TStrings;
 begin
- try
-  //log('OpenRADCmd');
-  LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
-  FilePath:=ExtractFilePath(Info.Value2.AsString);
-  RsvarsPath  :=ExtractFilePath(LDelphiVersion.Path)+'rsvars.bat';
-  BatchFile:=TStringList.Create;
-  try
-    BatchFile.Add(Format('%s',[FilePath[1]+':']));
-    BatchFile.Add(Format('cd "%s"',[FilePath]));
-    BatchFile.Add('cls');
-    BatchFile.Add(Format('call "%s"',[RsvarsPath]));
-    BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
-    BatchFile.SaveToFile(BatchFileName);
-    Params:='/K "'+BatchFileName+'"';
-    ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-  finally
-    BatchFile.Free;
-  end;
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.OpenRADCmd Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
-
+  DispatchCommand(IDECommand(ckTerminal, Info.Value2.AsString, TDelphiVersionData(Info.Value1.AsObject)));
 end;
+
 
 class procedure TDelphiDevShellTasks.OpenRADStudio(Info: TMethodInfo);
-var
-  LDelphiVersion: TDelphiVersionData;
-  LFileName: string;
 begin
- try
-  LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
-  LFileName:=Info.Value2.AsString;
-  //log('OpenRADStudio '+LDelphiVersion.Path+' '+Format(' "%s" "%s"',[LFileName, Info.Value3.AsString]));
-  ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('"%s" "%s"',[LFileName, Info.Value3.AsString])) , nil , SW_SHOWNORMAL);
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.OpenRADStudio Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
-
+  DispatchCommand(IDECommand(ckOpenIDE, Info.Value2.AsString, TDelphiVersionData(Info.Value1.AsObject)));
 end;
+
 
 class procedure TDelphiDevShellTasks.OpenVclStyle(Info: TMethodInfo);
-var
-  LDelphiVersion: TDelphiVersionData;
-  LVclStyleEditor: string;
+var Version: TDelphiVersionData; Executable: string;
 begin
- try
-  LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
-  if LDelphiVersion.Version=DelphiXE2 then
-   LVclStyleEditor:=IncludeTrailingPathDelimiter(ExtractFilePath(LDelphiVersion.Path))+'VCLStyleTest.exe'
-  else
-   LVclStyleEditor:=IncludeTrailingPathDelimiter(ExtractFilePath(LDelphiVersion.Path))+'VCLStyleViewer.exe';
-
-  //log('OpenVclStyle '+LVclStyleEditor+' '+Format(' "%s"',[FFileName]));
-  ShellExecute(Info.hwnd, 'open', PChar(LVclStyleEditor), PChar(Format('"%s"',[Info.Value2.AsString])) , nil , SW_SHOWNORMAL);
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.OpenVclStyle Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
+  Version := TDelphiVersionData(Info.Value1.AsObject);
+  Executable := IncludeTrailingPathDelimiter(Version.Installation.RootDirectory) + 'bin\';
+  if Version.Version = DelphiXE2 then Executable := Executable + 'VCLStyleTest.exe'
+  else Executable := Executable + 'VCLStyleViewer.exe';
+  DispatchCommand(ProgramCommand(Executable, Info.Value2.AsString, [Info.Value2.AsString]));
 end;
+
 
 class procedure TDelphiDevShellTasks.OpenWithApp(Info: TMethodInfo);
 begin
- try
-   ShellExecute(Info.hwnd, 'open', PChar(Info.Value1.AsString), PChar(Info.Value2.AsString) , nil , SW_SHOWNORMAL);
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.OpenWithApp Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
+  DispatchCommand(ProgramCommand(Info.Value1.AsString, Info.Value2.AsString, [Info.Value2.AsString]));
 end;
 
+
 class procedure TDelphiDevShellTasks.OpenWithDelphi(Info: TMethodInfo);
-var
-  LDelphiVersion: TDelphiVersionData;
 begin
- try
-  LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
-  //log('OpenWithDelphi '+LDelphiVersion.Path+' '+Format('-pDelphi "%s"',[FFileName]));
-  ShellExecute(Info.hwnd, 'open', PChar(LDelphiVersion.Path), PChar(Format('-pDelphi "%s"',[Info.Value1.AsString])) , nil , SW_SHOWNORMAL);
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.OpenWithDelphi Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
+  DispatchCommand(IDECommand(ckOpenIDE, Info.Value2.AsString, TDelphiVersionData(Info.Value1.AsObject)));
 end;
 
 
 class procedure TDelphiDevShellTasks.OpenWithLazarus(Info: TMethodInfo);
-var
-  LazarusIDE: string;
 begin
- try
-  LazarusIDE:=Info.Value1.AsString;
-  //log('OpenWithLazarus '+LazarusIDE+' '+Format(' "%s"',[FFileName]));
-  ShellExecute(Info.hwnd, 'open', PChar(LazarusIDE), PChar(Format('"%s"',[Info.Value2.AsString])) , nil , SW_SHOWNORMAL);
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.OpenWithLazarus Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
-
+  DispatchCommand(ProgramCommand(Info.Value1.AsString, Info.Value2.AsString, [Info.Value2.AsString]));
 end;
+
 
 class procedure TDelphiDevShellTasks.OpenWithNotepad(Info: TMethodInfo);
 begin
- try
-  ShellExecute(Info.hwnd, 'open', 'C:\Windows\notepad.exe', PChar(Info.Value1.AsString) , nil , SW_SHOWNORMAL);
- except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.OpenWithNotepad Message %s  Trace %s',[E.Message, e.StackTrace]));
- end;
+  DispatchCommand(ProgramCommand(ExtractFilePath(CommandProcessor) + 'notepad.exe', Info.Value1.AsString, [Info.Value1.AsString]));
 end;
+
 
 class procedure TDelphiDevShellTasks.PAClientTest(Info: TMethodInfo);
-var
-  LDelphiVersion: TDelphiVersionData;
-  LPAClientApp, BatchFileName, Params: string;
-  BatchFile: TStrings;
+var Version: TDelphiVersionData; Request: TCommandRequest;
 begin
-  try
-    LDelphiVersion:=TDelphiVersionData(Info.Value1.AsObject);
-    LPAClientApp:=IncludeTrailingPathDelimiter(ExtractFilePath(LDelphiVersion.Path))+'PAClient.exe';
-    //log('PAClientTest '+LPAClientApp+' '+Format(' "%s"',[Info.Value2.AsString]));
-    BatchFile:=TStringList.Create;
-    try
-      BatchFile.Add(Format('"%s" "%s"',[LPAClientApp, Info.Value2.AsString]));
-      BatchFile.Add('Pause');
-      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
-      BatchFile.SaveToFile(BatchFileName);
-      Params:='/C "'+BatchFileName+'"';
-      ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-    finally
-      BatchFile.Free;
-    end;
-  except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.PAClientTest Message %s  Trace %s',[E.Message, e.StackTrace]));
-  end;
+  Version := TDelphiVersionData(Info.Value1.AsObject);
+  Request := ProgramCommand(IncludeTrailingPathDelimiter(Version.Installation.RootDirectory) + 'bin\PAClient.exe',
+    '', [Info.Value2.AsString]);
+  Request.WaitForExit := True;
+  DispatchCommand(Request);
 end;
 
+
 class procedure TDelphiDevShellTasks.RADTools(Info: TMethodInfo);
-var
-  BatchFileName, Params: string;
-  BatchFile: TStrings;
 begin
-  try
-    //log('RADTools');
-    BatchFile:=TStringList.Create;
-    try
-      BatchFile.Text:=Info.Value1.AsString;
-      BatchFileName:=IncludeTrailingPathDelimiter(GetTempDirectory)+'ShellExec.bat';
-      BatchFile.SaveToFile(BatchFileName);
-      Params:='/C "'+BatchFileName+'"';
-      if Info.Value2.AsBoolean then
-        ShellExecute(Info.hwnd, 'runas', PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL)
-      else
-        ShellExecute(Info.hwnd, nil, PChar('cmd.exe'), PChar(Params) , nil , SW_SHOWNORMAL);
-    finally
-      BatchFile.Free;
-    end;
-  except
-   on  E: Exception do
-   log(Format('TDelphiDevShellTasks.RADTools Message %s  Trace %s',[E.Message, e.StackTrace]));
-  end;
+  SendScript(Info);
 end;
+
 
 class procedure TDelphiDevShellTasks.Updater(Info: TMethodInfo);
 begin
