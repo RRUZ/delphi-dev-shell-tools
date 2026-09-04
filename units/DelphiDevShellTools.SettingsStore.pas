@@ -221,7 +221,9 @@ begin
     Keys := TStringList.Create;
     try
       Ini.ReadSection('Global', Keys);
-      for Name in Keys do Globals.AddPair(Name, Ini.ReadString('Global', Name, ''));
+      for Name in Keys do
+        if not SameText(Name, 'CheckForUpdates') then
+          Globals.AddPair(Name, Ini.ReadString('Global', Name, ''));
     finally
       Keys.Free;
       Ini.Free;
@@ -230,7 +232,6 @@ begin
     if Globals.GetValue('OpenDelphiExt') = nil then Globals.AddPair('OpenDelphiExt', '.pas,.dpr,.dproj,.groupproj,.inc,.dpk');
     if Globals.GetValue('OpenLazarusExt') = nil then Globals.AddPair('OpenLazarusExt', '.lpi,.lpr,.pas');
     if Globals.GetValue('CheckSumExt') = nil then Globals.AddPair('CheckSumExt', '.pas,.dpr,.dproj,.exe,.dll');
-    if Globals.GetValue('CheckForUpdates') = nil then Globals.AddPair('CheckForUpdates', '0');
     Execution := TJSONObject.Create;
     Result.AddPair('execution', Execution);
     // Import the earlier per-user preference once; future writes use JSON only.

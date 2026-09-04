@@ -75,7 +75,6 @@ TODO
   enumerate builds and plattform from msbuild file dproj   DONE
   Add extra info to default msbuild conf (platform, type (dll, app), framweork) use owner draw?  DONE
 
-  Auto Update  done
   settings app       done
   Map dpr to dproj >=Delphi2007    done
   Add open RadStudio Command Prompt Here  %comspec%  /K "C:\Program Files (x86)\Embarcadero\RAD Studio\11.0\bin\rsvars.bat"  DONE

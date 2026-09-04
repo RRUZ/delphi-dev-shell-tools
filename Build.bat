@@ -504,9 +504,7 @@ icacls "%DDS_DATA%" /grant "*%DDS_SID%:(OI)(CI)M" >nul
 if errorlevel 1 exit /b 1
 :copy_defaults
 if exist "%DDS_DATA%\Settings.ini" goto copy_catalogs
-findstr /v /x /c:"CheckForUpdates=1" "%DDS_ROOT%\Settings.ini" >"%DDS_DATA%\Settings.ini"
-if errorlevel 1 exit /b 1
->>"%DDS_DATA%\Settings.ini" echo CheckForUpdates=0
+copy /y "%DDS_ROOT%\Settings.ini" "%DDS_DATA%\Settings.ini" >nul
 if errorlevel 1 exit /b 1
 :copy_catalogs
 for %%F in (Tools.db DelphiVersions.db macros.xml) do if not exist "%DDS_DATA%\%%F" (

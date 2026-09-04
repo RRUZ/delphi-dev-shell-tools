@@ -37,14 +37,12 @@ type
     MemoCopyRights: TMemo;
     Button3: TButton;
     Image2: TImage;
-    btnCheckUpdates: TButton;
     Image1: TImage;
     LabelWindowsVersion: TLabel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Button3Click(Sender: TObject);
-    procedure btnCheckUpdatesClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure Image3Click(Sender: TObject);
   private
@@ -65,15 +63,6 @@ uses
   DelphiDevShellTools.Misc;
 
 {$R *.dfm}
-
-procedure TFrmAbout.btnCheckUpdatesClick(Sender: TObject);
-var
-  LBinaryPath, LUpdaterPath: string;
-begin
-  LBinaryPath:=ExtractFilePath(ParamStr(0))+'DelphiDevShellTools.dll';
-  LUpdaterPath := ExtractFilePath(ParamStr(0))+'Updater.exe';
-  ShellExecute(0, 'open', PChar(LUpdaterPath), PChar(Format('"%s"', [LBinaryPath])), '', SW_SHOWNORMAL);
-end;
 
 procedure TFrmAbout.Button1Click(Sender: TObject);
 begin

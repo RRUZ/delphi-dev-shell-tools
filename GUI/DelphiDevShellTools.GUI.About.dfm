@@ -1,7 +1,7 @@
 object FrmAbout: TFrmAbout
   Left = 651
   Top = 323
-  ActiveControl = btnCheckUpdates
+  ActiveControl = Button1
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'About Delphi Dev. Shell Tools'
@@ -397,15 +397,6 @@ object FrmAbout: TFrmAbout
       Caption = 'Contribute'
       TabOrder = 2
       OnClick = Button3Click
-    end
-    object btnCheckUpdates: TButton
-      Left = 170
-      Top = 16
-      Width = 127
-      Height = 25
-      Caption = 'Check for updates'
-      TabOrder = 3
-      OnClick = btnCheckUpdatesClick
     end
   end
   object MemoCopyRights: TMemo

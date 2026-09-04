@@ -54,9 +54,6 @@ type
     TabSheet1: TTabSheet;
     Panel1: TPanel;
     TabSheet2: TTabSheet;
-    RadioButtonCheckUpdates: TRadioButton;
-    RadioButtonNoCheckUpdates: TRadioButton;
-    Label1: TLabel;
     Label2: TLabel;
     EditCommonTaskExt: TEdit;
     EditOpenDelphiExt: TEdit;
@@ -87,7 +84,6 @@ type
     ClientDataSet2: TClientDataSet;
     DataSource2: TDataSource;
     DBGrid1: TDBGrid;
-    Image4: TImage;
     DBComboBoxImage: TDBComboBox;
     Label14: TLabel;
     DBCheckBoxRunAs: TDBCheckBox;
@@ -166,7 +162,6 @@ begin
     FSettings.SubMenuCompileRC        := CheckBoxSubMenuCompileRC.Checked;
     FSettings.SubMenuOpenVclStyle        := CheckBoxSubMenuVCLStyles.Checked;
     FSettings.SubMenuOpenFMXStyle        := CheckBoxSubMenuFMXStyles.Checked;
-    FSettings.CheckForUpdates            := RadioButtonCheckUpdates.Checked;
     FSettings.CommonTaskExt              := EditCommonTaskExt.Text;
     FSettings.OpenDelphiExt              := EditOpenDelphiExt.Text;
     FSettings.OpenLazarusExt             := EditOpenLazarusExt.Text;
@@ -353,14 +348,11 @@ begin
   CheckBoxSubMenuCompileRC.Checked:= FSettings.SubMenuCompileRC;
   CheckBoxSubMenuVCLStyles.Checked:= FSettings.SubMenuOpenVclStyle;
   CheckBoxSubMenuFMXStyles.Checked:= FSettings.SubMenuOpenFMXStyle;
-  RadioButtonCheckUpdates.Checked := FSettings.CheckForUpdates;
   EditCommonTaskExt.Text          := FSettings.CommonTaskExt;
   EditOpenDelphiExt.Text          := FSettings.OpenDelphiExt;
   EditOpenLazarusExt.Text         := FSettings.OpenLazarusExt;
   EditCheckSumExt.Text            := FSettings.CheckSumExt;
 
-  if not FSettings.CheckForUpdates then
-   RadioButtonNoCheckUpdates.Checked:=True;
 end;
 
 

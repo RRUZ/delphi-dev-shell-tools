@@ -299,7 +299,6 @@ begin
     RegisterBitmap('platforms', 'platforms2');
     RegisterBitmap('settings');
     RegisterBitmap('common');
-    RegisterBitmap('updates');
     RegisterBitmap('checksum');
     RegisterBitmap('copy_unc');
     RegisterBitmap('copy_url');
@@ -408,8 +407,6 @@ begin
      end;
 
      ReadSettings(FSettings);
-     if FSettings.CheckForUpdates then
-       CheckUpdates(True);
   except
    on  E: Exception do
      log(Format('TShellMenu.InitResources Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -892,20 +889,6 @@ begin
     LMethodInfo:=TMethodInfo.Create;
     LMethodInfo.Method:=TDelphiDevShellTasks.OpenGUI;
     LMethodInfo.Value1:='-settings';
-    FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
-    Inc(uIDNewItem);
-    Inc(hSubMenuIndex);
-
-
-    //InsertMenu(hSubMenu, hSubMenuIndex, MF_BYPOSITION, uIDNewItem, PWideChar('Check for updates'));
-    InsertMenuDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, PWideChar('Check for updates'), 'updates');
-    //SetMenuItemBitmaps(hSubMenu, hSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['updates'].Handle, BitmapsDict.Items['updates'].Handle);
-    //log('Check for updates uIDNewItem '+IntToStr(uIDNewItem));
-    if not IsVistaOrLater then
-    RegisterMenuItemBitmapDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, 'updates_ico');
-    LMethodInfo:=TMethodInfo.Create;
-    LMethodInfo.Method:=TDelphiDevShellTasks.Updater;
-    //LMethodInfo.Value1:='-update';
     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
     Inc(uIDNewItem);
     Inc(hSubMenuIndex);

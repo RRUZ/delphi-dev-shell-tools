@@ -68,7 +68,7 @@ end;
 
 procedure TSettingsTests.WriteLegacy(const Versions: string);
 begin
-  TFile.WriteAllText(FLegacy + '\Settings.ini', '[Global]'#13#10'ShowInfoDProj=0'#13#10'CustomFlag=keep'#13#10, TEncoding.UTF8);
+  TFile.WriteAllText(FLegacy + '\Settings.ini', '[Global]'#13#10'ShowInfoDProj=0'#13#10'CustomFlag=keep'#13#10'CheckForUpdates=1'#13#10, TEncoding.UTF8);
   TFile.WriteAllText(FLegacy + '\DelphiVersions.db', '<DATAPACKET><ROWDATA>' + Versions + '</ROWDATA></DATAPACKET>', TEncoding.UTF8);
   TFile.WriteAllText(FLegacy + '\Tools.db', '<?xml version="1.0" encoding="utf-8"?><DATAPACKET><ROWDATA>' +
     '<ROW Name="' + #$65E5#$672C + ' tool" Group="Delphi Tools" Menu="My tool" Extensions=".pas" Script="echo %PATH%! &amp; ^ ( ) &#xD;&#xA;echo ' + #$65E5#$672C + '" DelphiVersion="8" RunAs="TRUE" Image="custom.ico"/>' +
@@ -91,6 +91,10 @@ begin
     Assert.IsTrue(TFile.ReadAllBytes(Backup + '\ico\custom.ico')[3] = 255);
     Assert.IsTrue(TFile.ReadAllBytes(FConfig + '\ico\custom.ico')[3] = 255);
     Assert.AreEqual('keep', Doc.GetValue<TJSONObject>('settings').GetValue<string>('CustomFlag'));
+    Assert.IsNull(Doc.GetValue<TJSONObject>('settings').GetValue('CheckForUpdates'));
+    Assert.IsTrue(TFile.ReadAllText(Backup + '\Settings.ini').Contains('CheckForUpdates=1'));
+    SaveConfiguration(FConfig, Doc);
+    Assert.IsFalse(TFile.ReadAllText(FConfig + '\settings.json').Contains('CheckForUpdates'));
     Command := Doc.GetValue<TJSONArray>('commands').Items[0] as TJSONObject;
     Assert.AreEqual(#$65E5#$672C + ' tool', Command.GetValue<string>('name'));
     Assert.AreEqual('echo %PATH%! & ^ ( ) '#13#10'echo ' + #$65E5#$672C, Command.GetValue<string>('script'));

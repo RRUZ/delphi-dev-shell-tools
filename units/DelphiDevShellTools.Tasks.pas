@@ -62,7 +62,6 @@ type
     class procedure RADTools(Info: TMethodInfo);
     class procedure ExternalTools(Info: TMethodInfo);
 
-    class procedure Updater(Info: TMethodInfo);
 
 
     //Lazarus & FPC
@@ -345,9 +344,5 @@ begin
 end;
 
 
-class procedure TDelphiDevShellTasks.Updater(Info: TMethodInfo);
-begin
-  CheckUpdates(False);
-end;
 
 end.

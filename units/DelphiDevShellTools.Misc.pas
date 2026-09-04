@@ -62,7 +62,6 @@ type
     FSubMenuOpenVclStyle: Boolean;
     FSubMenuOpenFMXStyle: Boolean;
     FSubMenuCompileRC: Boolean;
-    FCheckForUpdates: Boolean;
     FCheckSumExt, FOpenLazarusExt, FOpenDelphiExt, FCommonTaskExt: string;
   public
     destructor Destroy; override;
@@ -81,7 +80,6 @@ type
     property SubMenuOpenFMXStyle: Boolean read FSubMenuOpenFMXStyle write FSubMenuOpenFMXStyle;
     property SubMenuOpenVclStyle: Boolean read FSubMenuOpenVclStyle write FSubMenuOpenVclStyle;
 
-    property CheckForUpdates: Boolean read FCheckForUpdates write FCheckForUpdates;
     property CommonTaskExt: string read FCommonTaskExt write FCommonTaskExt;
     property OpenDelphiExt: string read FOpenDelphiExt write FOpenDelphiExt;
     property OpenLazarusExt: string read FOpenLazarusExt write FOpenLazarusExt;
@@ -117,7 +115,6 @@ type
   function GetUNCNameEx(const lpLocalPath: string): string;
   function LocalPathToFileURL(const pszPath: string): string;
 
-  procedure CheckUpdates(Silent: Boolean);
 
   function GetGroupToolsExtensions(const GroupName: string): TStringDynArray;
 
@@ -274,57 +271,6 @@ begin
     Result := pszUrl;
 end;
 
-procedure CheckUpdates(Silent: Boolean);
-var
-  LRegistry: TRegistry;
-  dt: TDateTime;
-  LBinaryPath, LUpdaterPath: string;
-begin
-  LRegistry:=TRegistry.Create;
-  try
-    LRegistry.RootKey := HKEY_CURRENT_USER;
-    if LRegistry.OpenKeyReadOnly('Software\DelphiDevShellTools\') then
-    begin
-      try
-        if LRegistry.ReadBinaryData('LastUpdateCheck', dt, SizeOf(dt)) = 0 then
-          dt := Now -1;
-      finally
-        LRegistry.CloseKey;
-      end;
-    end;
-  finally
-    LRegistry.Free;
-  end;
-
-  if not Silent or (Abs(Now-dt)>=1) then
-  begin
-    //ShellExecute(0, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(GetModuleName))+'GUIDelphiDevShell.exe'), PChar('-checkupdates') , nil , SW_SHOWNORMAL);
-
-    LBinaryPath:=GetModuleName();
-    LUpdaterPath := ExtractFilePath(LBinaryPath)+'Updater.exe';
-    if Silent then
-     ShellExecute(0, 'open', PChar(LUpdaterPath), PChar(Format('"%s" -Silent', [LBinaryPath])), '', SW_SHOWNORMAL)
-    else
-     ShellExecute(0, 'open', PChar(LUpdaterPath), PChar(Format('"%s"', [LBinaryPath])), '', SW_SHOWNORMAL);
-
-    LRegistry:=TRegistry.Create;
-    try
-      LRegistry.RootKey := HKEY_CURRENT_USER;
-      if LRegistry.OpenKey('Software\DelphiDevShellTools\', True) then
-      begin
-        try
-          dt:=Now;
-          LRegistry.WriteBinaryData('LastUpdateCheck', dt, SizeOf(dt));
-        finally
-          LRegistry.CloseKey;
-        end;
-      end;
-    finally
-      LRegistry.Free;
-    end;
-  end;
-end;
-
 function GetDelphiDevShellToolsFolder: string;
 begin
   Result := IncludeTrailingPathDelimiter(UserSettingsDirectory);
@@ -365,8 +311,6 @@ begin
       if Prop.PropertyType.TypeKind = tkEnumeration then
       begin
         Value := Globals.GetValue<string>(Prop.Name, '1');
-        // A missing legacy setting must not opt a new user into network checks.
-        if (Prop.Name = 'CheckForUpdates') and (Globals.GetValue(Prop.Name) = nil) then Value := '0';
         Prop.SetValue(Settings, (Value = '1') or SameText(Value, 'True'));
       end
       else if Prop.PropertyType.TypeKind in [tkString, tkUString] then
@@ -380,6 +324,7 @@ procedure WriteSettings(const Settings: TSettings);
 var Context: TRttiContext; Prop: TRttiProperty; Globals: TJSONObject; Value: string;
 begin
   Globals := Settings.FDocument.GetValue<TJSONObject>('settings');
+  Globals.RemovePair('CheckForUpdates').Free;
   Context := TRttiContext.Create;
   try
     for Prop in Context.GetType(TypeInfo(TSettings)).GetProperties do

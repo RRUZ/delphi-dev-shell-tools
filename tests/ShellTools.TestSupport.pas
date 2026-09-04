@@ -122,6 +122,7 @@ var
   procedure CheckMenuIds(Handle: HMENU);
   var
     Position: Integer;
+    Caption: array[0..255] of Char;
     Info: TMenuItemInfo;
     Measure: TMeasureItemStruct;
     Draw: TDrawItemStruct;
@@ -135,6 +136,13 @@ var
       Info.cbSize := SizeOf(Info);
       Info.fMask := MIIM_ID or MIIM_FTYPE or MIIM_SUBMENU or MIIM_DATA;
       Assert.IsTrue(GetMenuItemInfo(Handle, Position, True, Info));
+      if (Info.fType and MFT_OWNERDRAW) = 0 then
+      begin
+        ZeroMemory(@Caption, SizeOf(Caption));
+        GetMenuString(Handle, Position, Caption, Length(Caption), MF_BYPOSITION);
+        Assert.IsFalse(SameText(string(Caption), 'Check for updates'),
+          'The retired updater must not appear in the shell menu');
+      end;
       if not ProjectFile then
         Assert.IsTrue((Info.fType and MFT_OWNERDRAW) = 0,
           'Ordinary Pascal-file actions must stay native');
