@@ -12,3 +12,17 @@
 *.drc
 *.dcu
 /*.identcache
+
+/build/
+/GUI/Win32/
+/tests/Win32/
+/tests/Win64/
+/tests/ShellTools.Tests.res
+/Win32/*/GUIDelphiDevShell.exe
+/Win64/*/GUIDelphiDevShell.exe
+*.rsm
+
+/ShellExtensionManifest.res
+
+# Local architecture/rules handoff: never stage or commit this file.
+/ARCHITECTURE_HANDOFF.md

@@ -10,6 +10,7 @@ uses
   DelphiDevShellToolsImpl in 'DelphiDevShellToolsImpl.pas',
   uDelphiVersions in 'units\uDelphiVersions.pas',
   uMisc in 'units\uMisc.pas',
+  DelphiDevShellTools.ProjectInfoPanel in 'units\DelphiDevShellTools.ProjectInfoPanel.pas',
   uRegistry in 'units\uRegistry.pas',
   uSupportedIDEs in 'units\uSupportedIDEs.pas',
   uLazarusVersions in 'units\uLazarusVersions.pas',
@@ -24,8 +25,9 @@ exports
 
 {$R *.TLB}
 
-{$R *.RES}
-{$R VersionInfo.res}
+// Link external resources explicitly; the IDE-generated project .res is not used.
+{$R 'VersionInfo.res' 'VersionInfo.rc'}
+{$R 'ShellExtensionManifest.res' 'ShellExtensionManifest.rc'}
 
 {
 TODO

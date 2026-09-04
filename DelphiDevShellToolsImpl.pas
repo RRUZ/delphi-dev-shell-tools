@@ -27,6 +27,7 @@ interface
 
 uses
   uMisc,
+  DelphiDevShellTools.ProjectInfoPanel,
   uTasks,
   Generics.Defaults,
   Generics.Collections,
@@ -47,11 +48,12 @@ type
   IShellExtInit, IContextMenu, IContextMenu2, IContextMenu3)
   private
     FFileName, FFileExt: string;
+    FInfoPanel: TProjectInfoPanel;
+    FInfoPanelId: UINT;
     FDProjectVersion: SetDelphiVersions;
     FMSBuildDProj: TMSBuildDProj;
     FMSBuildGroupDProj: TMSBuildGroupProj;
     FMethodsDict: TObjectDictionary<Integer, TMethodInfo>;
-    FOwnerDrawId: UINT;
     //]DelphiDevShellTasks: TDelphiDevShellTasks;
 
     FInstalledDelphiVersions: TInstalledDelphiVerions;
@@ -160,6 +162,7 @@ end;
 procedure TDelphiDevShellToolsContextMenu.FreeResources;
 begin
   log('FreeResources init');
+  FreeAndNil(FInfoPanel);
   FSettings.Free;
   FBitmapsDict.Free;
   FInstalledDelphiVersions.Free;
@@ -629,312 +632,85 @@ begin
 end;
 
 function TDelphiDevShellToolsContextMenu.MenuMessageHandler(uMsg: UINT; wParam: WPARAM; lParam: LPARAM; var lpResult: LRESULT): HResult; stdcall;
-const
-  Dx = 20;
-  Dy = 5;
-  MinHeight = 16;
 var
-  i, Lx,Ly :Integer;
-  LCanvas: TCanvas;
-  SaveIndex: Integer;
+  ItemId: UINT;
   LIcon: TIcon;
-  //LCurrentDelphiVersionData: TDelphiVersionData;
-  Found: Boolean;
+  Draw: PDrawItemStruct;
+  Background, Foreground: COLORREF;
 begin
+  lpResult := 0;
+  Result := E_NOTIMPL;
+  // Handle only our information panel and legacy bitmap callbacks.
+  // Explorer retains ownership of all ordinary menu-item drawing.
+  if lParam = 0 then Exit;
   try
-    log('TDelphiDevShellToolsContextMenu.MenuMessageHandler');
     case uMsg of
-
       WM_MEASUREITEM:
-      begin
-        if PMeasureItemStruct(lParam)=nil then Exit(S_OK);
-        if PMeasureItemStruct(lParam)^.itemID<>FOwnerDrawId then
         begin
-            PMeasureItemStruct(lParam)^.itemWidth := PMeasureItemStruct(lParam)^.itemWidth+2;
-            if (PMeasureItemStruct(lParam)^.itemHeight < MinHeight) then
-               PMeasureItemStruct(lParam)^.itemHeight := MinHeight;
-        end
-        else
-        if PMeasureItemStruct(lParam)^.itemID=FOwnerDrawId then
-        begin
-          with PMeasureItemStruct(lParam)^ do
-          begin
-            itemWidth :=380;
-            itemHeight:=120;
-              if (FMSBuildDProj<>nil) and (FMSBuildDProj.TargetPlatforms.Count>1) then
-                itemHeight:= itemHeight+((18+Dy)*UINT(FMSBuildDProj.TargetPlatforms.Count));
-          end;
+          if PMeasureItemStruct(lParam)^.CtlType <> ODT_MENU then Exit;
+          ItemId := PMeasureItemStruct(lParam)^.itemID;
         end;
-      end;
-
       WM_DRAWITEM:
-      begin
-
-          if PDrawItemStruct(lParam)^.itemID<>FOwnerDrawId then
-          with PDrawItemStruct(lParam)^ do
-          begin
-              if FIconsDictResources.ContainsKey(PDrawItemStruct(lParam)^.itemID) then
-              begin
-                LIcon:=TIcon.Create;
-                try
-                 LIcon.LoadFromResourceName(HInstance,FIconsDictResources[PDrawItemStruct(lParam)^.itemID]);
-                 DrawIconEx(hDC,rcItem.Left-16, rcItem.Top + (rcItem.Bottom - rcItem.Top - 16) div 2,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                finally
-                 LIcon.Free;
-                end;
-              end
-              else
-              if FIconsDictExternal.ContainsKey(PDrawItemStruct(lParam)^.itemID) then
-                 DrawIconEx(hDC,rcItem.Left-16, rcItem.Top + (rcItem.Bottom - rcItem.Top - 16) div 2,  FIconsDictExternal[PDrawItemStruct(lParam)^.itemID].Handle, 16, 16,  0, 0, DI_NORMAL);
-          end
-          else
-          if (PDrawItemStruct(lParam)^.itemID=FOwnerDrawId)  then
-          begin
-            with PDrawItemStruct(lParam)^ do
-            begin
-
-              LCanvas := TCanvas.Create;
-              try
-                SaveIndex := SaveDC(hDC);
-                try
-                  LCanvas.Handle := hDC;
-
-//                  if itemState = ODS_SELECTED then
-//                  begin
-//                    LCanvas.Brush.Color := clHighlight;
-//                    LCanvas.Font.Color := clHighlightText;
-//                  end
-//                  else
-//                  begin
-//                    LCanvas.Brush.Color := clMenu;
-//                    LCanvas.Font.Color := clMenuText;
-//                  end;
-
-                  LCanvas.Brush.Color := clMenu;
-                  LCanvas.Font.Color  := clMenuText;
-                  LCanvas.FillRect(rcItem);
-
-                  Ly:=rcItem.Top  + Dy;
-                  Lx:=rcItem.Left + Dx;
-
-                  LCanvas.TextOut(Lx, Ly, 'Delphi Version (Detected)');
-                  LIcon:=TIcon.Create;
-                  try
-                    Found:=FInstalledDelphiVersions.ContainsKey(FMSBuildDProj.DelphiVersion);
-                    if Found then
-                      LIcon.Assign(FInstalledDelphiVersions[FMSBuildDProj.DelphiVersion].Icon);
-
-//                    for LCurrentDelphiVersionData in InstalledDelphiVersions do
-//                     if LCurrentDelphiVersionData.Version=FMSBuildDProj.DelphiVersion then
-//                     begin
-//                        LIcon.Assign(LCurrentDelphiVersionData.Icon);
-//                        Found:=True;
-//                        break;
-//                     end;
-
-                     {
-                     if Found then
-                     begin
-                       DrawIconEx(hDC, Lx+140, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                       LCanvas.TextOut(Lx+140+LIcon.Width+3, Ly, DelphiVersionsNames[FMSBuildDProj.DelphiVersion]);
-                     end
-                     else
-                       LCanvas.TextOut(Lx+140, Ly, DelphiVersionsNames[FMSBuildDProj.DelphiVersion]);
-                     }
-                     LCanvas.TextOut(Lx+140, Ly, DelphiVersionsNames[FMSBuildDProj.DelphiVersion]);
-                     if Found then
-                       DrawIconEx(hDC, Lx+140+LCanvas.TextWidth(DelphiVersionsNames[FMSBuildDProj.DelphiVersion])+3, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                  finally
-                   LIcon.Free;
-                  end;
-
-                  LIcon:=TIcon.Create;
-                  try
-                   LIcon.LoadFromResourceName(HInstance,'delphi_ico');
-                   DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                  finally
-                   LIcon.Free;
-                  end;
-
-
-                  Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                  LCanvas.TextOut(Lx, Ly, 'Project Type');
-                  LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.AppType);
-
-                  Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                  LCanvas.TextOut(Lx, Ly, 'Framework Type');
-                  LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.FrameworkType);
-                  if SameText(FMSBuildDProj.FrameworkType,'FMX') then
-                  begin
-                    LIcon:=TIcon.Create;
-                    try
-                     LIcon.LoadFromResourceName(HInstance,'firemonkey_ico');
-                     DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                    finally
-                     LIcon.Free;
-                    end;
-                  end
-                  else
-                  begin
-                    LIcon:=TIcon.Create;
-                    try
-                     LIcon.LoadFromResourceName(HInstance,'vcl_ico');
-                     DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                    finally
-                     LIcon.Free;
-                    end;
-                  end;
-
-
-                  Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                  LCanvas.TextOut(Lx, Ly, 'GUID');
-                  LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.GUID);
-
-                  Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                  LCanvas.TextOut(Lx, Ly, 'Current Build Configuration');
-                  LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.DefaultConfiguration);
-                    LIcon:=TIcon.Create;
-                    try
-                     LIcon.LoadFromResourceName(HInstance,'buildconf_ico');
-                     DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                    finally
-                     LIcon.Free;
-                    end;
-
-                  Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                  LCanvas.TextOut(Lx, Ly, 'Current Target Platform');
-                  LCanvas.TextOut(Lx+140, Ly, FMSBuildDProj.DefaultPlatForm);
-
-                 if StartsText('Win', FMSBuildDProj.DefaultPlatForm) then
-                  begin
-                    LIcon:=TIcon.Create;
-                    try
-                     LIcon.LoadFromResourceName(HInstance,'win_ico');
-                     DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                    finally
-                     LIcon.Free;
-                    end;
-                  end
-                 else
-                 if StartsText('OSX', FMSBuildDProj.DefaultPlatForm) then
-                  begin
-                    LIcon:=TIcon.Create;
-                    try
-                     LIcon.LoadFromResourceName(HInstance,'osx_ico');
-                     DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                    finally
-                     LIcon.Free;
-                    end;
-                  end
-                 else
-                 if StartsText('IOS', FMSBuildDProj.DefaultPlatForm) then
-                  begin
-                    LIcon:=TIcon.Create;
-                    try
-                     LIcon.LoadFromResourceName(HInstance,'ios_ico');
-                     DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                    finally
-                     LIcon.Free;
-                    end;
-                  end
-                 else
-                 if StartsText('Android', FMSBuildDProj.DefaultPlatForm) then
-                  begin
-                    LIcon:=TIcon.Create;
-                    try
-                     LIcon.LoadFromResourceName(HInstance,'android_ico');
-                     DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                    finally
-                     LIcon.Free;
-                    end;
-                  end;
-
-                  if (FMSBuildDProj<>nil) and (FMSBuildDProj.TargetPlatforms.Count>1) then
-                  begin
-                    Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                    LCanvas.TextOut(Lx, Ly, 'Target Platforms');
-
-                    LIcon:=TIcon.Create;
-                    try
-                     LIcon.LoadFromResourceName(HInstance,'platforms_ico');
-                     DrawIconEx(hDC,rcItem.Left +1, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                    finally
-                     LIcon.Free;
-                    end;
-
-                     for i := 0 to FMSBuildDProj.TargetPlatforms.Count-1 do
-                     begin
-                        Inc(Ly,LCanvas.TextHeight('Hg')+Dy);
-                        LCanvas.TextOut(Lx+25, Ly, FMSBuildDProj.TargetPlatforms[i]);
-                        if StartsText('Win', FMSBuildDProj.TargetPlatforms[i]) then
-                        begin
-                          LIcon:=TIcon.Create;
-                          try
-                           LIcon.LoadFromResourceName(HInstance,'win_ico');
-                           DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                          finally
-                           LIcon.Free;
-                          end;
-                        end
-                        else
-                        if StartsText('OSX', FMSBuildDProj.TargetPlatforms[i]) then
-                        begin
-                          LIcon:=TIcon.Create;
-                          try
-                           LIcon.LoadFromResourceName(HInstance,'osx_ico');
-                           DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                          finally
-                           LIcon.Free;
-                          end;
-                        end
-                        else
-                        if StartsText('IOS', FMSBuildDProj.TargetPlatforms[i]) then
-                        begin
-                          LIcon:=TIcon.Create;
-                          try
-                           LIcon.LoadFromResourceName(HInstance,'ios_ico');
-                           DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                          finally
-                           LIcon.Free;
-                          end;
-                        end
-                        else
-                        if StartsText('Android', FMSBuildDProj.TargetPlatforms[i]) then
-                        begin
-                          LIcon:=TIcon.Create;
-                          try
-                           LIcon.LoadFromResourceName(HInstance,'android_ico');
-                           DrawIconEx(hDC,Lx+5, Ly,  LIcon.Handle, 16, 16,  0, 0, DI_NORMAL);
-                          finally
-                           LIcon.Free;
-                          end;
-                        end;
-                     end;
-                  end;
-
-                finally
-                  LCanvas.Handle := 0;
-                  RestoreDC(hDC, SaveIndex);
-                end;
-              finally
-                LCanvas.Free;
-              end;
-
-            end;
-          end;
-      end;
-
+        begin
+          if PDrawItemStruct(lParam)^.CtlType <> ODT_MENU then Exit;
+          ItemId := PDrawItemStruct(lParam)^.itemID;
+        end;
+    else
+      Exit;
     end;
-    Result:=S_OK;
-
-  except on  E: Exception do
+    if (FInfoPanel <> nil) and (ItemId = FInfoPanelId) then
     begin
-     log(Format('TDelphiDevShellToolsContextMenu.MenuMessageHandler Message %s  Trace %s',[E.Message, e.StackTrace]));
-     Result := E_FAIL;
+      if uMsg = WM_MEASUREITEM then
+      begin
+        PMeasureItemStruct(lParam)^.itemWidth := FInfoPanel.Width;
+        PMeasureItemStruct(lParam)^.itemHeight := FInfoPanel.Height;
+      end
+      else
+      begin
+        Draw := PDrawItemStruct(lParam);
+        if Draw^.hDC = 0 then Exit(E_INVALIDARG);
+        MenuPanelColors(Draw^.hDC, Draw^.rcItem, Background, Foreground);
+        FInfoPanel.Paint(Draw^.hDC, Draw^.rcItem, Background, Foreground);
+      end;
+      lpResult := 1;
+      Exit(S_OK);
+    end;
+    if IsVistaOrLater then Exit;
+    if (FIconsDictResources = nil) or (FIconsDictExternal = nil) then Exit;
+    if not FIconsDictResources.ContainsKey(ItemId) and
+       not FIconsDictExternal.ContainsKey(ItemId) then Exit;
+    if uMsg = WM_MEASUREITEM then
+    begin
+      Inc(PMeasureItemStruct(lParam)^.itemWidth, 2);
+      if PMeasureItemStruct(lParam)^.itemHeight < 16 then
+        PMeasureItemStruct(lParam)^.itemHeight := 16;
+    end
+    else
+    begin
+      Draw := PDrawItemStruct(lParam);
+      LIcon := TIcon.Create;
+      try
+        if FIconsDictResources.ContainsKey(ItemId) then
+          LIcon.LoadFromResourceName(HInstance, FIconsDictResources[ItemId])
+        else
+          LIcon.Assign(FIconsDictExternal[ItemId]);
+        DrawIconEx(Draw^.hDC, Draw^.rcItem.Left - 16,
+          Draw^.rcItem.Top + (Draw^.rcItem.Bottom - Draw^.rcItem.Top - 16) div 2,
+          LIcon.Handle, 16, 16, 0, 0, DI_NORMAL);
+      finally
+        LIcon.Free;
+      end;
+    end;
+    lpResult := 1;
+    Result := S_OK;
+  except
+    on E: Exception do
+    begin
+      log('MenuMessageHandler: ' + E.Message);
+      Result := E_FAIL;
     end;
   end;
 end;
-
 //IContextMenu2
 function TDelphiDevShellToolsContextMenu.HandleMenuMsg(uMsg: UINT; WParam: WPARAM; LParam: LPARAM): HResult; stdcall;
 var
@@ -946,9 +722,14 @@ end;
 
 //IContextMenu3
 function TDelphiDevShellToolsContextMenu.HandleMenuMsg2(uMsg: UINT; wParam: WPARAM; lParam: LPARAM; var lpResult: LRESULT): HResult; stdcall;
+var
+  MessageResult: LRESULT;
 begin
-  //log('HandleMenuMsg2');
-  Result:= MenuMessageHandler( uMsg, wParam, lParam, lpResult);
+  // The native COM contract permits a NULL plResult, despite Delphi's var
+  // declaration. Always give our internal handler valid storage first.
+  Result := MenuMessageHandler(uMsg, wParam, lParam, MessageResult);
+  if @lpResult <> nil then
+    lpResult := MessageResult;
 end;
 
 
@@ -2374,10 +2155,11 @@ var
   hSubMenuIndex: Integer;
   Found: Boolean;
   LMethodInfo: TMethodInfo;
-  LMenuInfo: TMenuInfo;
+
 begin
  try
-  log('TDelphiDevShellToolsContextMenu.QueryContextMenu Init');
+  log(Format('QueryContextMenu file=%s index=%d first=%d last=%d flags=%.8x',
+    [FFileName, indexMenu, idCmdFirst, idCmdLast, uFlags]));
   InitResources;
 
   ReadSettings(FSettings);
@@ -2430,23 +2212,34 @@ begin
     uIDNewItem := idCmdFirst;
     hSubMenuIndex := 0;
 
-     if FSettings.ShowInfoDProj and  MatchText(FFileExt,['.dproj','.dpr']) and (FMSBuildDProj<>nil) and (FMSBuildDProj.ValidData) then
-     begin
-       ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
-       LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-       LMenuItem.fMask := MIIM_TYPE or MIIM_ID;
-       LMenuItem.fType := MFT_OWNERDRAW;
-       LMenuItem.wID := uIDNewItem;
-       FOwnerDrawId  := uIDNewItem;
-       log('MFT_OWNERDRAW '+IntToStr(uIDNewItem));
-       if not InsertMenuItem(hSubMenu, hSubMenuIndex, True, LMenuItem) then
-        log('TDelphiDevShellToolsContextMenu.QueryContextMenu SysErrorMessage '+SysErrorMessage(GetLastError));
-       Inc(uIDNewItem);
-       Inc(hSubMenuIndex);
-       AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
-     end;
-
-
+    FreeAndNil(FInfoPanel);
+    if FSettings.ShowInfoDProj and MatchText(FFileExt, ['.dproj', '.dpr']) and
+       FileExists(ChangeFileExt(FFileName, '.dproj')) then
+    begin
+      try
+        FInfoPanel := TProjectInfoPanel.Create(ChangeFileExt(FFileName, '.dproj'), MenuDpi);
+        if not FInfoPanel.IsValid then FreeAndNil(FInfoPanel);
+      except
+        on E: Exception do log('Project information: ' + E.Message);
+      end;
+      if FInfoPanel <> nil then
+      begin
+        ZeroMemory(@LMenuItem, SizeOf(LMenuItem));
+        LMenuItem.cbSize := SizeOf(LMenuItem);
+        LMenuItem.fMask := MIIM_FTYPE or MIIM_ID or MIIM_DATA or MIIM_STATE or MIIM_STRING;
+        LMenuItem.fType := MFT_OWNERDRAW;
+        LMenuItem.fState := MFS_DISABLED;
+        LMenuItem.wID := uIDNewItem;
+        LMenuItem.dwItemData := NativeUInt(FInfoPanel);
+        LMenuItem.dwTypeData := 'Project information';
+        FInfoPanelId := uIDNewItem;
+        if not InsertMenuItem(hSubMenu, hSubMenuIndex, True, LMenuItem) then RaiseLastOSError;
+        Inc(uIDNewItem);
+        Inc(hSubMenuIndex);
+        AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
+        log(Format('Project panel id=%d size=%dx%d', [FInfoPanelId, FInfoPanel.Width, FInfoPanel.Height]));
+      end;
+    end;
     //AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj','.bdsproj','.dpk','.groupproj','.rc','.lfm','.dfm','.fmx','.lpi','.lpr','.lpk']);
     AddCommonTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, SplitString(FSettings.CommonTaskExt,','));
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
@@ -2593,16 +2386,10 @@ begin
     if not IsVistaOrLater then
       RegisterMenuItemBitmapDevShell(Menu, indexMenu, uIDNewItem, 'logo_ico');
 
-    if IsVistaOrLater then
-    begin
-      ZeroMemory(@LMenuInfo, SizeOf(LMenuInfo));
-      LMenuInfo.cbSize  := sizeof(LMenuInfo);
-      LMenuInfo.fMask   := MIM_STYLE or MIM_APPLYTOSUBMENUS;
-      LMenuInfo.dwStyle := MNS_CHECKORBMP;
-      SetMenuInfo(Menu, LMenuInfo);
-    end;
-
-    log('uIDNewItem-idCmdFirst '+IntToStr(uIDNewItem-idCmdFirst));
+    // The root submenu also owns an ID. Return the highest offset PLUS ONE,
+    // otherwise Explorer can discard it or reuse its ID for another handler.
+    Inc(uIDNewItem);
+    log('QueryContextMenu reserved IDs='+IntToStr(uIDNewItem-idCmdFirst));
     Result := MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, uIDNewItem-idCmdFirst);
  except on  E: Exception do
     begin

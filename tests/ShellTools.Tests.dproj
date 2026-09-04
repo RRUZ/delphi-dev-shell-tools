@@ -1,0 +1,38 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{9DF44539-9B5F-4E6F-949D-D353538D61A6}</ProjectGuid>
+    <MainSource>ShellTools.Tests.dpr</MainSource>
+    <AppType>Console</AppType>
+    <FrameworkType>None</FrameworkType>
+    <Base>true</Base>
+    <Config Condition="'$(Config)'==''">Release</Config>
+    <Platform Condition="'$(Platform)'==''">Win64</Platform>
+    <TargetedPlatforms>3</TargetedPlatforms>
+    <DUnitXRoot Condition="'$(DUnitXRoot)'==''">C:\dev\DUnitX-0.4.1</DUnitXRoot>
+    <DCC_Namespace>System;System.Win;Winapi;Vcl;Vcl.Imaging;Data;Datasnap;Xml;Xml.Win</DCC_Namespace>
+    <DCC_UnitSearchPath>$(DUnitXRoot)\Source;..\units;..;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+    <DCC_IncludePath>$(DUnitXRoot)\Source;$(DCC_IncludePath)</DCC_IncludePath>
+    <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
+    <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
+    <DCC_Define>CI;$(DCC_Define)</DCC_Define>
+    <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Config)'=='Debug'">
+    <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+    <DCC_Optimize>false</DCC_Optimize>
+    <DCC_DebugInformation>2</DCC_DebugInformation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Config)'=='Release'">
+    <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+    <DCC_DebugInformation>0</DCC_DebugInformation>
+  </PropertyGroup>
+  <ItemGroup>
+    <DelphiCompile Include="$(MainSource)"><MainSource>MainSource</MainSource></DelphiCompile>
+    <DCCReference Include="ShellTools.BasicTests.pas"/>
+    <DCCReference Include="ShellTools.RegistrationTests.pas"/>
+    <DCCReference Include="ShellTools.TestSupport.pas"/>
+    <BuildConfiguration Include="Debug"><Key>Debug</Key><CfgParent>Base</CfgParent></BuildConfiguration>
+    <BuildConfiguration Include="Release"><Key>Release</Key><CfgParent>Base</CfgParent></BuildConfiguration>
+  </ItemGroup>
+  <Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+</Project>

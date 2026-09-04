@@ -23,7 +23,7 @@ unit uMisc;
 
 interface
 
-{.$DEFINE ENABLELOG}
+{$DEFINE ENABLELOG}
 
 uses
  Windows,
@@ -186,7 +186,14 @@ const
 procedure log(const msg: string);
 begin
  {$IFDEF ENABLELOG}
-  TFile.AppendAllText(IncludeTrailingPathDelimiter(GetTempDirectory)+'shelllog.txt', FormatDateTime('hh:nn:ss.zzz',Now)+' '+msg+sLineBreak);
+  // Diagnostics must never prevent Explorer from creating a context menu.
+  try
+    TFile.AppendAllText(IncludeTrailingPathDelimiter(GetTempDirectory)+'shelllog.txt',
+      FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now) +
+      Format(' pid=%d tid=%d ', [GetCurrentProcessId, GetCurrentThreadId]) + msg + sLineBreak);
+  except
+    // The temp directory may be unavailable or another process may hold the log.
+  end;
  {$ENDIF}
 end;
 
