@@ -43,6 +43,7 @@ type
     [TestCase('192 DPI', '192')]
     procedure PanelPaintPreservesHostDCAndBounds(Dpi: Integer);
     [Test] procedure DllCreatesShellInterfacesAndRejectsEmptySelection;
+    [Test] procedure DllFactoryInitializesMenuState;
   end;
 
 implementation
@@ -308,6 +309,33 @@ begin
     Init := nil;
     Menu3 := nil;
     Menu2 := nil;
+    Menu := nil;
+    Factory := nil;
+    FreeLibrary(Module);
+  end;
+end;
+
+procedure TBasicTests.DllFactoryInitializesMenuState;
+var
+  Module: HMODULE;
+  GetClassObject: TDllGetClassObject;
+  Factory: IClassFactory;
+  Menu: IContextMenu;
+  ProjectFile: Boolean;
+begin
+  Module := LoadTestDll;
+  try
+    GetClassObject := GetProcAddress(Module, 'DllGetClassObject');
+    Assert.IsTrue(Assigned(GetClassObject));
+    CheckHR(GetClassObject(ShellClassId, IClassFactory, Factory), 'DllGetClassObject');
+    for ProjectFile in [False, True] do
+    begin
+      // Exercise factory initialization and per-instance state without registration.
+      CheckHR(Factory.CreateInstance(nil, IContextMenu, Menu), 'Create file menu');
+      CheckFileContextMenu(Menu, ProjectFile);
+      Menu := nil;
+    end;
+  finally
     Menu := nil;
     Factory := nil;
     FreeLibrary(Module);

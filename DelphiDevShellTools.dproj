@@ -170,7 +170,11 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="DelphiDevShellTools_TLB.pas"/>
-        <DCCReference Include="DelphiDevShellToolsImpl.pas"/>
+        <DCCReference Include="DelphiDevShellTools.Main.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.ShellMenu.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.ToolMenus.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.IDEMenus.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.ComRegistration.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.DelphiVersions.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.Misc.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.ProjectInfoPanel.pas"/>
