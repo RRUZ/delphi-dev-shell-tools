@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
-// Unit uTasks
-// unit for the Delphi Dev Shell Tools
+// Unit DelphiDevShellTools.Tasks
+// Shared unit for the Delphi Dev Shell Tools
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
@@ -12,21 +12,20 @@
 // ANY KIND, either express or implied. See the License for the specific language governing rights
 // and limitations under the License.
 //
-// The Original Code is uTasks.pas.
+// The Original Code is DelphiDevShellTools.Tasks.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2026 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
-
-unit uTasks;
+unit DelphiDevShellTools.Tasks;
 
 interface
 
 uses
-   uMisc,
-   uDelphiVersions,
+   DelphiDevShellTools.Misc,
+   DelphiDevShellTools.DelphiVersions,
    Winapi.Windows,
    System.RTTI;
 
@@ -73,7 +72,7 @@ type
 implementation
 
 uses
-  uLazarusVersions,
+  DelphiDevShellTools.LazarusVersions,
   Vcl.Clipbrd,
   System.IOUtils,
   System.Classes,
@@ -366,7 +365,7 @@ end;
 class procedure TDelphiDevShellTasks.OpenGUI(Info: TMethodInfo);
 begin
  try
-  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(uMisc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString) , nil , SW_SHOWNORMAL);
+  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(DelphiDevShellTools.Misc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString) , nil , SW_SHOWNORMAL);
  except
    on  E: Exception do
    log(Format('TDelphiDevShellTasks.OpenGUI Message %s  Trace %s',[E.Message, e.StackTrace]));
@@ -376,7 +375,7 @@ end;
 class procedure TDelphiDevShellTasks.OpenGUICheckSum(Info: TMethodInfo);
 begin
  try
-  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(uMisc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString+' "'+Info.Value2.AsString+'"'), nil , SW_SHOWNORMAL);
+  ShellExecute(Info.hwnd, 'open', PChar(IncludeTrailingPathDelimiter(ExtractFilePath(DelphiDevShellTools.Misc.GetModuleName))+'GUIDelphiDevShell.exe'), PChar(Info.Value1.AsString+' "'+Info.Value2.AsString+'"'), nil , SW_SHOWNORMAL);
  except
    on  E: Exception do
    log(Format('TDelphiDevShellTasks.OpenGUI Message %s  Trace %s',[E.Message, e.StackTrace]));

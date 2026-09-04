@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
-// Unit uSettings
-// unit for the Delphi Dev Shell Tools
+// Unit DelphiDevShellTools.GUI.Settings
+// GUI unit for the Delphi Dev Shell Tools
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
@@ -12,20 +12,20 @@
 // ANY KIND, either express or implied. See the License for the specific language governing rights
 // and limitations under the License.
 //
-// The Original Code is uSettings.pas.
+// The Original Code is DelphiDevShellTools.GUI.Settings.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2026 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
-unit uSettings;
+unit DelphiDevShellTools.GUI.Settings;
 
 interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, uMisc,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, DelphiDevShellTools.Misc,
   Vcl.Imaging.pngimage, Vcl.ComCtrls, Vcl.DBCtrls, Vcl.Mask, Data.DB,
   Datasnap.DBClient, Vcl.Grids, Vcl.DBGrids;
 
@@ -116,7 +116,7 @@ var
 implementation
 
 Uses
-  uMiscGUI,
+  DelphiDevShellTools.GUI.MiscGUI,
   StrUtils,
   System.Types,
   ComObj,

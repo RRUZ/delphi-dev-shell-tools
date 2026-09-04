@@ -8,13 +8,13 @@ uses
   System.Win.ComServ,
   DelphiDevShellTools_TLB in 'DelphiDevShellTools_TLB.pas',
   DelphiDevShellToolsImpl in 'DelphiDevShellToolsImpl.pas',
-  uDelphiVersions in 'units\uDelphiVersions.pas',
-  uMisc in 'units\uMisc.pas',
+  DelphiDevShellTools.DelphiVersions in 'units\DelphiDevShellTools.DelphiVersions.pas',
+  DelphiDevShellTools.Misc in 'units\DelphiDevShellTools.Misc.pas',
   DelphiDevShellTools.ProjectInfoPanel in 'units\DelphiDevShellTools.ProjectInfoPanel.pas',
-  uRegistry in 'units\uRegistry.pas',
-  uSupportedIDEs in 'units\uSupportedIDEs.pas',
-  uLazarusVersions in 'units\uLazarusVersions.pas',
-  uTasks in 'units\uTasks.pas';
+  DelphiDevShellTools.Registry in 'units\DelphiDevShellTools.Registry.pas',
+  DelphiDevShellTools.SupportedIDEs in 'units\DelphiDevShellTools.SupportedIDEs.pas',
+  DelphiDevShellTools.LazarusVersions in 'units\DelphiDevShellTools.LazarusVersions.pas',
+  DelphiDevShellTools.Tasks in 'units\DelphiDevShellTools.Tasks.pas';
 
 exports
   DllGetClassObject,

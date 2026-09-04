@@ -30,13 +30,13 @@ uses
   SysUtils,
   StrUtils,
   Windows,
-  uAbout in 'uAbout.pas' {FrmAbout},
-  uMiscGUI in 'uMiscGUI.pas',
+  DelphiDevShellTools.GUI.About in 'DelphiDevShellTools.GUI.About.pas' {FrmAbout},
+  DelphiDevShellTools.GUI.MiscGUI in 'DelphiDevShellTools.GUI.MiscGUI.pas',
   Vcl.Themes,
   Vcl.Styles,
-  uSettings in 'uSettings.pas' {FrmSettings},
-  uMisc in '..\units\uMisc.pas',
-  uCheckSum in 'uCheckSum.pas' {FrmCheckSum},
+  DelphiDevShellTools.GUI.Settings in 'DelphiDevShellTools.GUI.Settings.pas' {FrmSettings},
+  DelphiDevShellTools.Misc in '..\units\DelphiDevShellTools.Misc.pas',
+  DelphiDevShellTools.GUI.CheckSum in 'DelphiDevShellTools.GUI.CheckSum.pas' {FrmCheckSum},
   Vcl.Styles.Utils.Menus in 'Vcl.Styles.Utils.Menus.pas';
 
 {$R *.res}

@@ -170,13 +170,13 @@
         </DelphiCompile>
         <DCCReference Include="DelphiDevShellTools_TLB.pas"/>
         <DCCReference Include="DelphiDevShellToolsImpl.pas"/>
-        <DCCReference Include="units\uDelphiVersions.pas"/>
-        <DCCReference Include="units\uMisc.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.DelphiVersions.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.Misc.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.ProjectInfoPanel.pas"/>
-        <DCCReference Include="units\uRegistry.pas"/>
-        <DCCReference Include="units\uSupportedIDEs.pas"/>
-        <DCCReference Include="units\uLazarusVersions.pas"/>
-        <DCCReference Include="units\uTasks.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.Registry.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.SupportedIDEs.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.LazarusVersions.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.Tasks.pas"/>
         <RidlCompile Include="DelphiDevShellTools.ridl"/>
         <RcCompile Include="VersionInfo.rc"/>
         <RcCompile Include="ShellExtensionManifest.rc"/>

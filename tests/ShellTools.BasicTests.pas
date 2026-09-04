@@ -38,7 +38,7 @@ uses
   System.SysUtils, System.IOUtils, System.Classes, Xml.XMLDoc, Xml.XMLIntf,
   Winapi.Windows, Winapi.Messages, Winapi.ActiveX,
   Winapi.ShlObj, Vcl.Graphics, System.Types, DelphiDevShellTools.ProjectInfoPanel,
-  uTasks, uDelphiVersions, ShellTools.TestSupport;
+  DelphiDevShellTools.Tasks, DelphiDevShellTools.DelphiVersions, ShellTools.TestSupport;
 
 procedure TBasicTests.Setup;
 begin

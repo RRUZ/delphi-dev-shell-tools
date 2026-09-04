@@ -1,7 +1,7 @@
-﻿//**************************************************************************************************
+//**************************************************************************************************
 //
-// Unit uDelphiVersions
-// unit for the Delphi Dev Shell Tools
+// Unit DelphiDevShellTools.DelphiVersions
+// Shared unit for the Delphi Dev Shell Tools
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
@@ -12,23 +12,21 @@
 // ANY KIND, either express or implied. See the License for the specific language governing rights
 // and limitations under the License.
 //
-// The Original Code is uDelphiVersions.pas.
+// The Original Code is DelphiDevShellTools.DelphiVersions.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2026 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
-
-
-unit uDelphiVersions;
+unit DelphiDevShellTools.DelphiVersions;
 
 interface
 
 uses
   Generics.Defaults,
   Generics.Collections,
-  uSupportedIDEs,
+  DelphiDevShellTools.SupportedIDEs,
   Windows,
   Graphics,
   SysUtils,
@@ -268,7 +266,7 @@ const
 implementation
 
 uses
-  uMisc,
+  DelphiDevShellTools.Misc,
   Winapi.PsAPI,
   Controls,
   System.Variants,
@@ -282,7 +280,7 @@ uses
   ShellAPI,
   Winapi.ShlObj,
   IOUtils,
-  uRegistry,
+  DelphiDevShellTools.Registry,
   System.Types,
   Registry;
 

@@ -61,7 +61,7 @@ implementation
 
 uses
   System.SysUtils, System.Classes, System.IOUtils, System.Math,
-  System.Win.Registry, Xml.XMLDoc, Xml.XMLIntf, uDelphiVersions;
+  System.Win.Registry, Xml.XMLDoc, Xml.XMLIntf, DelphiDevShellTools.DelphiVersions;
 
 function MenuDpi: Integer;
 type

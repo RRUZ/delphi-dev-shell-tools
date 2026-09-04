@@ -1,7 +1,7 @@
-// **************************************************************************************************
+//**************************************************************************************************
 //
-// Unit uLazarusVersions
-// unit for the Delphi Dev Shell Tools
+// Unit DelphiDevShellTools.LazarusVersions
+// Shared unit for the Delphi Dev Shell Tools
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
@@ -12,15 +12,14 @@
 // ANY KIND, either express or implied. See the License for the specific language governing rights
 // and limitations under the License.
 //
-// The Original Code is uLazarusVersions.pas.
+// The Original Code is DelphiDevShellTools.LazarusVersions.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2026 Rodrigo Ruz V.
 // All Rights Reserved.
 //
-// **************************************************************************************************
-
-unit uLazarusVersions;
+//**************************************************************************************************
+unit DelphiDevShellTools.LazarusVersions;
 
 interface
 
@@ -31,7 +30,7 @@ uses
   Classes,
   Windows,
   Variants,
-  uDelphiVersions,
+  DelphiDevShellTools.DelphiVersions,
   Generics.Collections,
   SysUtils;
 
@@ -48,10 +47,10 @@ procedure FillListLazarusVersions(AList: TList<TDelphiVersionData>);
 implementation
 
 uses
-  uMisc,
+  DelphiDevShellTools.Misc,
   Graphics,
   ShellAPI,
-  uSupportedIDEs;
+  DelphiDevShellTools.SupportedIDEs;
 
 const
   sLazarusConfigFile = 'environmentoptions.xml';
@@ -76,7 +75,7 @@ begin
     ExtractIconFileToImageList(ListView.SmallImages, FileName);
     Item := ListView.Items.Add;
     Item.ImageIndex := ListView.SmallImages.Count - 1;
-    Item.Caption := Format('Lazarus %s', [uMisc.GetFileVersion(FileName)]);
+    Item.Caption := Format('Lazarus %s', [DelphiDevShellTools.Misc.GetFileVersion(FileName)]);
     Item.SubItems.Add(FileName);
     Item.SubItems.Add(IntToStr(Ord(TSupportedIDEs.LazarusIDE)));
     Item.Data := nil;
@@ -95,7 +94,7 @@ begin
     FileName := GetLazarusIDEFileName;
     VersionData := TDelphiVersionData.Create;
     VersionData.Path := FileName;
-    VersionData.Name := Format('Lazarus %s', [uMisc.GetFileVersion(FileName)]);
+    VersionData.Name := Format('Lazarus %s', [DelphiDevShellTools.Misc.GetFileVersion(FileName)]);
     VersionData.IDEType := TSupportedIDEs.LazarusIDE;
     VersionData.Icon := TIcon.Create;
     ExtractIconFile(VersionData.Icon, FileName, SHGFI_SMALLICON);

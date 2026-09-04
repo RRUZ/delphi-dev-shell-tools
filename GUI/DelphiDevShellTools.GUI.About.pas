@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
-// Unit uAbout
-// unit for the Delphi Dev Shell Tools
+// Unit DelphiDevShellTools.GUI.About
+// GUI unit for the Delphi Dev Shell Tools
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
@@ -12,15 +12,14 @@
 // ANY KIND, either express or implied. See the License for the specific language governing rights
 // and limitations under the License.
 //
-// The Original Code is uAbout.pas.
+// The Original Code is DelphiDevShellTools.GUI.About.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2026 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
-
-unit uAbout;
+unit DelphiDevShellTools.GUI.About;
 
 interface
 
@@ -63,7 +62,7 @@ implementation
 
 uses
   ShellApi,
-  uMisc;
+  DelphiDevShellTools.Misc;
 
 {$R *.dfm}
 
@@ -110,7 +109,7 @@ procedure TFrmAbout.FormCreate(Sender: TObject);
 begin
   if FileExists(IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)))+'DelphiDevShellTools.dll') then
   LabelVersion.Caption    := Format('Version %s', [
-  uMisc.GetFileVersion(ExtractFilePath(ParamStr(0))+'DelphiDevShellTools.dll')]);
+  DelphiDevShellTools.Misc.GetFileVersion(ExtractFilePath(ParamStr(0))+'DelphiDevShellTools.dll')]);
 
   LabelWindowsVersion.Caption    := Format('%s', [TOSVersion.ToString]);
   MemoCopyRights.Lines.Add('Shell Extension for Delphi Developers ');

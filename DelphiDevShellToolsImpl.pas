@@ -26,13 +26,13 @@ unit DelphiDevShellToolsImpl;
 interface
 
 uses
-  uMisc,
+  DelphiDevShellTools.Misc,
   DelphiDevShellTools.ProjectInfoPanel,
-  uTasks,
+  DelphiDevShellTools.Tasks,
   Generics.Defaults,
   Generics.Collections,
   System.Win.ComObj,
-  uDelphiVersions,
+  DelphiDevShellTools.DelphiVersions,
   Winapi.ActiveX,
   DelphiDevShellTools_TLB,
   System.Types,
@@ -124,7 +124,7 @@ type
 implementation
 
 uses
-  uLazarusVersions,
+  DelphiDevShellTools.LazarusVersions,
   Vcl.GraphUtil,
   Math,
   PngImage,

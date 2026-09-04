@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
-// Unit uSupportedIDEs
-// unit for the Delphi Dev Shell Tools
+// Unit DelphiDevShellTools.SupportedIDEs
+// Shared unit for the Delphi Dev Shell Tools
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
@@ -12,15 +12,14 @@
 // ANY KIND, either express or implied. See the License for the specific language governing rights
 // and limitations under the License.
 //
-// The Original Code is uSupportedIDEs.pas.
+// The Original Code is DelphiDevShellTools.SupportedIDEs.pas.
 //
 // The Initial Developer of the Original Code is Rodrigo Ruz V.
-// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2021 Rodrigo Ruz V.
+// Portions created by Rodrigo Ruz V. are Copyright (C) 2013-2026 Rodrigo Ruz V.
 // All Rights Reserved.
 //
 //**************************************************************************************************
-
-unit uSupportedIDEs;
+unit DelphiDevShellTools.SupportedIDEs;
 
 interface
 

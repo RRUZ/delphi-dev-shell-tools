@@ -87,9 +87,9 @@ implementation
 uses
   System.UITypes,
   ShellAPI,
-  uMisc,
+  DelphiDevShellTools.GUI.Misc,
   ComObj,
-  uWinInet;
+  DelphiDevShellTools.GUI.WinInet;
 
 Type
    TProcCallBack= procedure(BytesRead:Integer) of object;
