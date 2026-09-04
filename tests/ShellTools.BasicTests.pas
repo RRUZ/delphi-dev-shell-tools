@@ -57,6 +57,7 @@ type
     [Test] procedure MalformedProjectIsRejected;
     [Test] procedure DllExportsRequiredEntryPoints;
     [Test] procedure DllEmbedsShellManifest;
+    [Test] procedure GuiEmbedsDpiManifest;
     [Test] procedure DllMenuCallbacksAllowNullResult;
     [Test] procedure PanelReadsUnmappedProjectMetadata;
     [TestCase('96 DPI', '96')]
@@ -363,7 +364,7 @@ begin
   end;
 end;
 
-procedure TBasicTests.DllEmbedsShellManifest;
+procedure CheckEmbeddedDpiManifest(const BinaryPath: string; ManifestId: Integer);
 var
   Module: HMODULE;
   Resource: TResourceStream;
@@ -372,15 +373,13 @@ var
   Node: IXMLNode;
   Context: TActCtx;
   ContextHandle: THandle;
-  DllPath: string;
 begin
-  DllPath := TestDllPath;
-  Module := LoadLibraryEx(PChar(DllPath), 0, LOAD_LIBRARY_AS_DATAFILE);
+  Module := LoadLibraryEx(PChar(BinaryPath), 0, LOAD_LIBRARY_AS_DATAFILE);
   Assert.IsTrue(Module <> 0);
   try
-    Assert.IsTrue(FindResource(Module, MAKEINTRESOURCE(1), RT_MANIFEST) = 0,
-      'A DLL must not also embed the default executable manifest');
-    Resource := TResourceStream.CreateFromID(Module, 2, RT_MANIFEST);
+    Assert.IsTrue(FindResource(Module, MAKEINTRESOURCE(3 - ManifestId), RT_MANIFEST) = 0,
+      'Only the appropriate executable or DLL manifest may be embedded');
+    Resource := TResourceStream.CreateFromID(Module, ManifestId, RT_MANIFEST);
     try
       SetString(Bytes, PAnsiChar(Resource.Memory), Resource.Size);
       Document := LoadXMLData(UTF8ToString(Bytes));
@@ -405,20 +404,39 @@ begin
     Assert.AreEqual('Microsoft.Windows.Common-Controls', string(Node.Attributes['name']));
     Assert.AreEqual('6.0.0.0', string(Node.Attributes['version']));
     Assert.AreEqual('*', string(Node.Attributes['processorArchitecture']));
+    if ManifestId = 1 then
+    begin
+      Node := Document.DocumentElement.ChildNodes.FindNode('trustInfo', 'urn:schemas-microsoft-com:asm.v3')
+        .ChildNodes.FindNode('security', 'urn:schemas-microsoft-com:asm.v3')
+        .ChildNodes.FindNode('requestedPrivileges', 'urn:schemas-microsoft-com:asm.v3')
+        .ChildNodes.FindNode('requestedExecutionLevel', 'urn:schemas-microsoft-com:asm.v3');
+      Assert.AreEqual('asInvoker', string(Node.Attributes['level']));
+    end;
   finally
     FreeLibrary(Module);
   end;
-  // Ask Windows to validate the compiled DLL's manifest and resolve v6 controls.
+  // Ask Windows to validate the compiled binary's manifest and resolve v6 controls.
   ZeroMemory(@Context, SizeOf(Context));
   Context.cbSize := SizeOf(Context);
   Context.dwFlags := ACTCTX_FLAG_RESOURCE_NAME_VALID;
-  Context.lpSource := PChar(DllPath);
-  Context.lpResourceName := MAKEINTRESOURCE(2);
+  Context.lpSource := PChar(BinaryPath);
+  Context.lpResourceName := MAKEINTRESOURCE(ManifestId);
   ContextHandle := CreateActCtx(Context);
   Assert.IsTrue(ContextHandle <> INVALID_HANDLE_VALUE,
     'Windows must accept the embedded manifest: ' + SysErrorMessage(GetLastError));
   if ContextHandle <> INVALID_HANDLE_VALUE then ReleaseActCtx(ContextHandle);
 end;
+
+procedure TBasicTests.DllEmbedsShellManifest;
+begin
+  CheckEmbeddedDpiManifest(TestDllPath, 2);
+end;
+
+procedure TBasicTests.GuiEmbedsDpiManifest;
+begin
+  CheckEmbeddedDpiManifest(ExtractFilePath(TestDllPath) + 'GUIDelphiDevShell.exe', 1);
+end;
+
 procedure TBasicTests.DllMenuCallbacksAllowNullResult;
 var
   Module: HMODULE;

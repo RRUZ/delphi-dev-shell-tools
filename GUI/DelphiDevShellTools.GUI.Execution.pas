@@ -204,7 +204,6 @@ function RunCommandRequest(const RequestFile: string): Integer;
 var Request: TCommandRequest; Directory, LogFile: string; Progress: TForm;
   LabelControl: TLabel; CloseButton: TButton; Output: TMemo;
 begin
-  Result := 1;
   Directory := ExtractFileDir(ExpandFileName(RequestFile));
   Progress := nil;
   Output := nil;

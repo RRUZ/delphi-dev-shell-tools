@@ -112,7 +112,6 @@ uses
   DelphiDevShellTools.ToolMenus,
   DelphiDevShellTools.IDEMenus;
 
-{$R '..\Images.RES'}
 
 constructor TShellMenu.Create;
 begin

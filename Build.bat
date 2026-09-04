@@ -1,12 +1,16 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
+set "DDS_RELOAD="
+set "DDS_RELOAD_STAGE="
 set "DDS_ACTION=build"
 set "DDS_PLATFORM=Win64"
 set "DDS_CONFIG=Release"
 if not "%~1"=="" set "DDS_ACTION=%~1"
 if not "%~2"=="" set "DDS_PLATFORM=%~2"
 if not "%~3"=="" set "DDS_CONFIG=%~3"
-if not "%~4"=="" goto usage_error
+if not "%~5"=="" goto usage_error
+if /i "%~4"=="--reload" set "DDS_RELOAD=1"
+if not "%~4"=="" if not defined DDS_RELOAD goto usage_error
 if /i "%DDS_ACTION%"=="help" goto help
 set "DDS_VALID="
 for %%A in (build rebuild clean test test-registration register unregister status) do if /i "%DDS_ACTION%"=="%%A" set "DDS_VALID=1"
@@ -21,6 +25,11 @@ if /i "%DDS_CONFIG%"=="All" set "DDS_CONFIGS=Debug Release"
 if not defined DDS_CONFIGS goto usage_error
 if /i "%DDS_ACTION%"=="register" if /i "%DDS_PLATFORM%"=="All" goto usage_error
 if /i "%DDS_ACTION%"=="register" if /i "%DDS_CONFIG%"=="All" goto usage_error
+if defined DDS_RELOAD (
+    if /i not "%DDS_ACTION%"=="build" if /i not "%DDS_ACTION%"=="rebuild" goto usage_error
+    if /i "%DDS_PLATFORM%"=="All" goto usage_error
+    if /i "%DDS_CONFIG%"=="All" goto usage_error
+)
 set "DDS_64BIT="
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" set "DDS_64BIT=1"
 if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "DDS_64BIT=1"
@@ -41,6 +50,10 @@ if /i "%DDS_ACTION%"=="status" goto status
 if /i "%DDS_ACTION%"=="register" goto registration
 if /i "%DDS_ACTION%"=="unregister" goto registration
 if /i "%DDS_ACTION%"=="test-registration" goto registration_tests
+if defined DDS_RELOAD (
+    call :require_admin
+    if errorlevel 1 goto failed
+)
 if not defined DUNITX_ROOT set "DUNITX_ROOT=C:\dev\DUnitX-0.4.1"
 if /i "%DDS_ACTION%"=="test" if not exist "%DUNITX_ROOT%\Source\DUnitX.TestFramework.pas" (
     echo ERROR: DUnitX source is missing. Set DUNITX_ROOT.
@@ -59,8 +72,11 @@ for %%F in (libeay32.dll ssleay32.dll) do if not exist "%DDS_OPENSSL%\%%F" (
     echo ERROR: Missing "%DDS_OPENSSL%\%%F". Restore it from Git.
     goto failed
 )
-"%DDS_DELPHI%\bin\brcc32.exe" "%DDS_ROOT%\VersionInfo.rc"
-if errorlevel 1 goto failed
+for %%R in (VersionInfo.rc ShellExtensionManifest.rc Icons\images.RC GUI\GUIManifest.rc GUI\GUIResources.rc GUI\AwesomeFont.rc) do (
+    call :compile_resource "%%R"
+    if errorlevel 1 goto failed
+)
+if defined DDS_RELOAD goto reload_build
 :build_configs
 for %%C in (%DDS_CONFIGS%) do (
     call :build_config %%C
@@ -74,6 +90,8 @@ set "DDS_CURRENT_CONFIG=%~1"
 set "DDS_PROJECT=GUI\GUIDelphiDevShell.dproj"
 set "DDS_ARCH=Win32"
 set "DDS_OUTPUT=%DDS_ROOT%\GUI\Win32\%~1"
+if defined DDS_RELOAD_STAGE set "DDS_OUTPUT=%DDS_RELOAD_STAGE%\GUI\Win32\%~1"
+set "DDS_GUI_OUTPUT=%DDS_OUTPUT%"
 call :project_build
 if errorlevel 1 exit /b 1
 for %%A in (%DDS_PLATFORMS%) do (
@@ -86,13 +104,14 @@ exit /b 0
 set "DDS_ARCH=%~1"
 set "DDS_PROJECT=DelphiDevShellTools.dproj"
 set "DDS_OUTPUT=%DDS_ROOT%\%DDS_ARCH%\%DDS_CURRENT_CONFIG%"
+if defined DDS_RELOAD_STAGE set "DDS_OUTPUT=%DDS_RELOAD_STAGE%\%DDS_ARCH%\%DDS_CURRENT_CONFIG%"
 call :project_build
 if errorlevel 1 exit /b 1
 if /i "%DDS_ACTION%"=="clean" goto clean_staged
 set "DDS_DLL=%DDS_OUTPUT%\DelphiDevShellTools.dll"
 call :check_dll
 if errorlevel 1 exit /b 1
-copy /y "%DDS_ROOT%\GUI\Win32\%DDS_CURRENT_CONFIG%\GUIDelphiDevShell.exe" "%DDS_OUTPUT%\GUIDelphiDevShell.exe" >nul
+copy /y "%DDS_GUI_OUTPUT%\GUIDelphiDevShell.exe" "%DDS_OUTPUT%\GUIDelphiDevShell.exe" >nul
 if errorlevel 1 exit /b 1
 for %%F in (libeay32.dll ssleay32.dll) do (
     copy /y "%DDS_OPENSSL%\%%F" "%DDS_OUTPUT%\%%F" >nul
@@ -113,14 +132,173 @@ for %%F in (GUIDelphiDevShell.exe libeay32.dll ssleay32.dll) do (
 )
 exit /b 0
 
+:compile_resource
+rem Resolve asset paths relative to each RC source, never the caller's directory.
+for %%R in ("%DDS_ROOT%\%~1") do (
+    pushd "%%~dpR"
+    if errorlevel 1 exit /b 1
+    "%DDS_DELPHI%\bin\brcc32.exe" "%%~nxR"
+)
+set "DDS_RESOURCE_RESULT=%errorlevel%"
+popd
+exit /b %DDS_RESOURCE_RESULT%
+
 :project_build
 for %%F in ("%DDS_PROJECT%") do set "DDS_PROJECT_NAME=%%~nF"
 set "DDS_LOG=%DDS_ROOT%\build\logs\%DDS_PROJECT_NAME%-%DDS_ARCH%-%DDS_CURRENT_CONFIG%.log"
 echo %DDS_TARGET% %DDS_PROJECT_NAME% / %DDS_ARCH% / %DDS_CURRENT_CONFIG%
 "%DDS_MSBUILD%" "%DDS_ROOT%\%DDS_PROJECT%" /nologo /v:minimal "/t:%DDS_TARGET%" "/p:Platform=%DDS_ARCH%" "/p:Config=%DDS_CURRENT_CONFIG%" /p:VerInfo_AutoIncVersion=false "/p:DCC_ExeOutput=%DDS_OUTPUT%" "/p:DCC_DcuOutput=%DDS_OUTPUT%" "/p:DUnitXRoot=%DUNITX_ROOT%" "/flp:LogFile=%DDS_LOG%;Verbosity=normal"
 if not errorlevel 1 exit /b 0
-echo ERROR: Build failed. Log: "%DDS_LOG%". A loaded shell DLL must be unloaded before rebuilding.
+echo ERROR: Build failed. Log: "%DDS_LOG%".
+if /i "%DDS_PROJECT_NAME%"=="DelphiDevShellTools" echo If Explorer holds the DLL, use Build.bat build %DDS_ARCH% %DDS_CURRENT_CONFIG% --reload from an Administrator Command Prompt.
 exit /b 1
+
+:reload_build
+rem Compile before touching live registration or stopping Explorer.
+set "DDS_PLATFORM=%DDS_PLATFORMS%"
+set "DDS_CONFIG=%DDS_CONFIGS%"
+set "DDS_RELOAD_COPYING="
+set "DDS_RELOAD_ACTION=%DDS_ACTION%"
+set "DDS_RELOAD_STAGE=%DDS_ROOT%\build\reload"
+set "DDS_RELOAD_LIVE=%DDS_ROOT%\%DDS_PLATFORM%\%DDS_CONFIG%"
+set "DDS_RELOAD_NEW=%DDS_RELOAD_STAGE%\%DDS_PLATFORM%\%DDS_CONFIG%"
+set "DDS_RELOAD_BACKUP=%DDS_RELOAD_NEW%\previous"
+set "DDS_RELOAD_FILES=GUIDelphiDevShell.exe libeay32.dll ssleay32.dll DelphiDevShellTools.dll"
+set "DDS_ARCH=%DDS_PLATFORM%"
+call :registry_view
+call :read_registered
+set "DDS_RELOAD_OLD_DLL=%DDS_REGISTERED%"
+if defined DDS_RELOAD_OLD_DLL if not exist "%DDS_RELOAD_OLD_DLL%" (
+    echo ERROR: The registered DLL is missing. Repair registration before reloading.
+    goto failed
+)
+set "DDS_OVERRIDE="
+for /f "tokens=2,*" %%A in ('reg query "HKCU\%DDS_CLASSKEY%" /ve /reg:%DDS_VIEW% 2^>nul') do if /i "%%A"=="REG_SZ" set "DDS_OVERRIDE=%%B"
+if defined DDS_OVERRIDE (
+    echo ERROR: A per-user COM registration overrides this class: "%DDS_OVERRIDE%".
+    goto failed
+)
+set "DDS_RELOAD_SESSION="
+"%DDS_SYSTEM%\query.exe" session >"%DDS_ROOT%\build\logs\reload-sessions.log" 2>nul
+findstr /b /c:">" "%DDS_ROOT%\build\logs\reload-sessions.log" >"%DDS_ROOT%\build\logs\reload-active-session.log"
+for /f "usebackq tokens=3" %%S in ("%DDS_ROOT%\build\logs\reload-active-session.log") do set "DDS_RELOAD_SESSION=%%S"
+for /f "delims=0123456789" %%S in ("%DDS_RELOAD_SESSION%") do set "DDS_RELOAD_SESSION="
+if not defined DDS_RELOAD_SESSION (
+    echo ERROR: Cannot identify the interactive session. Run --reload in a local Administrator Command Prompt.
+    goto failed
+)
+"%DDS_SYSTEM%\query.exe" session %DDS_RELOAD_SESSION% >"%DDS_ROOT%\build\logs\reload-verified-session.log" 2>nul
+findstr /b /c:">" "%DDS_ROOT%\build\logs\reload-verified-session.log" >nul
+if errorlevel 1 (
+    echo ERROR: Session identity could not be verified; registration was not changed.
+    goto failed
+)
+call :build_config %DDS_CONFIG%
+if errorlevel 1 goto failed
+if not exist "%DDS_RELOAD_BACKUP%\" mkdir "%DDS_RELOAD_BACKUP%"
+if not exist "%DDS_RELOAD_BACKUP%\" goto failed
+for %%F in (%DDS_RELOAD_FILES%) do (
+    call :reload_backup_file %%F
+    if errorlevel 1 goto failed
+)
+set "DDS_RELOAD_EXPLORER="
+set "DDS_RELOAD_BLOCKED="
+"%DDS_SYSTEM%\tasklist.exe" /m DelphiDevShellTools.dll /fo csv /nh >"%DDS_RELOAD_NEW%\holders.csv"
+if errorlevel 1 goto failed
+for /f "usebackq tokens=1,2 delims=," %%A in ("%DDS_RELOAD_NEW%\holders.csv") do call :reload_check_holder "%%~A" "%%~B"
+if defined DDS_RELOAD_BLOCKED goto failed
+set "DDS_ACTION=unregister"
+call :register_one %DDS_PLATFORM%
+if errorlevel 1 goto reload_recover
+if defined DDS_RELOAD_EXPLORER (
+    echo Restarting Explorer in session %DDS_RELOAD_SESSION%; its folder windows will close.
+    "%DDS_SYSTEM%\taskkill.exe" /f /fi "SESSION eq %DDS_RELOAD_SESSION%" /fi "USERNAME eq %USERDOMAIN%\%USERNAME%" /im explorer.exe
+    if errorlevel 1 goto reload_recover
+)
+if not exist "%DDS_RELOAD_LIVE%\" mkdir "%DDS_RELOAD_LIVE%"
+if not exist "%DDS_RELOAD_LIVE%\" goto reload_recover
+set "DDS_RELOAD_COPYING=1"
+for %%F in (%DDS_RELOAD_FILES%) do (
+    copy /y "%DDS_RELOAD_NEW%\%%F" "%DDS_RELOAD_LIVE%\%%F" >nul
+    if errorlevel 1 goto reload_recover
+)
+set "DDS_ACTION=register"
+call :register_one %DDS_PLATFORM%
+if errorlevel 1 goto reload_recover
+call :reload_start_explorer
+if errorlevel 1 (
+    echo ERROR: Could not start Explorer. Run explorer.exe manually.
+    goto failed
+)
+set "DDS_ACTION=%DDS_RELOAD_ACTION%"
+echo Reload complete: "%DDS_RELOAD_LIVE%\DelphiDevShellTools.dll"
+goto success
+
+:reload_backup_file
+rem Both paths are fixed beneath the validated repository/platform/configuration.
+if exist "%DDS_RELOAD_BACKUP%\%~1" del /q "%DDS_RELOAD_BACKUP%\%~1"
+if exist "%DDS_RELOAD_BACKUP%\%~1" exit /b 1
+if not exist "%DDS_RELOAD_LIVE%\%~1" exit /b 0
+copy /y "%DDS_RELOAD_LIVE%\%~1" "%DDS_RELOAD_BACKUP%\%~1" >nul
+exit /b %errorlevel%
+
+:reload_check_holder
+for %%F in ("%~1") do if /i not "%%~xF"==".exe" exit /b 0
+if /i not "%~1"=="explorer.exe" goto reload_foreign_holder
+"%DDS_SYSTEM%\tasklist.exe" /fi "PID eq %~2" /fi "SESSION eq %DDS_RELOAD_SESSION%" /fi "USERNAME eq %USERDOMAIN%\%USERNAME%" /fo csv /nh >"%DDS_RELOAD_NEW%\session-holder.csv"
+if errorlevel 1 goto reload_foreign_holder
+findstr /i /c:"explorer.exe" "%DDS_RELOAD_NEW%\session-holder.csv" >nul
+if errorlevel 1 goto reload_foreign_holder
+set "DDS_RELOAD_EXPLORER=1"
+exit /b 0
+:reload_foreign_holder
+echo ERROR: %~1 PID %~2 holds a shell DLL outside this session's Explorer. Close it and retry --reload.
+set "DDS_RELOAD_BLOCKED=1"
+exit /b 0
+
+:reload_recover
+echo ERROR: Reload failed; restoring the previous files and registration.
+set "DDS_RELOAD_RECOVERY_FAILED="
+if defined DDS_RELOAD_COPYING (
+    set "DDS_ACTION=unregister"
+    call :register_one %DDS_PLATFORM%
+    if errorlevel 1 set "DDS_RELOAD_RECOVERY_FAILED=1"
+    for %%F in (%DDS_RELOAD_FILES%) do (
+        call :reload_restore_file %%F
+        if errorlevel 1 set "DDS_RELOAD_RECOVERY_FAILED=1"
+    )
+)
+if defined DDS_RELOAD_OLD_DLL (
+    set "DDS_ACTION=register"
+    set "DDS_DLL=%DDS_RELOAD_OLD_DLL%"
+    set "DDS_REG_OPTIONS=/s"
+    call :run_regsvr
+    if errorlevel 1 set "DDS_RELOAD_RECOVERY_FAILED=1"
+)
+call :reload_start_explorer
+if defined DDS_RELOAD_RECOVERY_FAILED echo ERROR: Recovery needs attention. Previous files: "%DDS_RELOAD_BACKUP%".
+set "DDS_ACTION=%DDS_RELOAD_ACTION%"
+goto failed
+
+:reload_restore_file
+if not exist "%DDS_RELOAD_BACKUP%\%~1" goto reload_remove_new_file
+fc /b "%DDS_RELOAD_BACKUP%\%~1" "%DDS_RELOAD_LIVE%\%~1" >nul 2>&1
+if not errorlevel 1 exit /b 0
+copy /y "%DDS_RELOAD_BACKUP%\%~1" "%DDS_RELOAD_LIVE%\%~1" >nul
+exit /b %errorlevel%
+:reload_remove_new_file
+if exist "%DDS_RELOAD_LIVE%\%~1" del /q "%DDS_RELOAD_LIVE%\%~1"
+if exist "%DDS_RELOAD_LIVE%\%~1" exit /b 1
+exit /b 0
+
+:reload_start_explorer
+if not defined DDS_RELOAD_EXPLORER exit /b 0
+"%DDS_SYSTEM%\tasklist.exe" /fi "IMAGENAME eq explorer.exe" /fi "SESSION eq %DDS_RELOAD_SESSION%" /fi "USERNAME eq %USERDOMAIN%\%USERNAME%" /fo csv /nh >"%DDS_RELOAD_NEW%\explorer.csv"
+findstr /i /c:"explorer.exe" "%DDS_RELOAD_NEW%\explorer.csv" >nul
+if not errorlevel 1 exit /b 0
+ver >nul
+start "" "%SystemRoot%\explorer.exe"
+exit /b %errorlevel%
 
 :find_delphi
 set "DDS_DELPHI=%DELPHI_ROOT%"
@@ -130,6 +308,7 @@ for %%H in (HKCU HKLM) do for %%V in (32 64) do (
 )
 if not defined DDS_DELPHI set "DDS_DELPHI=%ProgramFiles(x86)%\Embarcadero\Studio\37.0"
 :delphi_found
+for %%D in ("%DDS_DELPHI%\.") do set "DDS_DELPHI=%%~fD"
 if exist "%DDS_DELPHI%\bin\rsvars.bat" exit /b 0
 echo ERROR: Delphi 13 is missing. Set DELPHI_ROOT to its installation folder.
 exit /b 1
@@ -358,10 +537,12 @@ echo ERROR: Invalid arguments. Run Build.bat help.
 exit /b 2
 :help
 echo Build.bat [build^|rebuild^|clean^|test^|test-registration] [Win64^|Win32^|All] [Release^|Debug^|All]
+echo Build.bat [build^|rebuild] [Win64^|Win32] [Release^|Debug] --reload
 echo Build.bat register [Win64^|Win32] [Release^|Debug]
 echo Build.bat [unregister^|status] [Win64^|Win32^|All]
 echo Defaults: build Win64 Release. Overrides: DELPHI_ROOT, DUNITX_ROOT.
 echo DUnitX default: C:\dev\DUnitX-0.4.1. Logs: build\logs.
-echo Register/unregister/test-registration require an Administrator Command Prompt.
+echo Register/unregister/test-registration/--reload require an Administrator Command Prompt.
+echo --reload stages the build, registers it and restarts this session's Explorer if loaded.
 echo Run test before test-registration; registration tests restore prior state.
 exit /b 0

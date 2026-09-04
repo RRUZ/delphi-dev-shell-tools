@@ -66,8 +66,8 @@
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
-        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <Manifest_File>None</Manifest_File>
+        <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(ModuleName);FileDescription=$(ModuleName);ProductName=$(ModuleName)</VerInfo_Keys>
     </PropertyGroup>
@@ -87,11 +87,11 @@
         <BT_BuildType>Debug</BT_BuildType>
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <DCC_MapFile>3</DCC_MapFile>
-        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+        <Manifest_File>None</Manifest_File>
         <Debugger_RunParams>-settings</Debugger_RunParams>
         <VerInfo_Build>74</VerInfo_Build>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
+        <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
+        <VerInfo_AutoIncVersion>false</VerInfo_AutoIncVersion>
         <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.74;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(ModuleName);FileDescription=$(ModuleName);ProductName=$(ModuleName)</VerInfo_Keys>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
     </PropertyGroup>
@@ -105,10 +105,14 @@
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <Debugger_RunParams>-Settings</Debugger_RunParams>
         <Icon_MainIcon>GUIDelphiDevShell_Icon.ico</Icon_MainIcon>
-        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <Manifest_File>None</Manifest_File>
+        <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
     </PropertyGroup>
     <ItemGroup>
+        <RcCompile Include="GUIManifest.rc"/>
+        <RcCompile Include="GUIResources.rc"/>
+        <RcCompile Include="AwesomeFont.rc"/>
+        <None Include="GUIDelphiDevShell.manifest"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Logging.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.SettingsStore.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Commands.pas"/>

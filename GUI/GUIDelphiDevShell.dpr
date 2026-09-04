@@ -46,7 +46,8 @@ uses
   DelphiDevShellTools.GUI.CheckSum in 'DelphiDevShellTools.GUI.CheckSum.pas' {FrmCheckSum},
   Vcl.Styles.Utils.Menus in 'Vcl.Styles.Utils.Menus.pas';
 
-{$R *.res}
+{$R 'GUIResources.res' 'GUIResources.rc'}
+{$R 'GUIManifest.res' 'GUIManifest.rc'}
 
 procedure OnlyOne;
 var

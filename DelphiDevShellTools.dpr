@@ -3,10 +3,6 @@ library DelphiDevShellTools;
 uses
   DelphiDevShellTools.Logging in 'units\DelphiDevShellTools.Logging.pas',
   DelphiDevShellTools.SettingsStore in 'units\DelphiDevShellTools.SettingsStore.pas',
-  {.$IFDEF MADEXCEPTS}
-  {$IFDEF DEBUG}
-  {$ENDIF DEBUG}
-  {.$ENDIF MADEXCEPTS}
   DelphiDevShellTools.Commands in 'units\DelphiDevShellTools.Commands.pas',
   DelphiDevShellTools.Installations in 'units\DelphiDevShellTools.Installations.pas',
   DelphiDevShellTools.Execution in 'units\DelphiDevShellTools.Execution.pas',
@@ -36,6 +32,7 @@ exports
 
 // Link external resources explicitly; the IDE-generated project .res is not used.
 {$R 'VersionInfo.res' 'VersionInfo.rc'}
+{$R 'Icons\Images.res' 'Icons\images.RC'}
 {$R 'ShellExtensionManifest.res' 'ShellExtensionManifest.rc'}
 
 {
