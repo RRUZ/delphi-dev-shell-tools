@@ -130,6 +130,7 @@
             <Form>FrmSettings</Form>
         </DCCReference>
         <DCCReference Include="..\units\DelphiDevShellTools.Misc.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.UI.pas"/>
         <DCCReference Include="DelphiDevShellTools.GUI.CheckSum.pas">
             <Form>FrmCheckSum</Form>
         </DCCReference>

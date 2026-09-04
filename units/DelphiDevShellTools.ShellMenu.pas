@@ -109,6 +109,7 @@ uses
   System.Win.ComObj,
   Vcl.GraphUtil,
   Vcl.Imaging.PngImage,
+  DelphiDevShellTools.UI,
   DelphiDevShellTools.Tasks,
   DelphiDevShellTools.LazarusVersions,
   DelphiDevShellTools.ToolMenus,
@@ -183,11 +184,35 @@ end;
 
 procedure TShellMenu.RegisterBitmap32(const ResourceName: string);
 var
+  BulletColor: TColor;
+  BulletHandle: HICON;
   LPicture: TPicture;
   SourceBitmap: TBitmap;
   FileName: string;
 begin
   try
+    if TryGetBulletColor(ResourceName, BulletColor) then
+    begin
+      if IsVistaOrLater then
+      begin
+        if not FBitmapsDict.ContainsKey(ResourceName) then
+        begin
+          FBitmapsDict.Add(ResourceName, TBitmap.Create);
+          CreateBulletBitmap(FBitmapsDict.Items[ResourceName], BulletColor,
+            FMenuImageSize);
+        end;
+      end
+      else if not FIconsExternals.ContainsKey(ResourceName) then
+      begin
+        BulletHandle := CreateBulletIcon(BulletColor, FMenuImageSize);
+        if BulletHandle <> 0 then
+        begin
+          FIconsExternals.Add(ResourceName, TIcon.Create);
+          FIconsExternals.Items[ResourceName].Handle := BulletHandle;
+        end;
+      end;
+      Exit;
+    end;
     FileName := GetDevShellToolsImagesFolder + ResourceName;
     if IsVistaOrLater then
     begin

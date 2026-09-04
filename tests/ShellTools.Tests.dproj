@@ -33,6 +33,7 @@
         <DCCReference Include="..\units\DelphiDevShellTools.Commands.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Installations.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Execution.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.UI.pas"/>
 
     <DelphiCompile Include="$(MainSource)"><MainSource>MainSource</MainSource></DelphiCompile>
     <DCCReference Include="ShellTools.ExecutionTests.pas"/>

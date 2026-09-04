@@ -65,6 +65,12 @@ type
     [TestCase('192 DPI', '192,32')]
     procedure MenuImageDpiContract(Dpi, ExpectedPixels: Integer);
     [Test] procedure ImageCacheIdentityAndIcoSelectionFollowDpi;
+    [Test] procedure BulletIconNamesAndColorsAreStable;
+    [TestCase('16 px', '16')]
+    [TestCase('20 px', '20')]
+    [TestCase('24 px', '24')]
+    [TestCase('32 px', '32')]
+    procedure GeneratedBulletImagesMatchRequestedSize(Size: Integer);
     [Test] procedure AssociatedEditorProviderHasNoLazarusFallback;
     [Test] procedure PanelDpiResourcesAreReleased;
     [Test] procedure DllMenuCallbacksAllowNullResult;
@@ -85,6 +91,7 @@ uses
   Winapi.Windows, Winapi.Messages, Winapi.ActiveX,
   Winapi.ShlObj, Vcl.Graphics, System.Types, DelphiDevShellTools.ProjectInfoPanel,
   DelphiDevShellTools.Tasks, DelphiDevShellTools.DelphiVersions, DelphiDevShellTools.Misc,
+  DelphiDevShellTools.UI,
   ShellTools.TestSupport;
 
 function RepositoryFile(const RelativeName: string): string;
@@ -515,6 +522,75 @@ begin
   Assert.AreNotEqual(Keys[0], Keys[1]);
   Assert.AreNotEqual(Keys[1], Keys[2]);
   Assert.AreNotEqual(Keys[2], Keys[3]);
+end;
+
+procedure TBasicTests.BulletIconNamesAndColorsAreStable;
+var
+  BulletColor: TColor;
+  IconName: string;
+  Names: TStringList;
+begin
+  Names := TStringList.Create;
+  try
+    AddBuiltInBulletIconNames(Names);
+    Assert.AreEqual(Length(cBulletIconNames), Names.Count);
+    AddBuiltInBulletIconNames(Names);
+    Assert.AreEqual(Length(cBulletIconNames), Names.Count);
+    for IconName in cBulletIconNames do
+      Assert.IsTrue(TryGetBulletColor(IconName, BulletColor), IconName);
+    Assert.IsTrue(TryGetBulletColor('C:\temp\BULLET_RED.ICO', BulletColor));
+    Assert.AreEqual(TColor(RGB(220, 64, 64)), BulletColor);
+    Assert.IsFalse(TryGetBulletColor('compile.ico', BulletColor));
+  finally
+    Names.Free;
+  end;
+end;
+
+procedure TBasicTests.GeneratedBulletImagesMatchRequestedSize(Size: Integer);
+type
+  TRGBQuadArray = array[0..1023] of TRGBQuad;
+  PRGBQuadArray = ^TRGBQuadArray;
+var
+  Bitmap: Vcl.Graphics.TBitmap;
+  BulletColor: TColor;
+  CenterRow, CornerRow: PRGBQuadArray;
+  Icon: HICON;
+  IconBitmap: Winapi.Windows.TBitmap;
+  IconInfo: TIconInfo;
+begin
+  Assert.IsTrue(TryGetBulletColor('bullet_green.ico', BulletColor));
+  Bitmap := Vcl.Graphics.TBitmap.Create;
+  try
+    CreateBulletBitmap(Bitmap, BulletColor, Size);
+    Assert.AreEqual(Size, Bitmap.Width);
+    Assert.AreEqual(Size, Bitmap.Height);
+    Assert.AreNotEqual(Bitmap.Canvas.Pixels[0, 0],
+      Bitmap.Canvas.Pixels[Size div 2, Size div 2]);
+    CornerRow := Bitmap.ScanLine[Size - 1];
+    CenterRow := Bitmap.ScanLine[Size - 1 - Size div 2];
+    Assert.AreEqual(0, Integer(CornerRow[0].rgbReserved));
+    Assert.IsTrue(CenterRow[Size div 2].rgbReserved > 0,
+      'Sphere center must carry alpha.');
+  finally
+    Bitmap.Free;
+  end;
+
+  Icon := CreateBulletIcon(BulletColor, Size);
+  Assert.IsTrue(Icon <> 0);
+  try
+    Assert.IsTrue(GetIconInfo(Icon, IconInfo));
+    try
+      Assert.IsTrue(GetObject(IconInfo.hbmColor, SizeOf(IconBitmap),
+        @IconBitmap) <> 0);
+      Assert.AreEqual(Size, IconBitmap.bmWidth);
+      Assert.AreEqual(Size, IconBitmap.bmHeight);
+    finally
+      if IconInfo.hbmColor <> 0 then DeleteObject(IconInfo.hbmColor);
+      if IconInfo.hbmMask <> 0 then DeleteObject(IconInfo.hbmMask);
+    end;
+  finally
+    DestroyIcon(Icon);
+  end;
 end;
 
 procedure TBasicTests.AssociatedEditorProviderHasNoLazarusFallback;

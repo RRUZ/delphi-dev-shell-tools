@@ -178,6 +178,7 @@
         <DCCReference Include="units\DelphiDevShellTools.ComRegistration.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.DelphiVersions.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.Misc.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.UI.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.ProjectInfoPanel.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.Registry.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.SupportedIDEs.pas"/>

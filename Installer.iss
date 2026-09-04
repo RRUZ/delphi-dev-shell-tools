@@ -30,13 +30,6 @@ Source: DelphiVersions.db; DestDir: {commonappdata}\DelphiDevShellTools
 Source: ico\application_osx_terminal.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: ico\application_xp_terminal.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: ico\audits.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_green.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_orange.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_pink.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_purple.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_red.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_white.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
-Source: ico\bullet_yellow.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: ico\check_boxes.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: ico\check_boxes_series.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\
 Source: ico\check_box_list.ico; DestDir: {commonappdata}\DelphiDevShellTools\Ico\

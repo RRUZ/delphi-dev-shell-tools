@@ -26,6 +26,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, DelphiDevShellTools.Misc,
+  DelphiDevShellTools.UI,
   Vcl.Imaging.pngimage, Vcl.ComCtrls, Vcl.DBCtrls, Vcl.Mask, Data.DB,
   Datasnap.DBClient, Vcl.Grids, Vcl.DBGrids;
 
@@ -206,8 +207,10 @@ end;
 procedure TFrmSettings.DBComboBoxImageDrawItem(Control: TWinControl;
   Index: Integer; Rect: TRect; State: TOwnerDrawState);
 var
+  BulletColor: TColor;
   IconHandle: HICON;
   IconFile: string;
+  ImageRect: TRect;
   TargetSize: Integer;
 begin
   TargetSize := ImagePixelsForDpi(MenuImageLogicalSize, CurrentPPI);
@@ -216,15 +219,22 @@ begin
     FillRect(Rect);
     TextRect(Rect, Rect.Left + TargetSize + 6, Rect.Top + 1,
       ChangeFileExt(TDBComboBox(Control).Items[Index], ''));
-    IconFile := GetDevShellToolsImagesFolder + TDBComboBox(Control).Items[Index];
-    IconHandle := LoadIconFileAtSize(IconFile, TargetSize);
-    if IconHandle <> 0 then
-    try
-      DrawIconEx(TDBComboBox(Control).Canvas.Handle, Rect.Left + 3,
-        Rect.Top + (Rect.Height - TargetSize) div 2, IconHandle,
-        TargetSize, TargetSize, 0, 0, DI_NORMAL);
-    finally
-      DestroyIcon(IconHandle);
+    ImageRect := System.Types.Rect(Rect.Left + 3,
+      Rect.Top + (Rect.Height - TargetSize) div 2, Rect.Left + 3 + TargetSize,
+      Rect.Top + (Rect.Height - TargetSize) div 2 + TargetSize);
+    if TryGetBulletColor(TDBComboBox(Control).Items[Index], BulletColor) then
+      DrawAntialiasedSphere(TDBComboBox(Control).Canvas, ImageRect, BulletColor)
+    else
+    begin
+      IconFile := GetDevShellToolsImagesFolder + TDBComboBox(Control).Items[Index];
+      IconHandle := LoadIconFileAtSize(IconFile, TargetSize);
+      if IconHandle <> 0 then
+      try
+        DrawIconEx(TDBComboBox(Control).Canvas.Handle, ImageRect.Left,
+          ImageRect.Top, IconHandle, TargetSize, TargetSize, 0, 0, DI_NORMAL);
+      finally
+        DestroyIcon(IconHandle);
+      end;
     end;
   end;
 end;
@@ -283,6 +293,7 @@ begin
 
   for s in TDirectory.GetFiles(GetDevShellToolsImagesFolder,'*.ico') do
     DBComboBoxImage.Items.Add(ExtractFileName(s));
+  AddBuiltInBulletIconNames(DBComboBoxImage.Items);
 
 
   LoadMacros;
