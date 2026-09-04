@@ -1,0 +1,49 @@
+﻿<!-- Parser fixture: user-saved Delphi 13 project from Desktop samples. Source/form files are not required by these metadata tests. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{BAE972FD-F384-44AD-AE9A-3DA43134FDA9}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="ProjectVCL.Delphi13.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ProjectFMXDelphi13.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="ProjectVCL_Delphi13">
+        <MSBuild Projects="ProjectVCL.Delphi13.dproj"/>
+    </Target>
+    <Target Name="ProjectVCL_Delphi13:Clean">
+        <MSBuild Projects="ProjectVCL.Delphi13.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ProjectVCL_Delphi13:Make">
+        <MSBuild Projects="ProjectVCL.Delphi13.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ProjectFMXDelphi13">
+        <MSBuild Projects="ProjectFMXDelphi13.dproj"/>
+    </Target>
+    <Target Name="ProjectFMXDelphi13:Clean">
+        <MSBuild Projects="ProjectFMXDelphi13.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ProjectFMXDelphi13:Make">
+        <MSBuild Projects="ProjectFMXDelphi13.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="ProjectVCL_Delphi13;ProjectFMXDelphi13"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="ProjectVCL_Delphi13:Clean;ProjectFMXDelphi13:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="ProjectVCL_Delphi13:Make;ProjectFMXDelphi13:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

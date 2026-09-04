@@ -1,0 +1,8 @@
+<!-- TODO: replace with a Delphi 11 IDE-saved group. Synthetic parser fixture only. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup><ProjectGuid>{109D03C7-4DAD-46DE-A8A6-0D481B91B103}</ProjectGuid></PropertyGroup>
+    <ItemGroup>
+        <Projects Include="ProjectVCL.Delphi11.dproj"><Dependencies/></Projects>
+        <Projects Include="ProjectFMX.Delphi11.dproj"><Dependencies/></Projects>
+    </ItemGroup>
+</Project>

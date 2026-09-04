@@ -18,8 +18,8 @@
 /tests/Win32/
 /tests/Win64/
 /tests/ShellTools.Tests.res
-/Win32/*/GUIDelphiDevShell.exe
-/Win64/*/GUIDelphiDevShell.exe
+/Win32/
+/Win64/
 *.rsm
 
 /ShellExtensionManifest.res

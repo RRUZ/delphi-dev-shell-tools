@@ -16,6 +16,19 @@ type
     [TearDown] procedure TearDown;
     [Test] procedure ExpandsFileMacros;
     [Test] procedure PreservesUnknownMacros;
+    [TestCase('Delphi11 VCL provisional', '11,VCL,Win32')]
+    [TestCase('Delphi11 FMX provisional', '11,FMX,Win32')]
+    [TestCase('Delphi12 VCL', '12,VCL,Win64')]
+    [TestCase('Delphi12 FMX', '12,FMX,Win32')]
+    [TestCase('Delphi13 VCL', '13,VCL,Win32')]
+    [TestCase('Delphi13 FMX', '13,FMX,Win32')]
+    procedure ReadsModernProjectFixture(IDE: Integer; const Framework, Platform: string);
+    [TestCase('Delphi11 provisional', '11')]
+    [TestCase('Delphi12', '12')]
+    [TestCase('Delphi13', '13')]
+    procedure ReadsModernGroupFixture(IDE: Integer);
+    [Test] procedure ProvisionalDelphi11SchemaGap;
+    [Test] procedure DelphiVersionIdsRemainStable;
     [Test] procedure DetectsRioProjectVersion;
     [Test] procedure ReadsProjectBuildOptions;
     [Test] procedure ReadsGroupProjectRelativePaths;
@@ -75,6 +88,111 @@ end;
 procedure TBasicTests.PreservesUnknownMacros;
 begin
   Assert.AreEqual('$UNKNOWN$', TDelphiDevShellTasks.ParseMacros('$UNKNOWN$', nil, 'Demo.pas'));
+end;
+
+function ModernFixturePath(IDE: Integer; const Name: string): string;
+begin
+  Result := TPath.GetFullPath(TPath.Combine(ExtractFilePath(ParamStr(0)),
+    Format('..\..\fixtures\Delphi%d\%s', [IDE, Name])));
+end;
+
+function FixtureIDE(IDE: Integer): TDelphiVersions;
+begin
+  case IDE of
+    11: Result := Delphi11Alexandria;
+    12: Result := Delphi12Athens;
+    13: Result := Delphi13Florence;
+  else
+    raise Exception.Create('Unsupported fixture IDE');
+  end;
+end;
+
+procedure TBasicTests.ReadsModernProjectFixture(IDE: Integer; const Framework, Platform: string);
+var
+  FileName, Name: string;
+  Project: TMSBuildDProj;
+  Versions: SetDelphiVersions;
+  Panel: TProjectInfoPanel;
+begin
+  Name := Format('Project%s.Delphi%d.dproj', [Framework, IDE]);
+  if (Framework = 'FMX') and (IDE >= 12) then
+    Name := Format('ProjectFMXDelphi%d.dproj', [IDE]);
+  FileName := ModernFixturePath(IDE, Name);
+  Assert.IsTrue(FileExists(FileName), FileName);
+  Versions := GetDelphiVersions(FileName);
+  Assert.AreEqual<NativeInt>(1, Length(Versions));
+  Assert.AreEqual(Ord(FixtureIDE(IDE)), Ord(Versions[0]));
+  Project := TMSBuildDProj.Create(FileName);
+  try
+    Assert.IsTrue(Project.ValidData);
+    Assert.AreEqual(Ord(FixtureIDE(IDE)), Ord(Project.DelphiVersion));
+    Assert.AreEqual(Framework, Project.FrameworkType);
+    Assert.AreEqual('Application', Project.AppType);
+    Assert.AreEqual('Debug', Project.DefaultConfiguration);
+    Assert.AreEqual(Platform, Project.DefaultPlatForm);
+    Assert.IsTrue(Project.GUID <> '');
+    Assert.IsTrue(Project.BuildConfigurations.IndexOf('Debug') >= 0);
+    Assert.IsTrue(Project.BuildConfigurations.IndexOf('Release') >= 0);
+    Assert.IsTrue(Project.TargetPlatforms.IndexOf('Win32') >= 0);
+    Assert.IsTrue(Project.TargetPlatforms.IndexOf('Win64') >= 0);
+    Assert.IsTrue(Project.TargetPlatforms.IndexOf('Android') < 0);
+    if IDE = 13 then
+      Assert.IsTrue(Project.TargetPlatforms.IndexOf('WinARM64EC') >= 0,
+        'Preserve the enabled target supplied by the real Delphi 13 fixture');
+  finally
+    Project.Free;
+  end;
+  Panel := TProjectInfoPanel.Create(FileName, 96);
+  try
+    Assert.IsTrue(Panel.IsValid);
+    Assert.AreEqual(DelphiVersionsNames[FixtureIDE(IDE)], Panel.Rows[0].Value);
+  finally
+    Panel.Free;
+  end;
+end;
+
+procedure TBasicTests.ReadsModernGroupFixture(IDE: Integer);
+var
+  Group: TMSBuildGroupProj;
+  Project: TMSBuildDProj;
+begin
+  Group := TMSBuildGroupProj.Create(ModernFixturePath(IDE,
+    Format('ProjectGroupDelphi%d.groupproj', [IDE])));
+  try
+    Assert.IsTrue(Group.ValidData);
+    Assert.AreEqual<NativeInt>(2, Group.Projects.Count);
+    Assert.AreEqual(Ord(FixtureIDE(IDE)), Ord(Group.DelphiVersion));
+    for Project in Group.Projects do
+    begin
+      Assert.IsTrue(FileExists(Project.ProjectFile), 'Resolve group members relative to the group');
+      Assert.IsTrue(Project.ValidData);
+      Assert.AreEqual(Ord(FixtureIDE(IDE)), Ord(Project.DelphiVersion));
+    end;
+    Assert.AreEqual('VCL', Group.Projects[0].FrameworkType);
+    Assert.AreEqual('FMX', Group.Projects[1].FrameworkType);
+  finally
+    Group.Free;
+  end;
+end;
+
+procedure TBasicTests.ProvisionalDelphi11SchemaGap;
+var
+  Versions: SetDelphiVersions;
+begin
+  // TODO: replace this inferred intermediate schema with an IDE-saved fixture.
+  Versions := GetDelphiVersions(WriteProject('19.4'));
+  Assert.AreEqual<NativeInt>(1, Length(Versions));
+  Assert.AreEqual(Ord(Delphi11Alexandria), Ord(Versions[0]));
+end;
+
+procedure TBasicTests.DelphiVersionIdsRemainStable;
+begin
+  // Saved commands store these ordinals. New IDE support must not renumber them.
+  Assert.AreEqual(14, Ord(Appmethod113));
+  Assert.AreEqual(15, Ord(DelphiXE6));
+  Assert.AreEqual(21, Ord(Delphi10Rio));
+  Assert.AreEqual(22, Ord(Delphi10Sydney));
+  Assert.AreEqual(25, Ord(Delphi13Florence));
 end;
 
 procedure TBasicTests.DetectsRioProjectVersion;
@@ -284,10 +402,10 @@ var
   Row: TProjectInfoRow;
   HasConfiguration, HasPlatforms: Boolean;
 begin
-  Panel := TProjectInfoPanel.Create(WriteProject('20.4'), 96);
+  Panel := TProjectInfoPanel.Create(WriteProject('999.0'), 96);
   try
     Assert.IsTrue(Panel.IsValid, 'Metadata must not depend on an IDE-version mapping');
-    Assert.AreEqual('Not mapped (project format 20.4)', Panel.Rows[0].Value);
+    Assert.AreEqual('Not mapped (project format 999.0)', Panel.Rows[0].Value);
     HasConfiguration := False;
     HasPlatforms := False;
     for Row in Panel.Rows do
@@ -323,8 +441,8 @@ begin
   Standard := nil;
   Bitmap := nil;
   try
-    Panel := TProjectInfoPanel.Create(WriteProject('20.4'), Dpi, Module);
-    Standard := TProjectInfoPanel.Create(WriteProject('20.4'), 96, Module);
+    Panel := TProjectInfoPanel.Create(WriteProject('999.0'), Dpi, Module);
+    Standard := TProjectInfoPanel.Create(WriteProject('999.0'), 96, Module);
     Padding := MulDiv(10, Dpi, 96);
     IconSize := MulDiv(16, Dpi, 96);
     IconCount := 0;

@@ -35,6 +35,7 @@ uses
 {$DEFINE DELPHI_OLDER_VERSIONS_SUPPORT}
 
 type
+  // Append new versions: existing ordinals are persisted in command settings.
   TDelphiVersions =
     (
   {$IFDEF DELPHI_OLDER_VERSIONS_SUPPORT}
@@ -57,10 +58,14 @@ type
     DelphiXE6,
     DelphiXE7,
     DelphiXE8,
-	  Delphi10Seattle,
-	  Delphi10Berlin,
-	  Delphi10Tokyo,
-	  Delphi10Rio
+    Delphi10Seattle,
+    Delphi10Berlin,
+    Delphi10Tokyo,
+    Delphi10Rio,
+    Delphi10Sydney,
+    Delphi11Alexandria,
+    Delphi12Athens,
+    Delphi13Florence
 );
 
   SetDelphiVersions= TArray<TDelphiVersions>;
@@ -192,13 +197,17 @@ const
     'RAD Studio XE4',
     'RAD Studio XE5',
     'Appmethod 1.13',
-    'RAD Studio XE6',
-    'RAD Studio XE7',
+    'RAD Studio XE6/Appmethod 1.14',
+    'RAD Studio XE7/Appmethod 1.15',
     'RAD Studio XE8',
-  	'RAD Studio 10 Seattle',
-  	'RAD Studio 10 Berlin',
-	'RAD Studio 10 Tokyo',
-	'RAD Studio 10 Rio'
+    'RAD Studio 10 Seattle',
+    'RAD Studio 10.1 Berlin',
+    'RAD Studio 10.2 Tokyo',
+    'RAD Studio 10.3 Rio',
+    'RAD Studio 10.4 Sydney',
+    'RAD Studio 11.0 Alexandria',
+    'RAD Studio 12.0 Athens',
+    'RAD Studio 13.0 Florence'
     );
 
   DelphiRegPaths: array[TDelphiVersions] of string = (
@@ -224,8 +233,12 @@ const
     '\Software\Embarcadero\BDS\16.0',
     '\Software\Embarcadero\BDS\17.0',
     '\Software\Embarcadero\BDS\18.0',
-	'\Software\Embarcadero\BDS\19.0',
-	'\Software\Embarcadero\BDS\20.0'
+    '\Software\Embarcadero\BDS\19.0',
+    '\Software\Embarcadero\BDS\20.0',
+    '\Software\Embarcadero\BDS\21.0',
+    '\Software\Embarcadero\BDS\22.0',
+    '\Software\Embarcadero\BDS\23.0',
+    '\Software\Embarcadero\BDS\37.0'
     );
 
  PAClientProfilesPaths: array[TDelphiVersions] of string = (
@@ -251,8 +264,12 @@ const
     '\Embarcadero\BDS\16.0',
     '\Embarcadero\BDS\17.0',
     '\Embarcadero\BDS\18.0',
-	'\Embarcadero\BDS\19.0',
-	'\Embarcadero\BDS\20.0'
+    '\Embarcadero\BDS\19.0',
+    '\Embarcadero\BDS\20.0',
+    '\Embarcadero\BDS\21.0',
+    '\Embarcadero\BDS\22.0',
+    '\Embarcadero\BDS\23.0',
+    '\Embarcadero\BDS\37.0'
     );
 
   function  GetListInstalledDelphiVersions: TInstalledDelphiVerions;
@@ -471,7 +488,17 @@ begin
           if not VarIsClear(Node) then
           begin
             sVersion := Node.Text;
-            if MatchText(sVersion,['18.5', '18.6']) then
+            // Schema mappings are separate from compiler/registry version numbers.
+            // 20.3/20.4: user-saved Delphi 12/13 fixtures in tests/fixtures.
+            if SameText(sVersion, '20.4') then
+              Exit(TArray<TDelphiVersions>.Create(Delphi13Florence))
+            else if SameText(sVersion, '20.3') then
+              Exit(TArray<TDelphiVersions>.Create(Delphi12Athens))
+            // TODO: validate Delphi 11 with IDE-saved VCL/FMX fixtures.
+            // DUnitX's D11 projects provide 19.3 and 19.5; 19.4 is provisional.
+            else if MatchText(sVersion, ['19.3', '19.4', '19.5']) then
+              Exit(TArray<TDelphiVersions>.Create(Delphi11Alexandria))
+            else if MatchText(sVersion,['18.5', '18.6']) then
              Exit(TArray<TDelphiVersions>.Create(Delphi10Rio))
             else				
             if MatchText(sVersion,['18.3', '18.4']) then
@@ -709,6 +736,8 @@ begin
     if LDelphiVersionData.Version>=DelphiXE2  then
     begin
       sProfilePath:=IncludeTrailingPathDelimiter(GetSpecialFolder(CSIDL_APPDATA))+PAClientProfilesPaths[LDelphiVersionData.Version];
+      // An installed IDE may not have any per-user platform profiles yet.
+      if not TDirectory.Exists(sProfilePath) then Continue;
       for sProfile in TDirectory.GetFiles(sProfilePath,'*.profile') do
       begin
         FProfiles.Add(TPAClientProfile.Create);
