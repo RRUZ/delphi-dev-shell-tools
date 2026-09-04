@@ -4,6 +4,8 @@ program ShellTools.Tests;
 {$STRONGLINKTYPES ON}
 
 uses
+  ShellTools.LoggingTests in 'ShellTools.LoggingTests.pas',
+  DelphiDevShellTools.Logging in '..\units\DelphiDevShellTools.Logging.pas',
   ShellTools.SettingsTests in 'ShellTools.SettingsTests.pas',
   DelphiDevShellTools.SettingsStore in '..\units\DelphiDevShellTools.SettingsStore.pas',
   ShellTools.ExecutionTests in 'ShellTools.ExecutionTests.pas',
@@ -31,6 +33,7 @@ begin
     try
       TDUnitX.CheckCommandLine;
       TDUnitX.RegisterTestFixture(TBasicTests);
+      TDUnitX.RegisterTestFixture(TLoggingTests);
       TDUnitX.RegisterTestFixture(TExecutionTests);
       TDUnitX.RegisterTestFixture(TSettingsTests);
       if GetEnvironmentVariable('DDS_TEST_UNC_ROOT') <> '' then

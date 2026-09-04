@@ -18,7 +18,7 @@
     <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Config)'=='Debug'">
-    <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+    <DCC_Define>DEBUG;ENABLELOG;$(DCC_Define)</DCC_Define>
     <DCC_Optimize>false</DCC_Optimize>
     <DCC_DebugInformation>2</DCC_DebugInformation>
   </PropertyGroup>
@@ -27,6 +27,8 @@
     <DCC_DebugInformation>0</DCC_DebugInformation>
   </PropertyGroup>
   <ItemGroup>
+        <DCCReference Include="ShellTools.LoggingTests.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.Logging.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.SettingsStore.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Commands.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Installations.pas"/>

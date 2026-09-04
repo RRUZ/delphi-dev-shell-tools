@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.SettingsStore
-// Shared unit for the Delphi Dev Shell Tools
+// Versioned per-user settings, legacy migration and atomic persistence with recovery.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

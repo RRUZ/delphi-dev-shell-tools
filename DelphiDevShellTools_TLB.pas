@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools_TLB
-// unit for the Delphi Dev Shell Tools
+// Generated COM interface, type-library and class identifiers for the shell extension.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

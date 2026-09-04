@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.Tasks
-// Shared unit for the Delphi Dev Shell Tools
+// Adapts menu actions to clipboard operations and typed execution requests.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
@@ -76,6 +76,7 @@ type
 implementation
 
 uses
+  DelphiDevShellTools.Logging,
   DelphiDevShellTools.Execution,
   DelphiDevShellTools.LazarusVersions,
   Vcl.Clipbrd,

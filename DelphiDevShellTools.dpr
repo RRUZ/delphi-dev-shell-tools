@@ -1,6 +1,7 @@
 library DelphiDevShellTools;
 
 uses
+  DelphiDevShellTools.Logging in 'units\DelphiDevShellTools.Logging.pas',
   DelphiDevShellTools.SettingsStore in 'units\DelphiDevShellTools.SettingsStore.pas',
   {.$IFDEF MADEXCEPTS}
   {$IFDEF DEBUG}

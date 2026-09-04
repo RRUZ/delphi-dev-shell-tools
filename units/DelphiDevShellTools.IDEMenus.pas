@@ -45,6 +45,7 @@ procedure AddRADStudioToolsTasks(Context: TShellMenu; hMenu: HMENU;
 implementation
 
 uses
+  DelphiDevShellTools.Logging,
   System.SysUtils,
   System.Classes,
   System.Types,

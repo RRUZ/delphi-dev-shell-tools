@@ -76,7 +76,7 @@
         <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
-        <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+        <DCC_Define>DEBUG;ENABLELOG;$(DCC_Define)</DCC_Define>
         <DCC_DebugDCUs>true</DCC_DebugDCUs>
         <DCC_Optimize>false</DCC_Optimize>
         <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
@@ -109,6 +109,7 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
     </PropertyGroup>
     <ItemGroup>
+        <DCCReference Include="..\units\DelphiDevShellTools.Logging.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.SettingsStore.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Commands.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Installations.pas"/>

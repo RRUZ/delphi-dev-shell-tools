@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.Execution
-// Shared unit for the Delphi Dev Shell Tools
+// Dispatches command requests and runs processes with isolated scripts and build environments.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

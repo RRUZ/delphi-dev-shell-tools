@@ -101,7 +101,7 @@
         <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(ModuleName);FileDescription=$(ModuleName);ProductName=$(ModuleName)</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
-        <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+        <DCC_Define>DEBUG;ENABLELOG;$(DCC_Define)</DCC_Define>
         <DCC_Optimize>false</DCC_Optimize>
         <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
         <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
@@ -161,6 +161,7 @@
         <VerInfo_Build>0</VerInfo_Build>
     </PropertyGroup>
     <ItemGroup>
+        <DCCReference Include="units\DelphiDevShellTools.Logging.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.SettingsStore.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.Commands.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.Installations.pas"/>

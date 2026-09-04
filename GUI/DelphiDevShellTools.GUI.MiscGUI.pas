@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.GUI.MiscGUI
-// GUI unit for the Delphi Dev Shell Tools
+// Shared warning, information and confirmation dialogs.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

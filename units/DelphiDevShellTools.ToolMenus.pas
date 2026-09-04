@@ -40,6 +40,7 @@ procedure AddLazarusTasks(Context: TShellMenu; hMenu: HMENU; var MenuIndex: Inte
 implementation
 
 uses
+  DelphiDevShellTools.Logging,
   System.SysUtils,
   System.Types,
   System.StrUtils,

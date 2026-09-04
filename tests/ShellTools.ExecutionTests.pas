@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit ShellTools.ExecutionTests
-// Shared unit for the Delphi Dev Shell Tools
+// Tests command serialization, process execution, IDE discovery and environment isolation.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

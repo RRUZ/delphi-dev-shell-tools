@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.Installations
-// Shared unit for the Delphi Dev Shell Tools
+// Discovers and validates Delphi installations, then selects IDE variants and compiler targets.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

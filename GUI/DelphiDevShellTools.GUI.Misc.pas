@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.GUI.Misc
-// GUI unit for the Delphi Dev Shell Tools
+// GUI helpers for dialogs, console output, file operations, grids and network diagnostics.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

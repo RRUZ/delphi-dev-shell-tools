@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.Commands
-// Shared unit for the Delphi Dev Shell Tools
+// Typed command requests, JSON serialization and Windows command-line argument quoting.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

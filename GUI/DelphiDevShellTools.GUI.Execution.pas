@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.GUI.Execution
-// Shared unit for the Delphi Dev Shell Tools
+// GUI command runner with IDE/target selection, progress reporting and execution results.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

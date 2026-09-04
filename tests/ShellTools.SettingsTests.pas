@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit ShellTools.SettingsTests
-// Shared unit for the Delphi Dev Shell Tools
+// Tests settings migration, stable identifiers, concurrent writes and recovery.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

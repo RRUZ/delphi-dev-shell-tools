@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.Misc
-// Shared unit for the Delphi Dev Shell Tools
+// Shared settings adapters, Windows paths, shell helpers and image utilities.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
@@ -23,7 +23,6 @@ unit DelphiDevShellTools.Misc;
 
 interface
 
-{$DEFINE ENABLELOG}
 
 uses
  System.JSON,
@@ -125,11 +124,11 @@ type
   procedure ScaleImage32(const SourceBitmap, ResizedBitmap: TBitmap; const ScaleAmount: Double);
   function IsVistaOrLater: Boolean;
   function IconToBitmapPARGB32(hIcon: HICON): HBITMAP;
-  procedure log(const msg: string);
 
 implementation
 
 uses
+  DelphiDevShellTools.Logging,
   DelphiDevShellTools.SettingsStore,
   ActiveX,
   ShlObj,
@@ -188,21 +187,6 @@ const
   'ASSOCSTR_DDEAPPLICATION',
   'ASSOCSTR_DDETOPIC' );
 
-
-
-procedure log(const msg: string);
-begin
- {$IFDEF ENABLELOG}
-  // Diagnostics must never prevent Explorer from creating a context menu.
-  try
-    TFile.AppendAllText(IncludeTrailingPathDelimiter(GetTempDirectory)+'shelllog.txt',
-      FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now) +
-      Format(' pid=%d tid=%d ', [GetCurrentProcessId, GetCurrentThreadId]) + msg + sLineBreak);
-  except
-    // The temp directory may be unavailable or another process may hold the log.
-  end;
- {$ENDIF}
-end;
 
 
 function IsVistaOrLater: Boolean;

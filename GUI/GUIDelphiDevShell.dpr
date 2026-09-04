@@ -23,6 +23,7 @@
 program GUIDelphiDevShell;
 
 uses
+  DelphiDevShellTools.Logging in '..\units\DelphiDevShellTools.Logging.pas',
   DelphiDevShellTools.SettingsStore in '..\units\DelphiDevShellTools.SettingsStore.pas',
   {$IFDEF DEBUG}
   {$ENDIF }

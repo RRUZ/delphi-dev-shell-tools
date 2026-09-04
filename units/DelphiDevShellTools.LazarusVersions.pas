@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.LazarusVersions
-// Shared unit for the Delphi Dev Shell Tools
+// Locates Lazarus and Free Pascal tools and supplies installed-IDE lists.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");

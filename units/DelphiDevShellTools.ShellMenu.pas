@@ -97,6 +97,7 @@ type
 implementation
 
 uses
+  DelphiDevShellTools.Logging,
   Winapi.ShellAPI,
   Winapi.Messages,
   System.SysUtils,

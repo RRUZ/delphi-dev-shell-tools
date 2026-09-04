@@ -35,7 +35,8 @@ type
 
 implementation
 
-uses Winapi.Windows, Winapi.ShlObj, System.SysUtils, System.Win.Registry, DelphiDevShellTools.Misc;
+uses DelphiDevShellTools.Logging,
+  Winapi.Windows, Winapi.ShlObj, System.SysUtils, System.Win.Registry, DelphiDevShellTools.Misc;
 
 function TDelphiDevShellObjectFactory.GetProgID: string;
 begin

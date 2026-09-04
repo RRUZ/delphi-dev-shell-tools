@@ -1,7 +1,7 @@
 //**************************************************************************************************
 //
 // Unit DelphiDevShellTools.GUI.Settings
-// GUI unit for the Delphi Dev Shell Tools
+// Edits menu preferences, IDE associations and custom tools in per-user settings.
 // https://github.com/RRUZ/delphi-dev-shell-tools
 //
 // The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");
