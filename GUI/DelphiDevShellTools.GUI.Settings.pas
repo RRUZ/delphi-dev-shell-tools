@@ -102,8 +102,7 @@ type
     FSettings: TSettings;
     procedure ApplyProjectIcons;
     procedure ApplyProjectIcon(AImage: TImage; const AKey: string;
-      ALogicalSize: Integer; ABackgroundColor, AForegroundColor: TColor;
-      AHighContrast: Boolean);
+      ALogicalSize: Integer; const ATheme: TDevShellTheme);
     procedure NewCommand(Data: TDataSet);
     procedure LoadMacros;
   protected
@@ -124,17 +123,15 @@ Uses
   DelphiDevShellTools.GUI.MiscGUI,
   StrUtils,
   System.Types,
+  System.UITypes,
   ComObj,
   IOUtils,
-  MidasLib,
-  System.UITypes,
-  Vcl.Themes;
+  MidasLib;
 
 {$R *.dfm}
 
 procedure TFrmSettings.ApplyProjectIcon(AImage: TImage; const AKey: string;
-  ALogicalSize: Integer; ABackgroundColor, AForegroundColor: TColor;
-  AHighContrast: Boolean);
+  ALogicalSize: Integer; const ATheme: TDevShellTheme);
 var
   LSource: TProjectIconSource;
 begin
@@ -142,8 +139,7 @@ begin
   var LBitmap := TBitmap.Create;
   try
     if not TryRenderProjectIconForSurface(LBitmap, AKey, LTargetSize,
-      ABackgroundColor, AForegroundColor, AHighContrast, False, HInstance,
-      LSource) then
+      ATheme, False, HInstance, LSource) then
       Exit;
     AImage.AutoSize := False;
     AImage.Stretch := True;
@@ -156,26 +152,14 @@ begin
 end;
 
 procedure TFrmSettings.ApplyProjectIcons;
-var
-  LContrast: THighContrast;
 begin
-  var LBackgroundColor := StyleServices.GetSystemColor(clBtnFace);
-  var LForegroundColor := StyleServices.GetSystemColor(clWindowText);
-  ZeroMemory(@LContrast, SizeOf(LContrast));
-  LContrast.cbSize := SizeOf(LContrast);
-  var LHighContrast := SystemParametersInfo(SPI_GETHIGHCONTRAST,
-    SizeOf(LContrast), @LContrast, 0) and
-    ((LContrast.dwFlags and HCF_HIGHCONTRASTON) <> 0);
+  var LTheme := TDevShellTheme.ActiveTheme;
   var LRenderBatchActive := BeginProjectIconRenderBatch;
   try
-    ApplyProjectIcon(Image1, 'common', 32, LBackgroundColor,
-      LForegroundColor, LHighContrast);
-    ApplyProjectIcon(Image2, 'lazarusmenu', 32, LBackgroundColor,
-      LForegroundColor, LHighContrast);
-    ApplyProjectIcon(Image3, 'delphi', 32, LBackgroundColor,
-      LForegroundColor, LHighContrast);
-    ApplyProjectIcon(Image5, 'shield', 16, LBackgroundColor,
-      LForegroundColor, LHighContrast);
+    ApplyProjectIcon(Image1, 'common', 32, LTheme);
+    ApplyProjectIcon(Image2, 'lazarusmenu', 32, LTheme);
+    ApplyProjectIcon(Image3, 'delphi', 32, LTheme);
+    ApplyProjectIcon(Image5, 'shield', 16, LTheme);
   finally
     if LRenderBatchActive then
       EndProjectIconRenderBatch;
@@ -283,6 +267,7 @@ var
   TargetSize: Integer;
 begin
   TargetSize := ImagePixelsForDpi(MenuImageLogicalSize, CurrentPPI);
+  var LTheme := TDevShellTheme.ActiveTheme;
   with TDBComboBox(Control).Canvas do
   begin
     FillRect(Rect);
@@ -291,8 +276,10 @@ begin
     ImageRect := System.Types.Rect(Rect.Left + 3,
       Rect.Top + (Rect.Height - TargetSize) div 2, Rect.Left + 3 + TargetSize,
       Rect.Top + (Rect.Height - TargetSize) div 2 + TargetSize);
-    if TryGetBulletColor(TDBComboBox(Control).Items[Index], BulletColor) then
-      DrawAntialiasedSphere(TDBComboBox(Control).Canvas, ImageRect, BulletColor)
+    if TryGetBulletColor(TDBComboBox(Control).Items[Index], LTheme,
+      BulletColor) then
+      DrawAntialiasedSphere(TDBComboBox(Control).Canvas, ImageRect,
+        BulletColor, LTheme)
     else
     begin
       IconFile := GetDevShellToolsImagesFolder + TDBComboBox(Control).Items[Index];

@@ -24,12 +24,16 @@ unit DelphiDevShellTools.ProjectInfoPanel;
 interface
 
 uses
-  System.Types, Winapi.Windows;
+  System.Types, Winapi.Windows, DelphiDevShellTools.UI;
 
 type
+  TProjectInfoValueKind = (pivkText, pivkBadge, pivkBadgeList);
+
   TProjectInfoRow = record
     Caption, Value: string;
     IconKey: string;
+    ValueKind: TProjectInfoValueKind;
+    BadgeRole: TDevShellBadgeRole;
   end;
 
   TProjectInfoPanel = class
@@ -42,7 +46,13 @@ type
     FDpi, FWidth, FHeight, FRowHeight, FPadding, FLabelWidth: Integer;
     function LoadPanelIcon(const AName: string): HICON;
     procedure AddRow(const ACaption, AValue: string;
-      const AIconKey: string = '');
+      const AIconKey: string = '';
+      AValueKind: TProjectInfoValueKind = pivkText;
+      ABadgeRole: TDevShellBadgeRole = dsbrMuted);
+    function BadgeValueWidth(ADC: HDC;
+      const ARow: TProjectInfoRow): Integer;
+    procedure DrawBadgeValue(ADC: HDC; const ABounds: TRect;
+      const ARow: TProjectInfoRow; const ATheme: TDevShellTheme);
     procedure ReadProject(const AFileName: string);
     procedure Measure;
   public
@@ -51,24 +61,23 @@ type
     destructor Destroy; override;
     function IsValid: Boolean;
     procedure Paint(ADC: HDC; const ABounds: TRect;
-      ABackground, AForeground: COLORREF);
+      const ATheme: TDevShellTheme);
     property Width: Integer read FWidth;
     property Height: Integer read FHeight;
     property Rows: TArray<TProjectInfoRow> read FRows;
   end;
 
 function MenuDpi: Integer;
-procedure MenuThemeColors(out ABackground, AForeground: COLORREF;
-  out AHighContrast: Boolean);
-procedure MenuPanelColors(ADC: HDC; const ABounds: TRect;
-  out ABackground, AForeground: COLORREF);
 
 implementation
 
 uses
   System.SysUtils, System.Classes, System.IOUtils, System.Math,
-  System.Win.Registry, Vcl.Graphics, Xml.XMLDoc, Xml.XMLIntf,
+  Vcl.Graphics, Xml.XMLDoc, Xml.XMLIntf,
   DelphiDevShellTools.DelphiVersions, DelphiDevShellTools.Icons;
+
+const
+  cBadgeSpacing = 4;
 
 function MenuDpi: Integer;
 type
@@ -93,61 +102,6 @@ begin
   end;
 end;
 
-procedure MenuThemeColors(out ABackground, AForeground: COLORREF;
-  out AHighContrast: Boolean);
-var
-  LContrast: THighContrast;
-  LDark: Boolean;
-begin
-  ABackground := GetSysColor(COLOR_MENU);
-  AForeground := GetSysColor(COLOR_MENUTEXT);
-  AHighContrast := False;
-  ZeroMemory(@LContrast, SizeOf(LContrast));
-  LContrast.cbSize := SizeOf(LContrast);
-  if SystemParametersInfo(SPI_GETHIGHCONTRAST, SizeOf(LContrast),
-     @LContrast, 0) and
-     ((LContrast.dwFlags and HCF_HIGHCONTRASTON) <> 0) then
-  begin
-    AHighContrast := True;
-    Exit;
-  end;
-  LDark := False;
-  var LRegistry := TRegistry.Create(KEY_READ);
-  try
-    LRegistry.RootKey := HKEY_CURRENT_USER;
-    if LRegistry.OpenKeyReadOnly(
-       'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize') and
-       LRegistry.ValueExists('AppsUseLightTheme') then
-      LDark := LRegistry.ReadInteger('AppsUseLightTheme') = 0;
-  finally
-    LRegistry.Free;
-  end;
-  if LDark then
-  begin
-    ABackground := RGB(43, 43, 43);
-    AForeground := RGB(245, 245, 245);
-  end;
-end;
-
-procedure MenuPanelColors(ADC: HDC; const ABounds: TRect;
-  out ABackground, AForeground: COLORREF);
-var
-  LHighContrast: Boolean;
-begin
-  MenuThemeColors(ABackground, AForeground, LHighContrast);
-  if LHighContrast then
-    Exit;
-  var LDark := (GetRValue(ABackground) + GetGValue(ABackground) +
-    GetBValue(ABackground)) < 384;
-  // Reuse an already painted host-menu background when it matches this mode.
-  // Do not sample the title/text area or trust an uninitialized black surface.
-  var LPixel := GetPixel(ADC, ABounds.Left + 1, ABounds.Top + 1);
-  if (LPixel <> CLR_INVALID) and (LPixel <> 0) and
-     (((GetRValue(LPixel) + GetGValue(LPixel) + GetBValue(LPixel)) < 384) =
-       LDark) then
-    ABackground := LPixel;
-end;
-
 function TProjectInfoPanel.LoadPanelIcon(const AName: string): HICON;
 begin
   Result := 0;
@@ -156,7 +110,8 @@ begin
       FIconSize, FIconSize, LR_DEFAULTCOLOR);
 end;
 
-procedure TProjectInfoPanel.AddRow(const ACaption, AValue, AIconKey: string);
+procedure TProjectInfoPanel.AddRow(const ACaption, AValue, AIconKey: string;
+  AValueKind: TProjectInfoValueKind; ABadgeRole: TDevShellBadgeRole);
 begin
   if AValue = '' then
     Exit;
@@ -165,6 +120,52 @@ begin
   FRows[LIndex].Caption := ACaption;
   FRows[LIndex].Value := AValue;
   FRows[LIndex].IconKey := AIconKey;
+  FRows[LIndex].ValueKind := AValueKind;
+  FRows[LIndex].BadgeRole := ABadgeRole;
+end;
+
+function TProjectInfoPanel.BadgeValueWidth(ADC: HDC;
+  const ARow: TProjectInfoRow): Integer;
+begin
+  Result := 0;
+  var LValues := ARow.Value.Split([',']);
+  for var LValue in LValues do
+  begin
+    var LCaption := Trim(LValue);
+    if LCaption = '' then
+      Continue;
+    if Result > 0 then
+      Inc(Result, MulDiv(cBadgeSpacing, FDpi, 96));
+    Inc(Result, DevShellBadgeNaturalWidth(ADC, LCaption, FDpi));
+    if ARow.ValueKind = pivkBadge then
+      Break;
+  end;
+end;
+
+procedure TProjectInfoPanel.DrawBadgeValue(ADC: HDC;
+  const ABounds: TRect; const ARow: TProjectInfoRow;
+  const ATheme: TDevShellTheme);
+begin
+  var LHeight := Min(DevShellBadgeHeight(ADC, FDpi), ABounds.Height);
+  var LX := ABounds.Left;
+  var LValues := ARow.Value.Split([',']);
+  for var LValue in LValues do
+  begin
+    var LCaption := Trim(LValue);
+    if LCaption = '' then
+      Continue;
+    if LX >= ABounds.Right then
+      Break;
+    var LWidth := DevShellBadgeNaturalWidth(ADC, LCaption, FDpi);
+    var LBadgeRect := Rect(LX, ABounds.Top + (ABounds.Height - LHeight) div 2,
+      Min(LX + LWidth, ABounds.Right),
+      ABounds.Top + (ABounds.Height + LHeight) div 2);
+    DrawDevShellBadge(ADC, LBadgeRect, LCaption, ATheme, ARow.BadgeRole,
+      FDpi);
+    LX := LBadgeRect.Right + MulDiv(cBadgeSpacing, FDpi, 96);
+    if ARow.ValueKind = pivkBadge then
+      Break;
+  end;
 end;
 
 procedure TProjectInfoPanel.ReadProject(const AFileName: string);
@@ -180,8 +181,10 @@ var
   LVersion: string;
   LTargets: string;
   LFramework: string;
+  LConfiguration: string;
   LTarget: string;
   LPlatformIcon: string;
+  LBadgeRole: TDevShellBadgeRole;
   LVersions: SetDelphiVersions;
 
   function PropertyValue(const AName: string): string;
@@ -218,11 +221,19 @@ begin
   AddRow('Project type', PropertyValue('AppType'));
   LFramework := PropertyValue('FrameworkType');
   if SameText(LFramework, 'FMX') then
-    AddRow('Framework', LFramework, 'firemonkey')
+    AddRow('Framework', LFramework, 'firemonkey', pivkBadge,
+      dsbrSecondary)
   else
-    AddRow('Framework', LFramework, 'vcl');
+    AddRow('Framework', LFramework, 'vcl', pivkBadge, dsbrPrimary);
   AddRow('GUID', PropertyValue('ProjectGuid'));
-  AddRow('Build configuration', PropertyValue('Config'), 'buildconf');
+  LConfiguration := PropertyValue('Config');
+  LBadgeRole := dsbrMuted;
+  if SameText(LConfiguration, 'Release') then
+    LBadgeRole := dsbrSuccess
+  else if SameText(LConfiguration, 'Debug') then
+    LBadgeRole := dsbrWarning;
+  AddRow('Build configuration', LConfiguration, 'buildconf', pivkBadge,
+    LBadgeRole);
   LTarget := PropertyValue('Platform');
   LPlatformIcon := 'platforms';
   if SameText(Copy(LTarget, 1, 3), 'Win') then
@@ -233,7 +244,7 @@ begin
     LPlatformIcon := 'ios'
   else if SameText(Copy(LTarget, 1, 7), 'Android') then
     LPlatformIcon := 'android';
-  AddRow('Target platform', LTarget, LPlatformIcon);
+  AddRow('Target platform', LTarget, LPlatformIcon, pivkBadge, dsbrPrimary);
   LNode := LRoot.ChildNodes.FindNode('ProjectExtensions', cNamespace);
   if LNode <> nil then
     LNode := LNode.ChildNodes.FindNode('BorlandProject', cNamespace);
@@ -254,20 +265,14 @@ begin
           LTargets := LTargets + string(LPlatform.Attributes['value']);
         end;
       end;
-      AddRow('Available platforms', LTargets, 'platforms');
+      AddRow('Available platforms', LTargets, 'platforms', pivkBadgeList,
+        dsbrMuted);
     end;
   end;
 end;
 
 constructor TProjectInfoPanel.Create(const AFileName: string; ADpi: Integer;
   AResourceModule: HMODULE);
-type
-  TParametersForDpi = function(AAction, AParam: UINT; AData: Pointer;
-    AFlags, ADpi: UINT): BOOL; stdcall;
-var
-  LMetrics: TNonClientMetrics;
-  LParametersForDpi: TParametersForDpi;
-  LLoaded: Boolean;
 begin
   inherited Create;
   FDpi := Max(96, ADpi);
@@ -277,21 +282,10 @@ begin
   if FResourceModule = 0 then
     FResourceModule := HInstance;
   FTitleIcon := LoadPanelIcon('logo_ico');
-  ZeroMemory(@LMetrics, SizeOf(LMetrics));
-  LMetrics.cbSize := SizeOf(LMetrics);
-  LParametersForDpi := GetProcAddress(GetModuleHandle('user32.dll'),
-    'SystemParametersInfoForDpi');
-  LLoaded := False;
-  if Assigned(LParametersForDpi) then
-    LLoaded := LParametersForDpi(SPI_GETNONCLIENTMETRICS,
-      SizeOf(LMetrics), @LMetrics, 0, FDpi);
-  if not LLoaded then
-  begin
-    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, SizeOf(LMetrics),
-      @LMetrics, 0);
-    LMetrics.lfMenuFont.lfHeight := -MulDiv(12, FDpi, 96);
-  end;
-  FFont := CreateFontIndirect(LMetrics.lfMenuFont);
+  var LFontHeight := -MulDiv(TDevShellTheme.cFontSize, FDpi, 72);
+  FFont := CreateFont(LFontHeight, 0, 0, 0, FW_NORMAL, 0, 0, 0,
+    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+    CLEARTYPE_QUALITY, DEFAULT_PITCH, PChar(TDevShellTheme.cFontName));
   if FFont = 0 then
     RaiseLastOSError;
   ReadProject(AFileName);
@@ -328,7 +322,8 @@ begin
       RaiseLastOSError;
     try
       GetTextExtentPoint32(LDC, 'Hg', 2, LTextSize);
-      FRowHeight := Max(LTextSize.cy, FIconSize) + MulDiv(6, FDpi, 96);
+      FRowHeight := Max(Max(LTextSize.cy, FIconSize),
+        DevShellBadgeHeight(LDC, FDpi)) + MulDiv(6, FDpi, 96);
       FLabelWidth := 0;
       LValueWidth := 0;
       for LRow in FRows do
@@ -336,9 +331,14 @@ begin
         GetTextExtentPoint32(LDC, PChar(LRow.Caption),
           Length(LRow.Caption), LTextSize);
         FLabelWidth := Max(FLabelWidth, LTextSize.cx);
-        GetTextExtentPoint32(LDC, PChar(LRow.Value), Length(LRow.Value),
-          LTextSize);
-        LValueWidth := Max(LValueWidth, LTextSize.cx);
+        if LRow.ValueKind = pivkText then
+        begin
+          GetTextExtentPoint32(LDC, PChar(LRow.Value), Length(LRow.Value),
+            LTextSize);
+          LValueWidth := Max(LValueWidth, LTextSize.cx);
+        end
+        else
+          LValueWidth := Max(LValueWidth, BadgeValueWidth(LDC, LRow));
       end;
       FWidth := Min(MulDiv(720, FDpi, 96), FPadding * 4 + FIconColumn +
         FLabelWidth + LValueWidth);
@@ -353,17 +353,14 @@ begin
 end;
 
 procedure TProjectInfoPanel.Paint(ADC: HDC; const ABounds: TRect;
-  ABackground, AForeground: COLORREF);
+  const ATheme: TDevShellTheme);
 var
   LBrush: HBRUSH;
-  LHighContrast: Boolean;
   LRenderBatchActive: Boolean;
   LRow: TProjectInfoRow;
   LSaved: Integer;
   LSource: TProjectIconSource;
   LTextRect: TRect;
-  LThemeBackground: COLORREF;
-  LThemeForeground: COLORREF;
   LY: Integer;
 begin
   LSaved := SaveDC(ADC);
@@ -372,7 +369,7 @@ begin
   try
     IntersectClipRect(ADC, ABounds.Left, ABounds.Top, ABounds.Right,
       ABounds.Bottom);
-    LBrush := CreateSolidBrush(ABackground);
+    LBrush := CreateSolidBrush(ColorToRGB(ATheme.BackgroundColor));
     try
       FillRect(ADC, ABounds, LBrush);
     finally
@@ -380,8 +377,7 @@ begin
     end;
     SelectObject(ADC, FFont);
     SetBkMode(ADC, TRANSPARENT);
-    SetTextColor(ADC, AForeground);
-    MenuThemeColors(LThemeBackground, LThemeForeground, LHighContrast);
+    SetTextColor(ADC, ColorToRGB(ATheme.TextColor));
     LRenderBatchActive := BeginProjectIconRenderBatch;
     try
       LY := ABounds.Top + FPadding;
@@ -402,8 +398,7 @@ begin
           var LIconRect := Rect(ABounds.Left + FPadding, LIconTop,
             ABounds.Left + FPadding + FIconSize, LIconTop + FIconSize);
           TryDrawProjectIcon(ADC, LRow.IconKey, LIconRect,
-            TColor(ABackground), TColor(AForeground), LHighContrast, False,
-            FResourceModule, LSource);
+            ATheme, False, FResourceModule, LSource);
         end;
         LTextRect := Rect(ABounds.Left + FPadding + FIconColumn, LY,
           ABounds.Left + FPadding + FIconColumn + FLabelWidth,
@@ -412,8 +407,11 @@ begin
           DT_SINGLELINE or DT_VCENTER or DT_NOPREFIX or DT_END_ELLIPSIS);
         LTextRect := Rect(ABounds.Left + FPadding * 3 + FIconColumn +
           FLabelWidth, LY, ABounds.Right - FPadding, LY + FRowHeight);
-        DrawText(ADC, PChar(LRow.Value), -1, LTextRect,
-          DT_SINGLELINE or DT_VCENTER or DT_NOPREFIX or DT_END_ELLIPSIS);
+        if LRow.ValueKind = pivkText then
+          DrawText(ADC, PChar(LRow.Value), -1, LTextRect,
+            DT_SINGLELINE or DT_VCENTER or DT_NOPREFIX or DT_END_ELLIPSIS)
+        else
+          DrawBadgeValue(ADC, LTextRect, LRow, ATheme);
         Inc(LY, FRowHeight);
       end;
     finally

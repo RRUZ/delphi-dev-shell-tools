@@ -31,6 +31,7 @@ uses
   System.Generics.Collections,
   Vcl.Graphics,
   DelphiDevShellTools.Misc,
+  DelphiDevShellTools.UI,
   DelphiDevShellTools.ProjectInfoPanel,
   DelphiDevShellTools.DelphiVersions;
 
@@ -49,8 +50,7 @@ type
     FPAClientProfiles: TPAClientProfileList;
     FBitmapsDict: TObjectDictionary<string, TBitmap>;
     FMenuDpi, FMenuImageSize: Integer;
-    FMenuBackground, FMenuForeground: TColor;
-    FMenuHighContrast: Boolean;
+    FMenuTheme: TDevShellTheme;
     FImageCacheKey: string;
     FIconsExternals: TObjectDictionary<string, TIcon>;//TIcon is a instance
     FIconsDictExternal: TDictionary<Integer, TIcon>;//TIcon is only a reference
@@ -112,7 +112,6 @@ uses
   System.Win.ComObj,
   Vcl.GraphUtil,
   Vcl.Imaging.PngImage,
-  DelphiDevShellTools.UI,
   DelphiDevShellTools.Icons,
   DelphiDevShellTools.Tasks,
   DelphiDevShellTools.LazarusVersions,
@@ -171,11 +170,10 @@ begin
     try
       if TryGetProjectIcon(LDictName, LDescriptor) then
       begin
-        ResolveProjectIconPalette(LDescriptor.PaletteRole, FMenuBackground,
-          FMenuForeground, FMenuHighContrast, LPrimaryColor,
-          LSecondaryColor);
+        ResolveProjectIconPalette(LDescriptor.PaletteRole, FMenuTheme,
+          LPrimaryColor, LSecondaryColor);
         if TryRenderProjectIcon(LBitmap, LDictName, FMenuImageSize,
-          LPrimaryColor, LSecondaryColor, FMenuHighContrast, False,
+          LPrimaryColor, LSecondaryColor, FMenuTheme.HighContrast, False,
           HInstance, LSource) then
         begin
           FBitmapsDict.Add(LDictName, LBitmap);
@@ -222,7 +220,7 @@ var
   FileName: string;
 begin
   try
-    if TryGetBulletColor(ResourceName, BulletColor) then
+    if TryGetBulletColor(ResourceName, FMenuTheme, BulletColor) then
     begin
       if IsVistaOrLater then
       begin
@@ -230,12 +228,13 @@ begin
         begin
           FBitmapsDict.Add(ResourceName, TBitmap.Create);
           CreateBulletBitmap(FBitmapsDict.Items[ResourceName], BulletColor,
-            FMenuImageSize);
+            FMenuImageSize, FMenuTheme);
         end;
       end
       else if not FIconsExternals.ContainsKey(ResourceName) then
       begin
-        BulletHandle := CreateBulletIcon(BulletColor, FMenuImageSize);
+        BulletHandle := CreateBulletIcon(BulletColor, FMenuImageSize,
+          FMenuTheme);
         if BulletHandle <> 0 then
         begin
           FIconsExternals.Add(ResourceName, TIcon.Create);
@@ -280,29 +279,27 @@ end;
 procedure TShellMenu.InitResources;
 var
   LCurrentDelphiVersionData: TDelphiVersionData;
-  SourceBitmap: TBitmap;
-  NewDpi: Integer;
-  NewCacheKey: string;
-  EditorIconFile: string;
-  LBackground, LForeground: COLORREF;
-  LHighContrast: Boolean;
+  LSourceBitmap: TBitmap;
+  LDpi: Integer;
+  LCacheKey: string;
+  LEditorIconFile: string;
+  LTheme: TDevShellTheme;
 begin
   try
-    NewDpi := MenuDpi;
-    MenuThemeColors(LBackground, LForeground, LHighContrast);
-    NewCacheKey := Format('%s|%.8x|%.8x|%d',
-      [ImageCacheKey('shell-menu', MenuImageLogicalSize, NewDpi),
-       Cardinal(LBackground), Cardinal(LForeground), Ord(LHighContrast)]);
-    if (FBitmapsDict <> nil) and SameText(FImageCacheKey, NewCacheKey) then
+    LDpi := MenuDpi;
+    LTheme := TDevShellTheme.ActiveTheme;
+    LCacheKey := Format('%s|%d|%.8x|%.8x|%d',
+      [ImageCacheKey('shell-menu', MenuImageLogicalSize, LDpi),
+       Ord(LTheme.Kind), Cardinal(ColorToRGB(LTheme.BackgroundColor)),
+       Cardinal(ColorToRGB(LTheme.TextColor)), Ord(LTheme.HighContrast)]);
+    if (FBitmapsDict <> nil) and SameText(FImageCacheKey, LCacheKey) then
       Exit;
     if FBitmapsDict <> nil then
       FreeResources;
-    FMenuDpi := NewDpi;
+    FMenuDpi := LDpi;
     FMenuImageSize := ImagePixelsForDpi(MenuImageLogicalSize, FMenuDpi);
-    FMenuBackground := TColor(LBackground);
-    FMenuForeground := TColor(LForeground);
-    FMenuHighContrast := LHighContrast;
-    FImageCacheKey := NewCacheKey;
+    FMenuTheme := LTheme;
+    FImageCacheKey := LCacheKey;
     FSettings:=TSettings.Create;
     FInstalledDelphiVersions:=GetListInstalledDelphiVersions(FMenuImageSize);
     FPAClientProfiles:=TPAClientProfileList.Create(FInstalledDelphiVersions);
@@ -363,17 +360,18 @@ begin
         EndProjectIconRenderBatch;
     end;
 
-    SourceBitmap := TBitmap.Create;
+    LSourceBitmap := TBitmap.Create;
     try
-      SourceBitmap.LoadFromResourceName(HInstance, 'logo24');
+      LSourceBitmap.LoadFromResourceName(HInstance, 'logo24');
       FBitmapsDict.Add('logo24', TBitmap.Create);
-      if (SourceBitmap.Width = FMenuImageSize) and (SourceBitmap.Height = FMenuImageSize) then
-        FBitmapsDict.Items['logo24'].Assign(SourceBitmap)
+      if (LSourceBitmap.Width = FMenuImageSize) and
+         (LSourceBitmap.Height = FMenuImageSize) then
+        FBitmapsDict.Items['logo24'].Assign(LSourceBitmap)
       else
-        ScaleImage32(SourceBitmap, FBitmapsDict.Items['logo24'],
-          FMenuImageSize / SourceBitmap.Width);
+        ScaleImage32(LSourceBitmap, FBitmapsDict.Items['logo24'],
+          FMenuImageSize / LSourceBitmap.Width);
     finally
-      SourceBitmap.Free;
+      LSourceBitmap.Free;
     end;
     MakeBitmapMenuTransparent(FBitmapsDict.Items['logo24']);
 
@@ -387,16 +385,17 @@ begin
      try
        FBitmapsDict.Add('txt', TBitmap.Create);
        GetAssocAppByExt('foo.txt', FExeNameTxt, FFriendlyAppNameTxt);
-       EditorIconFile := ResolveAssociatedEditorIcon(FExeNameTxt);
-       if EditorIconFile <> '' then
+       LEditorIconFile := ResolveAssociatedEditorIcon(FExeNameTxt);
+       if LEditorIconFile <> '' then
        begin
          if IsVistaOrLater then
-           ExtractBitmapFile32(FBitmapsDict.Items['txt'], EditorIconFile,
+           ExtractBitmapFile32(FBitmapsDict.Items['txt'], LEditorIconFile,
              SHGFI_SMALLICON, FMenuImageSize)
          else
          begin
            FIconsExternals.Add('txt', TIcon.Create);
-           ExtractIconFile(FIconsExternals['txt'], EditorIconFile, SHGFI_SMALLICON);
+           ExtractIconFile(FIconsExternals['txt'], LEditorIconFile,
+             SHGFI_SMALLICON);
          end;
        end;
      except
@@ -629,12 +628,13 @@ begin
  Result := (MenuType and MFT_SEPARATOR) = MFT_SEPARATOR;
 end;
 
-function TShellMenu.MenuMessageHandler(uMsg: UINT; wParam: WPARAM; lParam: LPARAM; var lpResult: LRESULT): HResult;
+function TShellMenu.MenuMessageHandler(uMsg: UINT; wParam: WPARAM;
+  lParam: LPARAM; var lpResult: LRESULT): HResult;
 var
-  ItemId: UINT;
+  LItemId: UINT;
   LIcon: TIcon;
-  Draw: PDrawItemStruct;
-  Background, Foreground: COLORREF;
+  LDraw: PDrawItemStruct;
+  LTheme: TDevShellTheme;
 begin
   lpResult := 0;
   Result := E_NOTIMPL;
@@ -646,17 +646,17 @@ begin
       WM_MEASUREITEM:
         begin
           if PMeasureItemStruct(lParam)^.CtlType <> ODT_MENU then Exit;
-          ItemId := PMeasureItemStruct(lParam)^.itemID;
+          LItemId := PMeasureItemStruct(lParam)^.itemID;
         end;
       WM_DRAWITEM:
         begin
           if PDrawItemStruct(lParam)^.CtlType <> ODT_MENU then Exit;
-          ItemId := PDrawItemStruct(lParam)^.itemID;
+          LItemId := PDrawItemStruct(lParam)^.itemID;
         end;
     else
       Exit;
     end;
-    if (FInfoPanel <> nil) and (ItemId = FInfoPanelId) then
+    if (FInfoPanel <> nil) and (LItemId = FInfoPanelId) then
     begin
       if uMsg = WM_MEASUREITEM then
       begin
@@ -665,18 +665,18 @@ begin
       end
       else
       begin
-        Draw := PDrawItemStruct(lParam);
-        if Draw^.hDC = 0 then Exit(E_INVALIDARG);
-        MenuPanelColors(Draw^.hDC, Draw^.rcItem, Background, Foreground);
-        FInfoPanel.Paint(Draw^.hDC, Draw^.rcItem, Background, Foreground);
+        LDraw := PDrawItemStruct(lParam);
+        if LDraw^.hDC = 0 then Exit(E_INVALIDARG);
+        LTheme := ResolveMenuSurfaceTheme(LDraw^.hDC, LDraw^.rcItem);
+        FInfoPanel.Paint(LDraw^.hDC, LDraw^.rcItem, LTheme);
       end;
       lpResult := 1;
       Exit(S_OK);
     end;
     if IsVistaOrLater then Exit;
     if (FIconsDictResources = nil) or (FIconsDictExternal = nil) then Exit;
-    if not FIconsDictResources.ContainsKey(ItemId) and
-       not FIconsDictExternal.ContainsKey(ItemId) then Exit;
+    if not FIconsDictResources.ContainsKey(LItemId) and
+       not FIconsDictExternal.ContainsKey(LItemId) then Exit;
     if uMsg = WM_MEASUREITEM then
     begin
       Inc(PMeasureItemStruct(lParam)^.itemWidth, 2);
@@ -685,15 +685,16 @@ begin
     end
     else
     begin
-      Draw := PDrawItemStruct(lParam);
+      LDraw := PDrawItemStruct(lParam);
       LIcon := TIcon.Create;
       try
-        if FIconsDictResources.ContainsKey(ItemId) then
-          LIcon.LoadFromResourceName(HInstance, FIconsDictResources[ItemId])
+        if FIconsDictResources.ContainsKey(LItemId) then
+          LIcon.LoadFromResourceName(HInstance, FIconsDictResources[LItemId])
         else
-          LIcon.Assign(FIconsDictExternal[ItemId]);
-        DrawIconEx(Draw^.hDC, Draw^.rcItem.Left - FMenuImageSize,
-          Draw^.rcItem.Top + (Draw^.rcItem.Bottom - Draw^.rcItem.Top - FMenuImageSize) div 2,
+          LIcon.Assign(FIconsDictExternal[LItemId]);
+        DrawIconEx(LDraw^.hDC, LDraw^.rcItem.Left - FMenuImageSize,
+          LDraw^.rcItem.Top +
+          (LDraw^.rcItem.Bottom - LDraw^.rcItem.Top - FMenuImageSize) div 2,
           LIcon.Handle, FMenuImageSize, FMenuImageSize, 0, 0, DI_NORMAL);
       finally
         LIcon.Free;

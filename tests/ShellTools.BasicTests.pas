@@ -67,6 +67,7 @@ type
     procedure MenuImageDpiContract(Dpi, ExpectedPixels: Integer);
     [Test] procedure ImageCacheIdentityAndIcoSelectionFollowDpi;
     [Test] procedure BulletIconNamesAndColorsAreStable;
+    [Test] procedure BadgeLabelUsesCompactThemePalette;
     [TestCase('16 px', '16')]
     [TestCase('20 px', '20')]
     [TestCase('24 px', '24')]
@@ -478,6 +479,7 @@ begin
   Assert.IsTrue(Pos('if /i "%~1"=="Icons\images.RC"', LProjectText) > 0);
   Assert.IsTrue(Pos('bin64\llvm-rc.exe" /no-preprocess', LProjectText) > 0,
     'Modern high-resolution ICO frames require LLVM-RC');
+  Assert.IsFalse(Pos('AwesomeFont', LProjectText) > 0);
   LProjectText := TFile.ReadAllText(RepositoryFile('DelphiDevShellTools.dproj'));
   Assert.IsFalse(Pos('<RcCompile Include="Icons\images.RC"/>', LProjectText) > 0,
     'MSBuild must not send the high-resolution icon bundle to BRCC32');
@@ -492,6 +494,9 @@ begin
   LProjectText := TFile.ReadAllText(RepositoryFile('GUI\GUIDelphiDevShell.dproj'));
   Assert.AreEqual(1, CountText('<Icon_MainIcon>', LProjectText));
   Assert.IsTrue(Pos('<Icon_MainIcon>GUIDelphiDevShell_Icon.ico</Icon_MainIcon>', LProjectText) > 0);
+  Assert.IsFalse(Pos('AwesomeFont', LProjectText) > 0);
+  Assert.IsFalse(TFile.Exists(RepositoryFile('GUI\AwesomeFont.rc')));
+  Assert.IsFalse(TFile.Exists(RepositoryFile('GUI\fontawesome.ttf')));
 end;
 
 procedure TBasicTests.HighResolutionLogoFramesAreEmbedded;
@@ -581,8 +586,10 @@ procedure TBasicTests.BulletIconNamesAndColorsAreStable;
 var
   BulletColor: TColor;
   IconName: string;
+  LTheme: TDevShellTheme;
   Names: TStringList;
 begin
+  LTheme := TDevShellTheme.LightTheme;
   Names := TStringList.Create;
   try
     AddBuiltInBulletIconNames(Names);
@@ -590,12 +597,53 @@ begin
     AddBuiltInBulletIconNames(Names);
     Assert.AreEqual(Length(cBulletIconNames), Names.Count);
     for IconName in cBulletIconNames do
-      Assert.IsTrue(TryGetBulletColor(IconName, BulletColor), IconName);
-    Assert.IsTrue(TryGetBulletColor('C:\temp\BULLET_RED.ICO', BulletColor));
-    Assert.AreEqual(TColor(RGB(220, 64, 64)), BulletColor);
-    Assert.IsFalse(TryGetBulletColor('compile.ico', BulletColor));
+      Assert.IsTrue(TryGetBulletColor(IconName, LTheme, BulletColor),
+        IconName);
+    Assert.IsTrue(TryGetBulletColor('C:\temp\BULLET_RED.ICO', LTheme,
+      BulletColor));
+    Assert.AreEqual(TColor(LTheme.DangerColor), BulletColor);
+    Assert.IsTrue(TryGetBulletColor('bullet_green.ico', LTheme,
+      BulletColor));
+    Assert.AreEqual(TColor(LTheme.SuccessColor), BulletColor);
+    Assert.IsTrue(TryGetBulletColor('bullet_orange.ico', LTheme,
+      BulletColor));
+    Assert.AreEqual(TColor(LTheme.WarningColor), BulletColor);
+    Assert.IsTrue(TryGetBulletColor('bullet_pink.ico', LTheme,
+      BulletColor));
+    Assert.AreEqual(TColor(LTheme.DangerColor), BulletColor);
+    Assert.IsTrue(TryGetBulletColor('bullet_purple.ico', LTheme,
+      BulletColor));
+    Assert.AreEqual(TColor(LTheme.PrimaryColor), BulletColor);
+    Assert.IsTrue(TryGetBulletColor('bullet_white.ico', LTheme,
+      BulletColor));
+    Assert.AreEqual(TColor(LTheme.TextColor), BulletColor);
+    Assert.IsTrue(TryGetBulletColor('bullet_yellow.ico', LTheme,
+      BulletColor));
+    Assert.AreEqual(TColor(LTheme.WarningColor), BulletColor);
+    Assert.IsFalse(TryGetBulletColor('compile.ico', LTheme, BulletColor));
   finally
     Names.Free;
+  end;
+end;
+
+procedure TBasicTests.BadgeLabelUsesCompactThemePalette;
+begin
+  var LTheme := TDevShellTheme.LightTheme;
+  var LBadge := TDevShellBadgeLabel.Create(nil);
+  try
+    LBadge.Caption := 'Win64';
+    LBadge.ApplyTheme(LTheme);
+    Assert.AreEqual(TDevShellTheme.cBadgeFontSize, LBadge.Font.Size);
+    Assert.AreEqual(TDevShellTheme.cFontSize - 1, LBadge.Font.Size);
+    LBadge.BadgeRole := dsbrSuccess;
+    Assert.AreEqual<Cardinal>(ColorToRGB(LTheme.SuccessColor),
+      ColorToRGB(LBadge.Font.Color));
+    Assert.IsTrue(LBadge.NaturalWidth > 16);
+    LBadge.BadgeRole := dsbrWarning;
+    Assert.AreEqual<Cardinal>(ColorToRGB(LTheme.WarningColor),
+      ColorToRGB(LBadge.Font.Color));
+  finally
+    LBadge.Free;
   end;
 end;
 
@@ -610,11 +658,13 @@ var
   Icon: HICON;
   IconBitmap: Winapi.Windows.TBitmap;
   IconInfo: TIconInfo;
+  LTheme: TDevShellTheme;
 begin
-  Assert.IsTrue(TryGetBulletColor('bullet_green.ico', BulletColor));
+  LTheme := TDevShellTheme.LightTheme;
+  Assert.IsTrue(TryGetBulletColor('bullet_green.ico', LTheme, BulletColor));
   Bitmap := Vcl.Graphics.TBitmap.Create;
   try
-    CreateBulletBitmap(Bitmap, BulletColor, Size);
+    CreateBulletBitmap(Bitmap, BulletColor, Size, LTheme);
     Assert.AreEqual(Size, Bitmap.Width);
     Assert.AreEqual(Size, Bitmap.Height);
     Assert.AreNotEqual(Bitmap.Canvas.Pixels[0, 0],
@@ -628,7 +678,7 @@ begin
     Bitmap.Free;
   end;
 
-  Icon := CreateBulletIcon(BulletColor, Size);
+  Icon := CreateBulletIcon(BulletColor, Size, LTheme);
   Assert.IsTrue(Icon <> 0);
   try
     Assert.IsTrue(GetIconInfo(Icon, IconInfo));
@@ -718,21 +768,47 @@ procedure TBasicTests.PanelReadsUnmappedProjectMetadata;
 var
   Panel: TProjectInfoPanel;
   Row: TProjectInfoRow;
-  HasConfiguration, HasPlatforms: Boolean;
+  HasConfiguration, HasFramework, HasPlatforms, HasTarget: Boolean;
 begin
   Panel := TProjectInfoPanel.Create(WriteProject('999.0'), 96);
   try
     Assert.IsTrue(Panel.IsValid, 'Metadata must not depend on an IDE-version mapping');
     Assert.AreEqual('Not mapped (project format 999.0)', Panel.Rows[0].Value);
     HasConfiguration := False;
+    HasFramework := False;
     HasPlatforms := False;
+    HasTarget := False;
     for Row in Panel.Rows do
     begin
-      if Row.Caption = 'Build configuration' then HasConfiguration := Row.Value = 'Release';
-      if Row.Caption = 'Available platforms' then HasPlatforms := Row.Value = 'Win32, Win64';
+      if Row.Caption = 'Framework' then
+      begin
+        HasFramework := Row.Value = 'VCL';
+        Assert.AreEqual(Ord(pivkBadge), Ord(Row.ValueKind));
+        Assert.AreEqual(Ord(dsbrPrimary), Ord(Row.BadgeRole));
+      end;
+      if Row.Caption = 'Build configuration' then
+      begin
+        HasConfiguration := Row.Value = 'Release';
+        Assert.AreEqual(Ord(pivkBadge), Ord(Row.ValueKind));
+        Assert.AreEqual(Ord(dsbrSuccess), Ord(Row.BadgeRole));
+      end;
+      if Row.Caption = 'Target platform' then
+      begin
+        HasTarget := Row.Value = 'Win64';
+        Assert.AreEqual(Ord(pivkBadge), Ord(Row.ValueKind));
+        Assert.AreEqual(Ord(dsbrPrimary), Ord(Row.BadgeRole));
+      end;
+      if Row.Caption = 'Available platforms' then
+      begin
+        HasPlatforms := Row.Value = 'Win32, Win64';
+        Assert.AreEqual(Ord(pivkBadgeList), Ord(Row.ValueKind));
+        Assert.AreEqual(Ord(dsbrMuted), Ord(Row.BadgeRole));
+      end;
     end;
     Assert.IsTrue(HasConfiguration);
+    Assert.IsTrue(HasFramework);
     Assert.IsTrue(HasPlatforms);
+    Assert.IsTrue(HasTarget);
   finally
     Panel.Free;
   end;
@@ -744,13 +820,14 @@ var
   Bitmap: TBitmap;
   DC: HDC;
   FontBefore: HGDIOBJ;
-  Background, Foreground: COLORREF;
+  Background: COLORREF;
   Bounds: TRect;
   HasIconPixels: Boolean;
   Palette: Integer;
   Module: HMODULE;
   Row: TProjectInfoRow;
   LDescriptor: TProjectIconDescriptor;
+  LTheme: TDevShellTheme;
   IconCount, X, Y, Padding, IconSize: Integer;
 begin
   Module := LoadLibraryEx(PChar(TestDllPath), 0, LOAD_LIBRARY_AS_DATAFILE);
@@ -792,20 +869,19 @@ begin
       FontBefore := GetCurrentObject(DC, OBJ_FONT);
       case Palette of
         1:
-          begin
-            Background := RGB(43, 43, 43);
-            Foreground := RGB(245, 245, 245);
-          end;
+          LTheme := TDevShellTheme.DarkTheme;
         2:
           begin
-            Background := GetSysColor(COLOR_HIGHLIGHT);
-            Foreground := GetSysColor(COLOR_HIGHLIGHTTEXT);
+            LTheme := TDevShellTheme.LightTheme;
+            LTheme.HighContrast := True;
+            LTheme.BackgroundColor := TColor(GetSysColor(COLOR_HIGHLIGHT));
+            LTheme.TextColor := TColor(GetSysColor(COLOR_HIGHLIGHTTEXT));
           end;
       else
-        Background := RGB(250, 250, 250);
-        Foreground := RGB(20, 20, 20);
+        LTheme := TDevShellTheme.LightTheme;
       end;
-      Panel.Paint(DC, Bounds, Background, Foreground);
+      Background := ColorToRGB(LTheme.BackgroundColor);
+      Panel.Paint(DC, Bounds, LTheme);
       Assert.AreEqual<Cardinal>(RGB(12, 34, 56), GetTextColor(DC));
       Assert.AreEqual<Cardinal>(RGB(78, 90, 12), GetBkColor(DC));
       Assert.AreEqual(OPAQUE, GetBkMode(DC));

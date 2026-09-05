@@ -121,6 +121,8 @@ var
   LInit: IShellExtInit;
   LReservedCount: UINT;
   LChecksumSignatures: TDictionary<UInt64, string>;
+  LCopyLeafCount: Integer;
+  LCopyMenuCount: Integer;
 
   function MenuBitmapSignature(
     const ABitmap: Winapi.Windows.TBitmap): UInt64;
@@ -141,7 +143,7 @@ var
     end;
   end;
 
-  procedure CheckMenuIds(AHandle: HMENU);
+  procedure CheckMenuIds(AHandle: HMENU; AInsideCopyMenu: Boolean);
   var
     LCaption: array[0..255] of Char;
     LInfo: TMenuItemInfo;
@@ -165,8 +167,21 @@ var
           MF_BYPOSITION);
         Assert.IsFalse(SameText(string(LCaption), 'Check for updates'),
           'The retired updater must not appear in the shell menu');
+        if SameText(string(LCaption), 'Copy') then
+        begin
+          Assert.IsTrue(LInfo.hSubMenu <> 0,
+            'Copy must be a submenu');
+          Inc(LCopyMenuCount);
+        end
+        else if Pos('Copy ', string(LCaption)) = 1 then
+        begin
+          Assert.IsTrue(AInsideCopyMenu,
+            string(LCaption) + ' must be inside the Copy submenu');
+          Inc(LCopyLeafCount);
+        end;
         if IsVistaOrLater and
            ((Pos('Calculate ', string(LCaption)) = 1) or
+            SameText(string(LCaption), 'Copy') or
             (Pos('Copy ', string(LCaption)) = 1)) then
         begin
           Assert.IsTrue(LInfo.hbmpItem <> 0,
@@ -226,11 +241,13 @@ var
             [LInfo.wID, cFirstCommand,
              cFirstCommand + LReservedCount - 1]));
       if LInfo.hSubMenu <> 0 then
-        CheckMenuIds(LInfo.hSubMenu);
+        CheckMenuIds(LInfo.hSubMenu, SameText(string(LCaption), 'Copy'));
     end;
   end;
 
 begin
+  LCopyLeafCount := 0;
+  LCopyMenuCount := 0;
   LChecksumSignatures := TDictionary<UInt64, string>.Create;
   try
     LFileName := TPath.Combine(TPath.GetTempPath, 'ShellMenu-' +
@@ -266,13 +283,16 @@ begin
         LReservedCount := Cardinal(LResultCode) and $FFFF;
         Assert.IsTrue(GetMenuItemCount(LPopup) > 0,
           'Pascal selection must create a menu');
-        CheckMenuIds(LPopup);
+        CheckMenuIds(LPopup, False);
       finally
         DestroyMenu(LPopup);
       end;
     finally
       TFile.Delete(LFileName);
     end;
+    Assert.AreEqual(1, LCopyMenuCount, 'Exactly one Copy submenu is required');
+    Assert.AreEqual(6, LCopyLeafCount,
+      'Every clipboard command must be grouped in the Copy submenu');
     if IsVistaOrLater then
       Assert.AreEqual<NativeInt>(7, LChecksumSignatures.Count,
         'Every checksum algorithm must expose a composed icon');

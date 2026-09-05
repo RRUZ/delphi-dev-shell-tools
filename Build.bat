@@ -72,7 +72,7 @@ for %%F in (libeay32.dll ssleay32.dll) do if not exist "%DDS_OPENSSL%\%%F" (
     echo ERROR: Missing "%DDS_OPENSSL%\%%F". Restore it from Git.
     goto failed
 )
-for %%R in (VersionInfo.rc ShellExtensionManifest.rc Icons\images.RC GUI\GUIManifest.rc GUI\GUIResources.rc GUI\AwesomeFont.rc units\DelphiDevShellTools.Phosphor.Font.rc) do (
+for %%R in (VersionInfo.rc ShellExtensionManifest.rc Icons\images.RC GUI\GUIManifest.rc GUI\GUIResources.rc units\DelphiDevShellTools.Phosphor.Font.rc) do (
     call :compile_resource "%%R"
     if errorlevel 1 goto failed
 )

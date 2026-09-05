@@ -26,7 +26,8 @@ interface
 uses
   Winapi.Windows,
   System.SysUtils,
-  Vcl.Graphics;
+  Vcl.Graphics,
+  DelphiDevShellTools.UI;
 
 type
   TProjectIconId = (
@@ -92,7 +93,7 @@ type
 
 function GetProjectIconDescriptors: TArray<TProjectIconDescriptor>;
 procedure ResolveProjectIconPalette(ARole: TProjectIconPaletteRole;
-  ABackgroundColor, AForegroundColor: TColor; AHighContrast: Boolean;
+  const ATheme: TDevShellTheme;
   out APrimaryColor, ASecondaryColor: TColor);
 function BeginProjectIconRenderBatch: Boolean;
 procedure EndProjectIconRenderBatch;
@@ -107,12 +108,12 @@ function TryRenderProjectIcon(ABitmap: TBitmap; const AKey: string;
   out ASource: TProjectIconSource): Boolean;
 function TryRenderProjectIconForSurface(ABitmap: TBitmap;
   const AKey: string; APixelSize: Integer;
-  ABackgroundColor, AForegroundColor: TColor; AHighContrast,
-  ADisabled: Boolean; AResourceModule: HMODULE;
+  const ATheme: TDevShellTheme; ADisabled: Boolean;
+  AResourceModule: HMODULE;
   out ASource: TProjectIconSource): Boolean;
 function TryDrawProjectIcon(ADC: HDC; const AKey: string;
-  const ADestRect: TRect; ABackgroundColor, AForegroundColor: TColor;
-  AHighContrast, ADisabled: Boolean; AResourceModule: HMODULE;
+  const ADestRect: TRect; const ATheme: TDevShellTheme;
+  ADisabled: Boolean; AResourceModule: HMODULE;
   out ASource: TProjectIconSource): Boolean;
 function ValidateProjectIconCatalog(out AError: string): Boolean;
 
@@ -377,46 +378,27 @@ begin
 end;
 
 procedure ResolveProjectIconPalette(ARole: TProjectIconPaletteRole;
-  ABackgroundColor, AForegroundColor: TColor; AHighContrast: Boolean;
+  const ATheme: TDevShellTheme;
   out APrimaryColor, ASecondaryColor: TColor);
-const
-  cDarkBackgroundThreshold = 384;
 begin
-  if AHighContrast then
+  if ATheme.HighContrast then
   begin
-    APrimaryColor := AForegroundColor;
-    ASecondaryColor := AForegroundColor;
+    APrimaryColor := ATheme.TextColor;
+    ASecondaryColor := ATheme.TextColor;
     Exit;
   end;
-  var LBackground := ColorToRGB(ABackgroundColor);
-  var LDark := (GetRValue(LBackground) + GetGValue(LBackground) +
-    GetBValue(LBackground)) < cDarkBackgroundThreshold;
-  if LDark then
-    case ARole of
-      pipNeutral: APrimaryColor := RGB(174, 184, 194);
-      pipCopy: APrimaryColor := RGB(85, 178, 239);
-      pipLink: APrimaryColor := RGB(65, 192, 181);
-      pipEdit: APrimaryColor := RGB(116, 196, 111);
-      pipPlatform: APrimaryColor := RGB(168, 181, 191);
-      pipFramework: APrimaryColor := RGB(185, 135, 244);
-      pipBuild: APrimaryColor := RGB(245, 136, 79);
-      pipChecksum: APrimaryColor := RGB(194, 139, 242);
-      pipWarning: APrimaryColor := RGB(255, 180, 74);
-      pipPrivileged: APrimaryColor := RGB(232, 179, 53);
-    end
-  else
-    case ARole of
-      pipNeutral: APrimaryColor := RGB(73, 84, 96);
-      pipCopy: APrimaryColor := RGB(0, 105, 180);
-      pipLink: APrimaryColor := RGB(0, 128, 120);
-      pipEdit: APrimaryColor := RGB(31, 124, 55);
-      pipPlatform: APrimaryColor := RGB(69, 87, 102);
-      pipFramework: APrimaryColor := RGB(118, 64, 174);
-      pipBuild: APrimaryColor := RGB(190, 72, 25);
-      pipChecksum: APrimaryColor := RGB(120, 62, 165);
-      pipWarning: APrimaryColor := RGB(184, 91, 0);
-      pipPrivileged: APrimaryColor := RGB(145, 94, 0);
-    end;
+  case ARole of
+    pipNeutral,
+    pipPlatform: APrimaryColor := ATheme.MutedColor;
+    pipCopy: APrimaryColor := ATheme.PrimaryColor;
+    pipLink: APrimaryColor := ATheme.SecondaryColor;
+    pipEdit: APrimaryColor := ATheme.SuccessColor;
+    pipFramework,
+    pipChecksum: APrimaryColor := ATheme.PrimaryColor;
+    pipBuild,
+    pipWarning,
+    pipPrivileged: APrimaryColor := ATheme.WarningColor;
+  end;
   ASecondaryColor := APrimaryColor;
 end;
 
@@ -564,8 +546,8 @@ end;
 
 function TryRenderProjectIconForSurface(ABitmap: TBitmap;
   const AKey: string; APixelSize: Integer;
-  ABackgroundColor, AForegroundColor: TColor; AHighContrast,
-  ADisabled: Boolean; AResourceModule: HMODULE;
+  const ATheme: TDevShellTheme; ADisabled: Boolean;
+  AResourceModule: HMODULE;
   out ASource: TProjectIconSource): Boolean;
 var
   LDescriptor: TProjectIconDescriptor;
@@ -575,16 +557,16 @@ begin
   ASource := pisNone;
   if not TryGetProjectIcon(AKey, LDescriptor) then
     Exit(False);
-  ResolveProjectIconPalette(LDescriptor.PaletteRole, ABackgroundColor,
-    AForegroundColor, AHighContrast, LPrimaryColor, LSecondaryColor);
+  ResolveProjectIconPalette(LDescriptor.PaletteRole, ATheme, LPrimaryColor,
+    LSecondaryColor);
   Result := TryRenderProjectIcon(ABitmap, LDescriptor.Key, APixelSize,
-    LPrimaryColor, LSecondaryColor, AHighContrast, ADisabled,
+    LPrimaryColor, LSecondaryColor, ATheme.HighContrast, ADisabled,
     AResourceModule, ASource);
 end;
 
 function TryDrawProjectIcon(ADC: HDC; const AKey: string;
-  const ADestRect: TRect; ABackgroundColor, AForegroundColor: TColor;
-  AHighContrast, ADisabled: Boolean; AResourceModule: HMODULE;
+  const ADestRect: TRect; const ATheme: TDevShellTheme;
+  ADisabled: Boolean; AResourceModule: HMODULE;
   out ASource: TProjectIconSource): Boolean;
 var
   LBlend: TBlendFunction;
@@ -596,8 +578,7 @@ begin
   var LBitmap := TBitmap.Create;
   try
     Result := TryRenderProjectIconForSurface(LBitmap, AKey,
-      ADestRect.Width, ABackgroundColor, AForegroundColor, AHighContrast,
-      ADisabled, AResourceModule, ASource);
+      ADestRect.Width, ATheme, ADisabled, AResourceModule, ASource);
     if not Result then
       Exit;
     ZeroMemory(@LBlend, SizeOf(LBlend));

@@ -224,60 +224,89 @@ begin
       end;
 
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy File Path to clipboard'), 'copy_path');
-     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, 'copy_path_ico');
+     var LCopySubMenuIndex := 0;
+     var LCopySubMenu := CreatePopupMenu;
+     if LCopySubMenu = 0 then
+       RaiseLastOSError;
+     var LCopyCaption := 'Copy';
+     var LCopyMenuId := uIDNewItem + 6;
+     var LCopyMenuItem := Default(TMenuItemInfo);
+     LCopyMenuItem.cbSize := SizeOf(TMenuItemInfo);
+     LCopyMenuItem.fMask := MIIM_SUBMENU or MIIM_STRING or MIIM_ID or
+       MIIM_BITMAP;
+     LCopyMenuItem.fType := MFT_STRING;
+     LCopyMenuItem.wID := LCopyMenuId;
+     LCopyMenuItem.hSubMenu := LCopySubMenu;
+     LCopyMenuItem.dwTypeData := PWideChar(LCopyCaption);
+     LCopyMenuItem.cch := Length(LCopyCaption);
+     LCopyMenuItem.hbmpItem := IfThen(IsVistaOrLater,
+       Context.BitmapsDict['copy'].Handle, HBMMENU_CALLBACK);
+     LCopyMenuItem.hbmpChecked := Context.BitmapsDict['copy'].Handle;
+     LCopyMenuItem.hbmpUnchecked := Context.BitmapsDict['copy'].Handle;
+     if not InsertMenuItem(LSubMenu, LSubMenuIndex, True, LCopyMenuItem) then
+     begin
+       DestroyMenu(LCopySubMenu);
+       RaiseLastOSError;
+     end;
+     if not IsVistaOrLater then
+       Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex,
+         LCopyMenuId, 'copy_ico');
+     Inc(LSubMenuIndex);
+
+     Context.InsertMenuDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, PWideChar('Copy File Path to clipboard'), 'copy_path');
+     Context.RegisterMenuItemBitmapDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, 'copy_path_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.CopyPathClipboard;
      LMethodInfo.Value1:=Context.FileName;
      Context.MethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(LSubMenuIndex);
+     Inc(LCopySubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy full FileName (Path + FileName) to clipboard'),'copy');
-     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, 'copy_ico');
+     Context.InsertMenuDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, PWideChar('Copy full FileName (Path + FileName) to clipboard'),'copy');
+     Context.RegisterMenuItemBitmapDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, 'copy_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.CopyFileNameClipboard;
      LMethodInfo.Value1:=Context.FileName;
      Context.MethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(LSubMenuIndex);
+     Inc(LCopySubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy FileName using URL format (file://...) to clipboard'),'copy_url');
-     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, 'copy_url_ico');
+     Context.InsertMenuDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, PWideChar('Copy FileName using URL format (file://...) to clipboard'),'copy_url');
+     Context.RegisterMenuItemBitmapDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, 'copy_url_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.CopyFileNameUrlClipboard;
      LMethodInfo.Value1:=Context.FileName;
      Context.MethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(LSubMenuIndex);
+     Inc(LCopySubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy FileName using UNC format (\\server-name\Shared...) to clipboard'),'copy_unc');
-     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, 'copy_unc_ico');
+     Context.InsertMenuDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, PWideChar('Copy FileName using UNC format (\\server-name\Shared...) to clipboard'),'copy_unc');
+     Context.RegisterMenuItemBitmapDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, 'copy_unc_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.CopyFileNameUNCClipboard;
      LMethodInfo.Value1:=Context.FileName;
      Context.MethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(LSubMenuIndex);
+     Inc(LCopySubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy FileName using Unix format (Drive:/Path/Filaname) to clipboard'),'copy_unc');
-     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, 'copy_unc_ico');
+     Context.InsertMenuDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, PWideChar('Copy FileName using Unix format (Drive:/Path/Filaname) to clipboard'),'copy_unc');
+     Context.RegisterMenuItemBitmapDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, 'copy_unc_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.CopyFileNameUnixClipboard;
      LMethodInfo.Value1:=Context.FileName;
      Context.MethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(LSubMenuIndex);
+     Inc(LCopySubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Copy File content to the clipboard'), 'copy_content');
-     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, 'copy_content_ico');
+     Context.InsertMenuDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, PWideChar('Copy File content to the clipboard'), 'copy_content');
+     Context.RegisterMenuItemBitmapDevShell(LCopySubMenu, LCopySubMenuIndex, uIDNewItem, 'copy_content_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.CopyFileContentClipboard;
      LMethodInfo.Value1:=Context.FileName;
      Context.MethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
      Inc(uIDNewItem);
-     Inc(LSubMenuIndex);
 
+     Inc(uIDNewItem);
 
      Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Open In Notepad'), 'notepad');
      Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, 'notepad_ico');

@@ -52,8 +52,8 @@ type
     [Test] procedure CompositeIconAddsItsSemanticBadge;
     [Test] procedure AlgorithmAndCopyVariantsRenderDistinctCompositions;
     [Test] procedure DirectDrawingPreservesHostDCStateAndClip;
-    [Test] procedure HighContrastUsesTheRegularGlyph;
-    [Test] procedure PaletteRolesAdaptToMenuTheme;
+    [Test] procedure HighContrastUsesTheBoldGlyph;
+    [Test] procedure PaletteRolesUseTheActiveShellTheme;
     [Test] procedure RepeatedRenderingReleasesGdiObjects;
   end;
 
@@ -65,6 +65,7 @@ uses
   System.SysUtils,
   System.Types,
   Vcl.Graphics,
+  DelphiDevShellTools.UI,
   DelphiDevShellTools.Icons,
   DelphiDevShellTools.Phosphor.Font;
 
@@ -428,7 +429,7 @@ begin
     LBitmap.Free;
   end;
 end;
-procedure TIconTests.HighContrastUsesTheRegularGlyph;
+procedure TIconTests.HighContrastUsesTheBoldGlyph;
 var
   LSource: TProjectIconSource;
 begin
@@ -438,36 +439,71 @@ begin
       clWindowText, clHighlight, True, False, HInstance, LSource));
     Assert.AreEqual(Ord(pisPhosphor), Ord(LSource));
     Assert.IsTrue(VisiblePixelCount(LActual) > 0,
-      'High-contrast regular glyph must contain visible pixels');
+      'High-contrast Bold glyph must contain visible pixels');
   finally
     LActual.Free;
   end;
 end;
 
-procedure TIconTests.PaletteRolesAdaptToMenuTheme;
+procedure TIconTests.PaletteRolesUseTheActiveShellTheme;
 var
+  LActiveTheme: TDevShellTheme;
+  LAliasPrimary, LAliasSecondary: TColor;
+  LDarkTheme: TDevShellTheme;
   LDarkPrimary, LDarkSecondary: TColor;
+  LHighContrastTheme: TDevShellTheme;
   LHighContrastPrimary, LHighContrastSecondary: TColor;
+  LLightTheme: TDevShellTheme;
   LLightPrimary, LLightSecondary: TColor;
 begin
-  ResolveProjectIconPalette(pipCopy, clWhite, clBlack, False,
-    LLightPrimary, LLightSecondary);
-  ResolveProjectIconPalette(pipCopy, RGB(43, 43, 43), clWhite, False,
-    LDarkPrimary, LDarkSecondary);
-  ResolveProjectIconPalette(pipWarning, clWhite, clBlack, True,
+  LLightTheme := TDevShellTheme.LightTheme;
+  LDarkTheme := TDevShellTheme.DarkTheme;
+  LHighContrastTheme := LLightTheme;
+  LHighContrastTheme.HighContrast := True;
+  LHighContrastTheme.TextColor := clWebBlack;
+  ResolveProjectIconPalette(pipCopy, LLightTheme, LLightPrimary,
+    LLightSecondary);
+  ResolveProjectIconPalette(pipCopy, LDarkTheme, LDarkPrimary,
+    LDarkSecondary);
+  ResolveProjectIconPalette(pipWarning, LHighContrastTheme,
     LHighContrastPrimary, LHighContrastSecondary);
-  Assert.AreEqual<Cardinal>(RGB(0, 105, 180),
+  Assert.AreEqual<Cardinal>(ColorToRGB(clWebSteelBlue),
     ColorToRGB(LLightPrimary));
-  Assert.AreEqual<Cardinal>(RGB(85, 178, 239),
+  Assert.AreEqual<Cardinal>(ColorToRGB(clWebCornflowerBlue),
     ColorToRGB(LDarkPrimary));
   Assert.AreEqual<Cardinal>(ColorToRGB(LLightPrimary),
     ColorToRGB(LLightSecondary));
   Assert.AreEqual<Cardinal>(ColorToRGB(LDarkPrimary),
     ColorToRGB(LDarkSecondary));
-  Assert.AreEqual<Cardinal>(ColorToRGB(clBlack),
+  Assert.AreEqual<Cardinal>(ColorToRGB(clWebBlack),
     ColorToRGB(LHighContrastPrimary));
   Assert.AreEqual<Cardinal>(ColorToRGB(LHighContrastPrimary),
     ColorToRGB(LHighContrastSecondary));
+  ResolveProjectIconPalette(pipPlatform, LLightTheme, LAliasPrimary,
+    LAliasSecondary);
+  Assert.AreEqual<Cardinal>(ColorToRGB(LLightTheme.MutedColor),
+    ColorToRGB(LAliasPrimary));
+  ResolveProjectIconPalette(pipFramework, LLightTheme, LAliasPrimary,
+    LAliasSecondary);
+  Assert.AreEqual<Cardinal>(ColorToRGB(LLightTheme.PrimaryColor),
+    ColorToRGB(LAliasPrimary));
+  ResolveProjectIconPalette(pipChecksum, LLightTheme, LAliasPrimary,
+    LAliasSecondary);
+  Assert.AreEqual<Cardinal>(ColorToRGB(LLightTheme.PrimaryColor),
+    ColorToRGB(LAliasPrimary));
+  ResolveProjectIconPalette(pipPrivileged, LLightTheme, LAliasPrimary,
+    LAliasSecondary);
+  Assert.AreEqual<Cardinal>(ColorToRGB(LLightTheme.WarningColor),
+    ColorToRGB(LAliasPrimary));
+  Assert.AreEqual<Cardinal>(ColorToRGB(LAliasPrimary),
+    ColorToRGB(LAliasSecondary));
+  Assert.AreEqual('Segoe UI', TDevShellTheme.cFontName);
+  Assert.AreEqual(9, TDevShellTheme.cFontSize);
+  LActiveTheme := TDevShellTheme.ActiveTheme;
+  if IsWindowsLightTheme then
+    Assert.AreEqual(Ord(dstLight), Ord(LActiveTheme.Kind))
+  else
+    Assert.AreEqual(Ord(dstDark), Ord(LActiveTheme.Kind));
 end;
 
 procedure TIconTests.RepeatedRenderingReleasesGdiObjects;
