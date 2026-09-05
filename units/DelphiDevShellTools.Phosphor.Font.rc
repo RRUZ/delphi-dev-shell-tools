@@ -1,0 +1,6 @@
+PHOSPHOR_THIN RCDATA "..\fonts\thin\Phosphor-Thin.ttf"
+PHOSPHOR_LIGHT RCDATA "..\fonts\light\Phosphor-Light.ttf"
+PHOSPHOR_REGULAR RCDATA "..\fonts\regular\Phosphor.ttf"
+PHOSPHOR_BOLD RCDATA "..\fonts\bold\Phosphor-Bold.ttf"
+PHOSPHOR_FILL RCDATA "..\fonts\fill\Phosphor-Fill.ttf"
+PHOSPHOR_DUOTONE RCDATA "..\fonts\duotone\Phosphor-Duotone.ttf"

@@ -100,8 +100,14 @@ type
     procedure ClientDataSet1AfterScroll(DataSet: TDataSet);
   private
     FSettings: TSettings;
+    procedure ApplyProjectIcons;
+    procedure ApplyProjectIcon(AImage: TImage; const AKey: string;
+      ALogicalSize: Integer; ABackgroundColor, AForegroundColor: TColor;
+      AHighContrast: Boolean);
     procedure NewCommand(Data: TDataSet);
     procedure LoadMacros;
+  protected
+    procedure ChangeScale(AM, AD: Integer; AIsDpiChange: Boolean); override;
   public
     property Settings: TSettings Read FSettings Write FSettings;
     procedure LoadSettings;
@@ -114,15 +120,78 @@ implementation
 
 Uses
   DelphiDevShellTools.SettingsStore,
+  DelphiDevShellTools.Icons,
   DelphiDevShellTools.GUI.MiscGUI,
   StrUtils,
   System.Types,
   ComObj,
   IOUtils,
   MidasLib,
-  System.UITypes;
+  System.UITypes,
+  Vcl.Themes;
 
 {$R *.dfm}
+
+procedure TFrmSettings.ApplyProjectIcon(AImage: TImage; const AKey: string;
+  ALogicalSize: Integer; ABackgroundColor, AForegroundColor: TColor;
+  AHighContrast: Boolean);
+var
+  LSource: TProjectIconSource;
+begin
+  var LTargetSize := ImagePixelsForDpi(ALogicalSize, CurrentPPI);
+  var LBitmap := TBitmap.Create;
+  try
+    if not TryRenderProjectIconForSurface(LBitmap, AKey, LTargetSize,
+      ABackgroundColor, AForegroundColor, AHighContrast, False, HInstance,
+      LSource) then
+      Exit;
+    AImage.AutoSize := False;
+    AImage.Stretch := True;
+    AImage.Proportional := True;
+    AImage.Center := True;
+    AImage.Picture.Assign(LBitmap);
+  finally
+    LBitmap.Free;
+  end;
+end;
+
+procedure TFrmSettings.ApplyProjectIcons;
+var
+  LContrast: THighContrast;
+begin
+  var LBackgroundColor := StyleServices.GetSystemColor(clBtnFace);
+  var LForegroundColor := StyleServices.GetSystemColor(clWindowText);
+  ZeroMemory(@LContrast, SizeOf(LContrast));
+  LContrast.cbSize := SizeOf(LContrast);
+  var LHighContrast := SystemParametersInfo(SPI_GETHIGHCONTRAST,
+    SizeOf(LContrast), @LContrast, 0) and
+    ((LContrast.dwFlags and HCF_HIGHCONTRASTON) <> 0);
+  var LRenderBatchActive := BeginProjectIconRenderBatch;
+  try
+    ApplyProjectIcon(Image1, 'common', 32, LBackgroundColor,
+      LForegroundColor, LHighContrast);
+    ApplyProjectIcon(Image2, 'lazarusmenu', 32, LBackgroundColor,
+      LForegroundColor, LHighContrast);
+    ApplyProjectIcon(Image3, 'delphi', 32, LBackgroundColor,
+      LForegroundColor, LHighContrast);
+    ApplyProjectIcon(Image5, 'shield', 16, LBackgroundColor,
+      LForegroundColor, LHighContrast);
+  finally
+    if LRenderBatchActive then
+      EndProjectIconRenderBatch;
+  end;
+end;
+
+procedure TFrmSettings.ChangeScale(AM, AD: Integer; AIsDpiChange: Boolean);
+begin
+  inherited ChangeScale(AM, AD, AIsDpiChange);
+  if not (csLoading in ComponentState) then
+  begin
+    DBComboBoxImage.ItemHeight := ImagePixelsForDpi(MenuImageLogicalSize,
+      CurrentPPI) + 6;
+    ApplyProjectIcons;
+  end;
+end;
 
 procedure TFrmSettings.BtnInsertMacroClick(Sender: TObject);
 var
@@ -250,6 +319,7 @@ var
  ReviewLabel: TLabel;
 begin
   DBComboBoxImage.ItemHeight := ImagePixelsForDpi(MenuImageLogicalSize, CurrentPPI) + 6;
+  ApplyProjectIcons;
   DBComboBoxGroup.DataField:='Group';
   DBEditName.DataField:='Name';
   DBEditMenu.DataField:='Menu';

@@ -95,8 +95,9 @@ begin
 //
 
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate CRC32'), nil);
-     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate CRC32'), 'checksum_crc32');
+     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex,
+       uIDNewItem, 'checksum_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.OpenGUICheckSum;
      LMethodInfo.Value1:='CRC32';
@@ -105,8 +106,9 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate MD4'), nil);
-     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate MD4'), 'checksum_md4');
+     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex,
+       uIDNewItem, 'checksum_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.OpenGUICheckSum;
      LMethodInfo.Value1:='MD4';
@@ -115,8 +117,9 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate MD5'), nil);
-     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate MD5'), 'checksum_md5');
+     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex,
+       uIDNewItem, 'checksum_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.OpenGUICheckSum;
      LMethodInfo.Value1:='MD5';
@@ -125,8 +128,9 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA1'), nil);
-     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA1'), 'checksum_sha1');
+     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex,
+       uIDNewItem, 'checksum_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.OpenGUICheckSum;
      LMethodInfo.Value1:='SHA1';
@@ -135,8 +139,9 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA-256'), nil);
-     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA-256'), 'checksum_sha256');
+     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex,
+       uIDNewItem, 'checksum_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.OpenGUICheckSum;
      LMethodInfo.Value1:='SHA-256';
@@ -145,8 +150,9 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA-384'), nil);
-     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA-384'), 'checksum_sha384');
+     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex,
+       uIDNewItem, 'checksum_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.OpenGUICheckSum;
      LMethodInfo.Value1:='SHA-384';
@@ -155,8 +161,9 @@ begin
      Inc(uIDNewItem);
      Inc(LSubMenuIndex);
 
-     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA-512'), nil);
-     //SetMenuItemBitmaps(LSubMenu, LSubMenuIndex, MF_BYPOSITION, BitmapsDict.Items['copy'].Handle, BitmapsDict.Items['copy'].Handle);
+     Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar('Calculate SHA-512'), 'checksum_sha512');
+     Context.RegisterMenuItemBitmapDevShell(LSubMenu, LSubMenuIndex,
+       uIDNewItem, 'checksum_ico');
      LMethodInfo:=TMethodInfo.Create;
      LMethodInfo.Method:=TDelphiDevShellTasks.OpenGUICheckSum;
      LMethodInfo.Value1:='SHA-512';

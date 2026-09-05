@@ -49,6 +49,8 @@ type
     FPAClientProfiles: TPAClientProfileList;
     FBitmapsDict: TObjectDictionary<string, TBitmap>;
     FMenuDpi, FMenuImageSize: Integer;
+    FMenuBackground, FMenuForeground: TColor;
+    FMenuHighContrast: Boolean;
     FImageCacheKey: string;
     FIconsExternals: TObjectDictionary<string, TIcon>;//TIcon is a instance
     FIconsDictExternal: TDictionary<Integer, TIcon>;//TIcon is only a reference
@@ -61,7 +63,8 @@ type
 
     procedure InitResources;
     procedure FreeResources;
-    procedure RegisterBitmap(const ResourceName: string;const DictName:string='');
+    procedure RegisterBitmap(const ResourceName: string;
+      const DictName: string = '');
     function  IsSeparator(MenuType: UINT): Boolean;
     function MenuMessageHandler(uMsg: UINT; wParam: WPARAM; lParam: LPARAM; var lpResult: LRESULT): HResult;
   public
@@ -110,6 +113,7 @@ uses
   Vcl.GraphUtil,
   Vcl.Imaging.PngImage,
   DelphiDevShellTools.UI,
+  DelphiDevShellTools.Icons,
   DelphiDevShellTools.Tasks,
   DelphiDevShellTools.LazarusVersions,
   DelphiDevShellTools.ToolMenus,
@@ -152,33 +156,60 @@ begin
   Result := E_INVALIDARG;
 end;
 
-procedure TShellMenu.RegisterBitmap(const ResourceName: string;const DictName:string='');
+procedure TShellMenu.RegisterBitmap(const ResourceName: string;
+  const DictName: string = '');
 var
-  LDictName: string;
-  SourceBitmap: TBitmap;
-  LPng: TPngImage;
+  LDescriptor: TProjectIconDescriptor;
+  LPrimaryColor, LSecondaryColor: TColor;
+  LSource: TProjectIconSource;
 begin
   try
-    LDictName := ResourceName;
-    if DictName <> '' then LDictName := DictName;
-    SourceBitmap := TBitmap.Create;
-    LPng := TPngImage.Create;
+    var LDictName := ResourceName;
+    if DictName <> '' then
+      LDictName := DictName;
+    var LBitmap := TBitmap.Create;
     try
-      LPng.LoadFromResourceName(HInstance, ResourceName);
-      SourceBitmap.Assign(LPng);
-      FBitmapsDict.Add(LDictName, TBitmap.Create);
-      if (SourceBitmap.Width = FMenuImageSize) and (SourceBitmap.Height = FMenuImageSize) then
-        FBitmapsDict.Items[LDictName].Assign(SourceBitmap)
-      else
-        ScaleImage32(SourceBitmap, FBitmapsDict.Items[LDictName],
-          FMenuImageSize / SourceBitmap.Width);
+      if TryGetProjectIcon(LDictName, LDescriptor) then
+      begin
+        ResolveProjectIconPalette(LDescriptor.PaletteRole, FMenuBackground,
+          FMenuForeground, FMenuHighContrast, LPrimaryColor,
+          LSecondaryColor);
+        if TryRenderProjectIcon(LBitmap, LDictName, FMenuImageSize,
+          LPrimaryColor, LSecondaryColor, FMenuHighContrast, False,
+          HInstance, LSource) then
+        begin
+          FBitmapsDict.Add(LDictName, LBitmap);
+          LBitmap := nil;
+          Exit;
+        end;
+      end;
+      var LPng := TPngImage.Create;
+      try
+        LPng.LoadFromResourceName(HInstance, ResourceName);
+        var LSourceBitmap := TBitmap.Create;
+        try
+          LSourceBitmap.Assign(LPng);
+          if (LSourceBitmap.Width = FMenuImageSize) and
+             (LSourceBitmap.Height = FMenuImageSize) then
+            LBitmap.Assign(LSourceBitmap)
+          else
+            ScaleImage32(LSourceBitmap, LBitmap,
+              FMenuImageSize / LSourceBitmap.Width);
+        finally
+          LSourceBitmap.Free;
+        end;
+      finally
+        LPng.Free;
+      end;
+      FBitmapsDict.Add(LDictName, LBitmap);
+      LBitmap := nil;
     finally
-      LPng.Free;
-      SourceBitmap.Free;
+      LBitmap.Free;
     end;
   except
     on E: Exception do
-      log(Format('RegisterBitmap Message %s Trace %s', [E.Message, E.StackTrace]));
+      log(Format('RegisterBitmap Message %s Trace %s',
+        [E.Message, E.StackTrace]));
   end;
 end;
 
@@ -253,14 +284,24 @@ var
   NewDpi: Integer;
   NewCacheKey: string;
   EditorIconFile: string;
+  LBackground, LForeground: COLORREF;
+  LHighContrast: Boolean;
 begin
   try
     NewDpi := MenuDpi;
-    NewCacheKey := ImageCacheKey('shell-menu', MenuImageLogicalSize, NewDpi);
-    if (FBitmapsDict <> nil) and SameText(FImageCacheKey, NewCacheKey) then Exit;
-    if FBitmapsDict <> nil then FreeResources;
+    MenuThemeColors(LBackground, LForeground, LHighContrast);
+    NewCacheKey := Format('%s|%.8x|%.8x|%d',
+      [ImageCacheKey('shell-menu', MenuImageLogicalSize, NewDpi),
+       Cardinal(LBackground), Cardinal(LForeground), Ord(LHighContrast)]);
+    if (FBitmapsDict <> nil) and SameText(FImageCacheKey, NewCacheKey) then
+      Exit;
+    if FBitmapsDict <> nil then
+      FreeResources;
     FMenuDpi := NewDpi;
     FMenuImageSize := ImagePixelsForDpi(MenuImageLogicalSize, FMenuDpi);
+    FMenuBackground := TColor(LBackground);
+    FMenuForeground := TColor(LForeground);
+    FMenuHighContrast := LHighContrast;
     FImageCacheKey := NewCacheKey;
     FSettings:=TSettings.Create;
     FInstalledDelphiVersions:=GetListInstalledDelphiVersions(FMenuImageSize);
@@ -270,44 +311,57 @@ begin
     FIconsDictExternal  :=TDictionary<Integer, TIcon>.Create;
     FIconsDictResources := TDictionary<Integer, string>.Create;
     ReadSettings(FSettings);
-    RegisterBitmap('logo');
-    RegisterBitmap('notepad');
-    RegisterBitmap('cmd');
-    RegisterBitmap('copy');
-    RegisterBitmap('osx');
-    RegisterBitmap('ios');
-    RegisterBitmap('win');
-    RegisterBitmap('android');
-    {
-    RegisterBitmap('osx', 'osx2');
-    RegisterBitmap('ios', 'ios2');
-    RegisterBitmap('win', 'win2');
-    }
-    RegisterBitmap('delphi');
-    RegisterBitmap('delphi', 'delphi2');
-    RegisterBitmap('delphig');
-    RegisterBitmap('radcmd');
-    RegisterBitmap('msbuild');
-    RegisterBitmap('firemonkey');
-    RegisterBitmap('firemonkey', 'firemonkey2');
-    RegisterBitmap('vcl');
-    RegisterBitmap('vcl', 'vcl2');
-    RegisterBitmap('lazarusmenu');
-    RegisterBitmap('lazbuild');
-    RegisterBitmap('buildconf');
-    RegisterBitmap('platforms');
-    RegisterBitmap('buildconf', 'buildconf2');
-    RegisterBitmap('platforms', 'platforms2');
-    RegisterBitmap('settings');
-    RegisterBitmap('common');
-    RegisterBitmap('checksum');
-    RegisterBitmap('copy_unc');
-    RegisterBitmap('copy_url');
-    RegisterBitmap('copy_content');
-    RegisterBitmap('copy_path');
-    RegisterBitmap('shield');
-    RegisterBitmap('fpc_tools');
-    RegisterBitmap('wrench');
+    var LIconBatchActive := BeginProjectIconRenderBatch;
+    try
+      RegisterBitmap('logo');
+      RegisterBitmap('notepad');
+      RegisterBitmap('cmd');
+      RegisterBitmap('copy');
+      RegisterBitmap('osx');
+      RegisterBitmap('ios');
+      RegisterBitmap('win');
+      RegisterBitmap('android');
+      {
+      RegisterBitmap('osx', 'osx2');
+      RegisterBitmap('ios', 'ios2');
+      RegisterBitmap('win', 'win2');
+      }
+      RegisterBitmap('delphi');
+      RegisterBitmap('delphi', 'delphi2');
+      RegisterBitmap('delphig');
+      RegisterBitmap('radcmd');
+      RegisterBitmap('msbuild');
+      RegisterBitmap('firemonkey');
+      RegisterBitmap('firemonkey', 'firemonkey2');
+      RegisterBitmap('vcl');
+      RegisterBitmap('vcl', 'vcl2');
+      RegisterBitmap('lazarusmenu');
+      RegisterBitmap('lazbuild');
+      RegisterBitmap('buildconf');
+      RegisterBitmap('platforms');
+      RegisterBitmap('buildconf', 'buildconf2');
+      RegisterBitmap('platforms', 'platforms2');
+      RegisterBitmap('settings');
+      RegisterBitmap('common');
+      RegisterBitmap('checksum');
+      RegisterBitmap('checksum_crc32');
+      RegisterBitmap('checksum_md4');
+      RegisterBitmap('checksum_md5');
+      RegisterBitmap('checksum_sha1');
+      RegisterBitmap('checksum_sha256');
+      RegisterBitmap('checksum_sha384');
+      RegisterBitmap('checksum_sha512');
+      RegisterBitmap('copy_unc');
+      RegisterBitmap('copy_url');
+      RegisterBitmap('copy_content');
+      RegisterBitmap('copy_path');
+      RegisterBitmap('shield');
+      RegisterBitmap('fpc_tools');
+      RegisterBitmap('wrench');
+    finally
+      if LIconBatchActive then
+        EndProjectIconRenderBatch;
+    end;
 
     SourceBitmap := TBitmap.Create;
     try
@@ -819,7 +873,7 @@ begin
              sSubMenuCaption:='Project Type '+DelphiVersionsNames[LCurrentDelphiVersion]+' Detected but not installed';
              InsertMenuDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, PWideChar(sSubMenuCaption),'delphig');
              if not IsVistaOrLater then
-               RegisterMenuItemBitmapExternal(hSubMenu, hSubMenuIndex, uIDNewItem, 'delphig_ico');
+               RegisterMenuItemBitmapDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, 'delphig_ico');
              Inc(uIDNewItem);
              Inc(hSubMenuIndex);
          end;

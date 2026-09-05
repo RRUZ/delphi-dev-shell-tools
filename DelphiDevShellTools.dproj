@@ -1,4 +1,4 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{93B8A149-40C5-44F2-AF82-FD06AA5CEC4A}</ProjectGuid>
         <ProjectVersion>20.4</ProjectVersion>
@@ -179,6 +179,9 @@
         <DCCReference Include="units\DelphiDevShellTools.DelphiVersions.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.Misc.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.UI.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.Phosphor.Font.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.Phosphor.Names.pas"/>
+        <DCCReference Include="units\DelphiDevShellTools.Icons.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.ProjectInfoPanel.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.Registry.pas"/>
         <DCCReference Include="units\DelphiDevShellTools.SupportedIDEs.pas"/>
@@ -186,7 +189,8 @@
         <DCCReference Include="units\DelphiDevShellTools.Tasks.pas"/>
         <RidlCompile Include="DelphiDevShellTools.ridl"/>
         <RcCompile Include="VersionInfo.rc"/>
-        <RcCompile Include="Icons\images.RC"/>
+        <None Include="Icons\images.RC"/>
+        <RcCompile Include="units\DelphiDevShellTools.Phosphor.Font.rc"/>
         <RcCompile Include="ShellExtensionManifest.rc"/>
         <None Include="DelphiDevShellTools.dll.manifest"/>
         <BuildConfiguration Include="Base">
@@ -254,6 +258,14 @@
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
     </ProjectExtensions>
+    <Target Name="CompileHighResolutionImages" BeforeTargets="ResourceBuild"
+            Inputs="$(MSBuildProjectDirectory)\Icons\images.RC"
+            Outputs="$(MSBuildProjectDirectory)\Icons\Images.res">
+        <Error Condition="!Exists('$(BDS)\bin64\llvm-rc.exe')"
+               Text="Delphi LLVM resource compiler is missing: $(BDS)\bin64\llvm-rc.exe"/>
+        <Exec WorkingDirectory="$(MSBuildProjectDirectory)\Icons"
+              Command="&quot;$(BDS)\bin64\llvm-rc.exe&quot; /no-preprocess /FO &quot;Images.res&quot; &quot;images.RC&quot;"/>
+    </Target>
     <Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
     <Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
     <Import Project="$(MSBuildProjectName).deployproj" Condition="Exists('$(MSBuildProjectName).deployproj')"/>

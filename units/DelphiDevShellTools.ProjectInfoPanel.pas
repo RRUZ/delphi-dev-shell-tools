@@ -29,7 +29,7 @@ uses
 type
   TProjectInfoRow = record
     Caption, Value: string;
-    Icon: HICON;
+    IconKey: string;
   end;
 
   TProjectInfoPanel = class
@@ -40,215 +40,266 @@ type
     FTitleIcon: HICON;
     FIconSize, FIconColumn: Integer;
     FDpi, FWidth, FHeight, FRowHeight, FPadding, FLabelWidth: Integer;
-    function LoadPanelIcon(const Name: string): HICON;
-    procedure AddRow(const Caption, Value: string; const IconName: string = '');
-    procedure ReadProject(const FileName: string);
+    function LoadPanelIcon(const AName: string): HICON;
+    procedure AddRow(const ACaption, AValue: string;
+      const AIconKey: string = '');
+    procedure ReadProject(const AFileName: string);
     procedure Measure;
   public
-    constructor Create(const FileName: string; Dpi: Integer; ResourceModule: HMODULE = 0);
+    constructor Create(const AFileName: string; ADpi: Integer;
+      AResourceModule: HMODULE = 0);
     destructor Destroy; override;
     function IsValid: Boolean;
-    procedure Paint(DC: HDC; const Bounds: TRect; Background, Foreground: COLORREF);
+    procedure Paint(ADC: HDC; const ABounds: TRect;
+      ABackground, AForeground: COLORREF);
     property Width: Integer read FWidth;
     property Height: Integer read FHeight;
     property Rows: TArray<TProjectInfoRow> read FRows;
   end;
 
 function MenuDpi: Integer;
-procedure MenuPanelColors(DC: HDC; const Bounds: TRect; out Background, Foreground: COLORREF);
+procedure MenuThemeColors(out ABackground, AForeground: COLORREF;
+  out AHighContrast: Boolean);
+procedure MenuPanelColors(ADC: HDC; const ABounds: TRect;
+  out ABackground, AForeground: COLORREF);
 
 implementation
 
 uses
   System.SysUtils, System.Classes, System.IOUtils, System.Math,
-  System.Win.Registry, Xml.XMLDoc, Xml.XMLIntf, DelphiDevShellTools.DelphiVersions;
+  System.Win.Registry, Vcl.Graphics, Xml.XMLDoc, Xml.XMLIntf,
+  DelphiDevShellTools.DelphiVersions, DelphiDevShellTools.Icons;
 
 function MenuDpi: Integer;
 type
-  TGetDpiForWindow = function(Window: HWND): UINT; stdcall;
+  TGetDpiForWindow = function(AWindow: HWND): UINT; stdcall;
 var
-  GetWindowDpi: TGetDpiForWindow;
-  Position: TPoint;
-  Window: HWND;
+  LGetWindowDpi: TGetDpiForWindow;
+  LPosition: TPoint;
+  LWindow: HWND;
 begin
   Result := 96;
-  GetWindowDpi := GetProcAddress(GetModuleHandle('user32.dll'), 'GetDpiForWindow');
-  if Assigned(GetWindowDpi) then
+  LGetWindowDpi := GetProcAddress(GetModuleHandle('user32.dll'),
+    'GetDpiForWindow');
+  if Assigned(LGetWindowDpi) then
   begin
-    GetCursorPos(Position);
-    Window := WindowFromPoint(Position);
-    if Window = 0 then Window := GetForegroundWindow;
-    Result := GetWindowDpi(Window);
-    if Result = 0 then Result := 96;
+    GetCursorPos(LPosition);
+    LWindow := WindowFromPoint(LPosition);
+    if LWindow = 0 then
+      LWindow := GetForegroundWindow;
+    Result := LGetWindowDpi(LWindow);
+    if Result = 0 then
+      Result := 96;
   end;
 end;
 
-procedure MenuPanelColors(DC: HDC; const Bounds: TRect; out Background, Foreground: COLORREF);
+procedure MenuThemeColors(out ABackground, AForeground: COLORREF;
+  out AHighContrast: Boolean);
 var
-  Contrast: THighContrast;
-  Registry: TRegistry;
-  Dark: Boolean;
-  Pixel: COLORREF;
+  LContrast: THighContrast;
+  LDark: Boolean;
 begin
-  Background := GetSysColor(COLOR_MENU);
-  Foreground := GetSysColor(COLOR_MENUTEXT);
-  ZeroMemory(@Contrast, SizeOf(Contrast));
-  Contrast.cbSize := SizeOf(Contrast);
-  if SystemParametersInfo(SPI_GETHIGHCONTRAST, SizeOf(Contrast), @Contrast, 0) and
-     ((Contrast.dwFlags and HCF_HIGHCONTRASTON) <> 0) then Exit;
-  Dark := False;
-  Registry := TRegistry.Create(KEY_READ);
-  try
-    Registry.RootKey := HKEY_CURRENT_USER;
-    if Registry.OpenKeyReadOnly('Software\Microsoft\Windows\CurrentVersion\Themes\Personalize') and
-       Registry.ValueExists('AppsUseLightTheme') then
-      Dark := Registry.ReadInteger('AppsUseLightTheme') = 0;
-  finally
-    Registry.Free;
-  end;
-  if Dark then
+  ABackground := GetSysColor(COLOR_MENU);
+  AForeground := GetSysColor(COLOR_MENUTEXT);
+  AHighContrast := False;
+  ZeroMemory(@LContrast, SizeOf(LContrast));
+  LContrast.cbSize := SizeOf(LContrast);
+  if SystemParametersInfo(SPI_GETHIGHCONTRAST, SizeOf(LContrast),
+     @LContrast, 0) and
+     ((LContrast.dwFlags and HCF_HIGHCONTRASTON) <> 0) then
   begin
-    Background := RGB(43, 43, 43);
-    Foreground := RGB(245, 245, 245);
+    AHighContrast := True;
+    Exit;
   end;
+  LDark := False;
+  var LRegistry := TRegistry.Create(KEY_READ);
+  try
+    LRegistry.RootKey := HKEY_CURRENT_USER;
+    if LRegistry.OpenKeyReadOnly(
+       'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize') and
+       LRegistry.ValueExists('AppsUseLightTheme') then
+      LDark := LRegistry.ReadInteger('AppsUseLightTheme') = 0;
+  finally
+    LRegistry.Free;
+  end;
+  if LDark then
+  begin
+    ABackground := RGB(43, 43, 43);
+    AForeground := RGB(245, 245, 245);
+  end;
+end;
+
+procedure MenuPanelColors(ADC: HDC; const ABounds: TRect;
+  out ABackground, AForeground: COLORREF);
+var
+  LHighContrast: Boolean;
+begin
+  MenuThemeColors(ABackground, AForeground, LHighContrast);
+  if LHighContrast then
+    Exit;
+  var LDark := (GetRValue(ABackground) + GetGValue(ABackground) +
+    GetBValue(ABackground)) < 384;
   // Reuse an already painted host-menu background when it matches this mode.
   // Do not sample the title/text area or trust an uninitialized black surface.
-  Pixel := GetPixel(DC, Bounds.Left + 1, Bounds.Top + 1);
-  if (Pixel <> CLR_INVALID) and (Pixel <> 0) and
-     (((GetRValue(Pixel) + GetGValue(Pixel) + GetBValue(Pixel)) < 384) = Dark) then
-    Background := Pixel;
+  var LPixel := GetPixel(ADC, ABounds.Left + 1, ABounds.Top + 1);
+  if (LPixel <> CLR_INVALID) and (LPixel <> 0) and
+     (((GetRValue(LPixel) + GetGValue(LPixel) + GetBValue(LPixel)) < 384) =
+       LDark) then
+    ABackground := LPixel;
 end;
 
-function TProjectInfoPanel.LoadPanelIcon(const Name: string): HICON;
+function TProjectInfoPanel.LoadPanelIcon(const AName: string): HICON;
 begin
   Result := 0;
-  if Name <> '' then
-    Result := LoadImage(FResourceModule, PChar(Name), IMAGE_ICON,
+  if AName <> '' then
+    Result := LoadImage(FResourceModule, PChar(AName), IMAGE_ICON,
       FIconSize, FIconSize, LR_DEFAULTCOLOR);
 end;
 
-procedure TProjectInfoPanel.AddRow(const Caption, Value, IconName: string);
-var
-  Index: Integer;
+procedure TProjectInfoPanel.AddRow(const ACaption, AValue, AIconKey: string);
 begin
-  if Value = '' then Exit;
-  Index := Length(FRows);
-  SetLength(FRows, Index + 1);
-  FRows[Index].Caption := Caption;
-  FRows[Index].Value := Value;
-  FRows[Index].Icon := LoadPanelIcon(IconName);
+  if AValue = '' then
+    Exit;
+  var LIndex := Length(FRows);
+  SetLength(FRows, LIndex + 1);
+  FRows[LIndex].Caption := ACaption;
+  FRows[LIndex].Value := AValue;
+  FRows[LIndex].IconKey := AIconKey;
 end;
 
-procedure TProjectInfoPanel.ReadProject(const FileName: string);
+procedure TProjectInfoPanel.ReadProject(const AFileName: string);
 const
-  Namespace = 'http://schemas.microsoft.com/developer/msbuild/2003';
+  cNamespace = 'http://schemas.microsoft.com/developer/msbuild/2003';
 var
-  Document: IXMLDocument;
-  Root, Group, Node, Platforms, Platform: IXMLNode;
-  I: Integer;
-  Version, Targets, Framework, Target, PlatformIcon: string;
-  Versions: SetDelphiVersions;
+  LDocument: IXMLDocument;
+  LRoot: IXMLNode;
+  LNode: IXMLNode;
+  LPlatforms: IXMLNode;
+  LPlatform: IXMLNode;
+  LIndex: Integer;
+  LVersion: string;
+  LTargets: string;
+  LFramework: string;
+  LTarget: string;
+  LPlatformIcon: string;
+  LVersions: SetDelphiVersions;
 
-  function PropertyValue(const Name: string): string;
+  function PropertyValue(const AName: string): string;
   var
-    J: Integer;
-    ValueNode: IXMLNode;
+    LGroup: IXMLNode;
+    LPropertyIndex: Integer;
+    LValueNode: IXMLNode;
   begin
     Result := '';
-    for J := 0 to Root.ChildNodes.Count - 1 do
+    for LPropertyIndex := 0 to LRoot.ChildNodes.Count - 1 do
     begin
-      Group := Root.ChildNodes[J];
-      if Group.LocalName <> 'PropertyGroup' then Continue;
-      ValueNode := Group.ChildNodes.FindNode(Name, Namespace);
-      if ValueNode <> nil then Exit(ValueNode.Text);
+      LGroup := LRoot.ChildNodes[LPropertyIndex];
+      if LGroup.LocalName <> 'PropertyGroup' then
+        Continue;
+      LValueNode := LGroup.ChildNodes.FindNode(AName, cNamespace);
+      if LValueNode <> nil then
+        Exit(LValueNode.Text);
     end;
   end;
 
 begin
-  Document := LoadXMLData(TFile.ReadAllText(FileName));
-  Root := Document.DocumentElement;
-  if (Root = nil) or (Root.LocalName <> 'Project') or (Root.NamespaceURI <> Namespace) then Exit;
-  Version := PropertyValue('ProjectVersion');
-  Versions := GetDelphiVersions(FileName);
-  if Length(Versions) > 0 then
-    AddRow('Delphi version', DelphiVersionsNames[Versions[0]], 'delphi_ico')
+  LDocument := LoadXMLData(TFile.ReadAllText(AFileName));
+  LRoot := LDocument.DocumentElement;
+  if (LRoot = nil) or (LRoot.LocalName <> 'Project') or
+     (LRoot.NamespaceURI <> cNamespace) then
+    Exit;
+  LVersion := PropertyValue('ProjectVersion');
+  LVersions := GetDelphiVersions(AFileName);
+  if Length(LVersions) > 0 then
+    AddRow('Delphi version', DelphiVersionsNames[LVersions[0]], 'delphi')
   else
-    AddRow('Delphi version', 'Not mapped (project format ' + Version + ')', 'delphi_ico');
+    AddRow('Delphi version', 'Not mapped (project format ' + LVersion +
+      ')', 'delphi');
   AddRow('Project type', PropertyValue('AppType'));
-  Framework := PropertyValue('FrameworkType');
-  if SameText(Framework, 'FMX') then
-    AddRow('Framework', Framework, 'firemonkey_ico')
+  LFramework := PropertyValue('FrameworkType');
+  if SameText(LFramework, 'FMX') then
+    AddRow('Framework', LFramework, 'firemonkey')
   else
-    AddRow('Framework', Framework, 'vcl_ico');
+    AddRow('Framework', LFramework, 'vcl');
   AddRow('GUID', PropertyValue('ProjectGuid'));
-  AddRow('Build configuration', PropertyValue('Config'), 'buildconf_ico');
-  Target := PropertyValue('Platform');
-  PlatformIcon := 'platforms_ico';
-  if SameText(Copy(Target, 1, 3), 'Win') then PlatformIcon := 'win_ico'
-  else if SameText(Copy(Target, 1, 3), 'OSX') then PlatformIcon := 'osx_ico'
-  else if SameText(Copy(Target, 1, 3), 'iOS') then PlatformIcon := 'ios_ico'
-  else if SameText(Copy(Target, 1, 7), 'Android') then PlatformIcon := 'android_ico';
-  AddRow('Target platform', Target, PlatformIcon);
-  Node := Root.ChildNodes.FindNode('ProjectExtensions', Namespace);
-  if Node <> nil then Node := Node.ChildNodes.FindNode('BorlandProject', Namespace);
-  if Node <> nil then
+  AddRow('Build configuration', PropertyValue('Config'), 'buildconf');
+  LTarget := PropertyValue('Platform');
+  LPlatformIcon := 'platforms';
+  if SameText(Copy(LTarget, 1, 3), 'Win') then
+    LPlatformIcon := 'win'
+  else if SameText(Copy(LTarget, 1, 3), 'OSX') then
+    LPlatformIcon := 'osx'
+  else if SameText(Copy(LTarget, 1, 3), 'iOS') then
+    LPlatformIcon := 'ios'
+  else if SameText(Copy(LTarget, 1, 7), 'Android') then
+    LPlatformIcon := 'android';
+  AddRow('Target platform', LTarget, LPlatformIcon);
+  LNode := LRoot.ChildNodes.FindNode('ProjectExtensions', cNamespace);
+  if LNode <> nil then
+    LNode := LNode.ChildNodes.FindNode('BorlandProject', cNamespace);
+  if LNode <> nil then
   begin
-    Platforms := Node.ChildNodes.FindNode('Platforms', Namespace);
-    if Platforms <> nil then
+    LPlatforms := LNode.ChildNodes.FindNode('Platforms', cNamespace);
+    if LPlatforms <> nil then
     begin
-      Targets := '';
-      for I := 0 to Platforms.ChildNodes.Count - 1 do
+      LTargets := '';
+      for LIndex := 0 to LPlatforms.ChildNodes.Count - 1 do
       begin
-        Platform := Platforms.ChildNodes[I];
-        if (Platform.LocalName = 'Platform') and SameText(Platform.Text, 'True') then
+        LPlatform := LPlatforms.ChildNodes[LIndex];
+        if (LPlatform.LocalName = 'Platform') and
+           SameText(LPlatform.Text, 'True') then
         begin
-          if Targets <> '' then Targets := Targets + ', ';
-          Targets := Targets + string(Platform.Attributes['value']);
+          if LTargets <> '' then
+            LTargets := LTargets + ', ';
+          LTargets := LTargets + string(LPlatform.Attributes['value']);
         end;
       end;
-      AddRow('Available platforms', Targets, 'platforms_ico');
+      AddRow('Available platforms', LTargets, 'platforms');
     end;
   end;
 end;
 
-constructor TProjectInfoPanel.Create(const FileName: string; Dpi: Integer; ResourceModule: HMODULE);
+constructor TProjectInfoPanel.Create(const AFileName: string; ADpi: Integer;
+  AResourceModule: HMODULE);
 type
-  TParametersForDpi = function(Action, Param: UINT; Data: Pointer; Flags, Dpi: UINT): BOOL; stdcall;
+  TParametersForDpi = function(AAction, AParam: UINT; AData: Pointer;
+    AFlags, ADpi: UINT): BOOL; stdcall;
 var
-  Metrics: TNonClientMetrics;
-  ParametersForDpi: TParametersForDpi;
-  Loaded: Boolean;
+  LMetrics: TNonClientMetrics;
+  LParametersForDpi: TParametersForDpi;
+  LLoaded: Boolean;
 begin
   inherited Create;
-  FDpi := Max(96, Dpi);
+  FDpi := Max(96, ADpi);
   FIconSize := MulDiv(16, FDpi, 96);
   FIconColumn := FIconSize + MulDiv(6, FDpi, 96);
-  FResourceModule := ResourceModule;
-  if FResourceModule = 0 then FResourceModule := HInstance;
+  FResourceModule := AResourceModule;
+  if FResourceModule = 0 then
+    FResourceModule := HInstance;
   FTitleIcon := LoadPanelIcon('logo_ico');
-  ZeroMemory(@Metrics, SizeOf(Metrics));
-  Metrics.cbSize := SizeOf(Metrics);
-  ParametersForDpi := GetProcAddress(GetModuleHandle('user32.dll'), 'SystemParametersInfoForDpi');
-  Loaded := False;
-  if Assigned(ParametersForDpi) then
-    Loaded := ParametersForDpi(SPI_GETNONCLIENTMETRICS, SizeOf(Metrics), @Metrics, 0, FDpi);
-  if not Loaded then
+  ZeroMemory(@LMetrics, SizeOf(LMetrics));
+  LMetrics.cbSize := SizeOf(LMetrics);
+  LParametersForDpi := GetProcAddress(GetModuleHandle('user32.dll'),
+    'SystemParametersInfoForDpi');
+  LLoaded := False;
+  if Assigned(LParametersForDpi) then
+    LLoaded := LParametersForDpi(SPI_GETNONCLIENTMETRICS,
+      SizeOf(LMetrics), @LMetrics, 0, FDpi);
+  if not LLoaded then
   begin
-    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, SizeOf(Metrics), @Metrics, 0);
-    Metrics.lfMenuFont.lfHeight := -MulDiv(12, FDpi, 96);
+    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, SizeOf(LMetrics),
+      @LMetrics, 0);
+    LMetrics.lfMenuFont.lfHeight := -MulDiv(12, FDpi, 96);
   end;
-  FFont := CreateFontIndirect(Metrics.lfMenuFont);
-  if FFont = 0 then RaiseLastOSError;
-  ReadProject(FileName);
+  FFont := CreateFontIndirect(LMetrics.lfMenuFont);
+  if FFont = 0 then
+    RaiseLastOSError;
+  ReadProject(AFileName);
   Measure;
 end;
 
 destructor TProjectInfoPanel.Destroy;
-var
-  Row: TProjectInfoRow;
 begin
-  for Row in FRows do
-    if Row.Icon <> 0 then DestroyIcon(Row.Icon);
   if FTitleIcon <> 0 then DestroyIcon(FTitleIcon);
   if FFont <> 0 then DeleteObject(FFont);
   inherited;
@@ -261,77 +312,116 @@ end;
 
 procedure TProjectInfoPanel.Measure;
 var
-  DC: HDC;
-  Previous: HGDIOBJ;
-  TextSize: TSize;
-  Row: TProjectInfoRow;
-  ValueWidth: Integer;
+  LDC: HDC;
+  LPrevious: HGDIOBJ;
+  LRow: TProjectInfoRow;
+  LTextSize: TSize;
+  LValueWidth: Integer;
 begin
   FPadding := MulDiv(10, FDpi, 96);
-  DC := CreateCompatibleDC(0);
-  if DC = 0 then RaiseLastOSError;
-  Previous := SelectObject(DC, FFont);
+  LDC := CreateCompatibleDC(0);
+  if LDC = 0 then
+    RaiseLastOSError;
   try
-    GetTextExtentPoint32(DC, 'Hg', 2, TextSize);
-    FRowHeight := Max(TextSize.cy, FIconSize) + MulDiv(6, FDpi, 96);
-    FLabelWidth := 0;
-    ValueWidth := 0;
-    for Row in FRows do
-    begin
-      GetTextExtentPoint32(DC, PChar(Row.Caption), Length(Row.Caption), TextSize);
-      FLabelWidth := Max(FLabelWidth, TextSize.cx);
-      GetTextExtentPoint32(DC, PChar(Row.Value), Length(Row.Value), TextSize);
-      ValueWidth := Max(ValueWidth, TextSize.cx);
+    LPrevious := SelectObject(LDC, FFont);
+    if LPrevious = 0 then
+      RaiseLastOSError;
+    try
+      GetTextExtentPoint32(LDC, 'Hg', 2, LTextSize);
+      FRowHeight := Max(LTextSize.cy, FIconSize) + MulDiv(6, FDpi, 96);
+      FLabelWidth := 0;
+      LValueWidth := 0;
+      for LRow in FRows do
+      begin
+        GetTextExtentPoint32(LDC, PChar(LRow.Caption),
+          Length(LRow.Caption), LTextSize);
+        FLabelWidth := Max(FLabelWidth, LTextSize.cx);
+        GetTextExtentPoint32(LDC, PChar(LRow.Value), Length(LRow.Value),
+          LTextSize);
+        LValueWidth := Max(LValueWidth, LTextSize.cx);
+      end;
+      FWidth := Min(MulDiv(720, FDpi, 96), FPadding * 4 + FIconColumn +
+        FLabelWidth + LValueWidth);
+      FWidth := Max(MulDiv(380, FDpi, 96), FWidth);
+      FHeight := FPadding * 2 + FRowHeight * (Length(FRows) + 1);
+    finally
+      SelectObject(LDC, LPrevious);
     end;
-    FWidth := Min(MulDiv(720, FDpi, 96), FPadding * 4 + FIconColumn + FLabelWidth + ValueWidth);
-    FWidth := Max(MulDiv(380, FDpi, 96), FWidth);
-    FHeight := FPadding * 2 + FRowHeight * (Length(FRows) + 1);
   finally
-    SelectObject(DC, Previous);
-    DeleteDC(DC);
+    DeleteDC(LDC);
   end;
 end;
 
-procedure TProjectInfoPanel.Paint(DC: HDC; const Bounds: TRect; Background, Foreground: COLORREF);
+procedure TProjectInfoPanel.Paint(ADC: HDC; const ABounds: TRect;
+  ABackground, AForeground: COLORREF);
 var
-  Saved, Y: Integer;
-  Brush: HBRUSH;
-  Row: TProjectInfoRow;
-  TextRect: TRect;
+  LBrush: HBRUSH;
+  LHighContrast: Boolean;
+  LRenderBatchActive: Boolean;
+  LRow: TProjectInfoRow;
+  LSaved: Integer;
+  LSource: TProjectIconSource;
+  LTextRect: TRect;
+  LThemeBackground: COLORREF;
+  LThemeForeground: COLORREF;
+  LY: Integer;
 begin
-  Saved := SaveDC(DC);
-  if Saved = 0 then RaiseLastOSError;
+  LSaved := SaveDC(ADC);
+  if LSaved = 0 then
+    RaiseLastOSError;
   try
-    IntersectClipRect(DC, Bounds.Left, Bounds.Top, Bounds.Right, Bounds.Bottom);
-    Brush := CreateSolidBrush(Background);
+    IntersectClipRect(ADC, ABounds.Left, ABounds.Top, ABounds.Right,
+      ABounds.Bottom);
+    LBrush := CreateSolidBrush(ABackground);
     try
-      FillRect(DC, Bounds, Brush);
+      FillRect(ADC, ABounds, LBrush);
     finally
-      DeleteObject(Brush);
+      DeleteObject(LBrush);
     end;
-    SelectObject(DC, FFont);
-    SetBkMode(DC, TRANSPARENT);
-    SetTextColor(DC, Foreground);
-    Y := Bounds.Top + FPadding;
-    if FTitleIcon <> 0 then
-      DrawIconEx(DC, Bounds.Left + FPadding, Y + (FRowHeight - FIconSize) div 2,
-        FTitleIcon, FIconSize, FIconSize, 0, 0, DI_NORMAL);
-    TextRect := Rect(Bounds.Left + FPadding + FIconColumn, Y, Bounds.Right - FPadding, Y + FRowHeight);
-    DrawText(DC, 'Project information', -1, TextRect, DT_SINGLELINE or DT_VCENTER or DT_NOPREFIX or DT_END_ELLIPSIS);
-    Inc(Y, FRowHeight);
-    for Row in FRows do
-    begin
-      if Row.Icon <> 0 then
-        DrawIconEx(DC, Bounds.Left + FPadding, Y + (FRowHeight - FIconSize) div 2,
-          Row.Icon, FIconSize, FIconSize, 0, 0, DI_NORMAL);
-      TextRect := Rect(Bounds.Left + FPadding + FIconColumn, Y, Bounds.Left + FPadding + FIconColumn + FLabelWidth, Y + FRowHeight);
-      DrawText(DC, PChar(Row.Caption), -1, TextRect, DT_SINGLELINE or DT_VCENTER or DT_NOPREFIX or DT_END_ELLIPSIS);
-      TextRect := Rect(Bounds.Left + FPadding * 3 + FIconColumn + FLabelWidth, Y, Bounds.Right - FPadding, Y + FRowHeight);
-      DrawText(DC, PChar(Row.Value), -1, TextRect, DT_SINGLELINE or DT_VCENTER or DT_NOPREFIX or DT_END_ELLIPSIS);
-      Inc(Y, FRowHeight);
+    SelectObject(ADC, FFont);
+    SetBkMode(ADC, TRANSPARENT);
+    SetTextColor(ADC, AForeground);
+    MenuThemeColors(LThemeBackground, LThemeForeground, LHighContrast);
+    LRenderBatchActive := BeginProjectIconRenderBatch;
+    try
+      LY := ABounds.Top + FPadding;
+      if FTitleIcon <> 0 then
+        DrawIconEx(ADC, ABounds.Left + FPadding,
+          LY + (FRowHeight - FIconSize) div 2, FTitleIcon, FIconSize,
+          FIconSize, 0, 0, DI_NORMAL);
+      LTextRect := Rect(ABounds.Left + FPadding + FIconColumn, LY,
+        ABounds.Right - FPadding, LY + FRowHeight);
+      DrawText(ADC, 'Project information', -1, LTextRect,
+        DT_SINGLELINE or DT_VCENTER or DT_NOPREFIX or DT_END_ELLIPSIS);
+      Inc(LY, FRowHeight);
+      for LRow in FRows do
+      begin
+        if LRow.IconKey <> '' then
+        begin
+          var LIconTop := LY + (FRowHeight - FIconSize) div 2;
+          var LIconRect := Rect(ABounds.Left + FPadding, LIconTop,
+            ABounds.Left + FPadding + FIconSize, LIconTop + FIconSize);
+          TryDrawProjectIcon(ADC, LRow.IconKey, LIconRect,
+            TColor(ABackground), TColor(AForeground), LHighContrast, False,
+            FResourceModule, LSource);
+        end;
+        LTextRect := Rect(ABounds.Left + FPadding + FIconColumn, LY,
+          ABounds.Left + FPadding + FIconColumn + FLabelWidth,
+          LY + FRowHeight);
+        DrawText(ADC, PChar(LRow.Caption), -1, LTextRect,
+          DT_SINGLELINE or DT_VCENTER or DT_NOPREFIX or DT_END_ELLIPSIS);
+        LTextRect := Rect(ABounds.Left + FPadding * 3 + FIconColumn +
+          FLabelWidth, LY, ABounds.Right - FPadding, LY + FRowHeight);
+        DrawText(ADC, PChar(LRow.Value), -1, LTextRect,
+          DT_SINGLELINE or DT_VCENTER or DT_NOPREFIX or DT_END_ELLIPSIS);
+        Inc(LY, FRowHeight);
+      end;
+    finally
+      if LRenderBatchActive then
+        EndProjectIconRenderBatch;
     end;
   finally
-    RestoreDC(DC, Saved);
+    RestoreDC(ADC, LSaved);
   end;
 end;
 

@@ -1,4 +1,4 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{664F5199-27AF-40FA-A4CE-9E7AA9CE06B3}</ProjectGuid>
         <ProjectVersion>18.2</ProjectVersion>
@@ -111,6 +111,7 @@
         <RcCompile Include="GUIManifest.rc"/>
         <RcCompile Include="GUIResources.rc"/>
         <RcCompile Include="AwesomeFont.rc"/>
+        <RcCompile Include="..\units\DelphiDevShellTools.Phosphor.Font.rc"/>
         <None Include="GUIDelphiDevShell.manifest"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Logging.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.SettingsStore.pas"/>
@@ -131,6 +132,9 @@
         </DCCReference>
         <DCCReference Include="..\units\DelphiDevShellTools.Misc.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.UI.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.Phosphor.Font.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.Phosphor.Names.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.Icons.pas"/>
         <DCCReference Include="DelphiDevShellTools.GUI.CheckSum.pas">
             <Form>FrmCheckSum</Form>
         </DCCReference>

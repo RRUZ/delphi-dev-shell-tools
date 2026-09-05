@@ -16,6 +16,12 @@ uses
   DUnitX.Loggers.Console,
   DUnitX.Loggers.Xml.NUnit,
   ShellTools.BasicTests in 'ShellTools.BasicTests.pas',
+  ShellTools.IconTests in 'ShellTools.IconTests.pas',
+  DelphiDevShellTools.Misc in '..\units\DelphiDevShellTools.Misc.pas',
+  DelphiDevShellTools.UI in '..\units\DelphiDevShellTools.UI.pas',
+  DelphiDevShellTools.Phosphor.Font in '..\units\DelphiDevShellTools.Phosphor.Font.pas',
+  DelphiDevShellTools.Phosphor.Names in '..\units\DelphiDevShellTools.Phosphor.Names.pas',
+  DelphiDevShellTools.Icons in '..\units\DelphiDevShellTools.Icons.pas',
   ShellTools.RegistrationTests in 'ShellTools.RegistrationTests.pas',
   ShellTools.TestSupport in 'ShellTools.TestSupport.pas';
 
@@ -33,6 +39,7 @@ begin
     try
       TDUnitX.CheckCommandLine;
       TDUnitX.RegisterTestFixture(TBasicTests);
+      TDUnitX.RegisterTestFixture(TIconTests);
       TDUnitX.RegisterTestFixture(TLoggingTests);
       TDUnitX.RegisterTestFixture(TExecutionTests);
       TDUnitX.RegisterTestFixture(TSettingsTests);

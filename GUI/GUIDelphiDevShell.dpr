@@ -43,6 +43,10 @@ uses
   Vcl.Styles,
   DelphiDevShellTools.GUI.Settings in 'DelphiDevShellTools.GUI.Settings.pas' {FrmSettings},
   DelphiDevShellTools.Misc in '..\units\DelphiDevShellTools.Misc.pas',
+  DelphiDevShellTools.UI in '..\units\DelphiDevShellTools.UI.pas',
+  DelphiDevShellTools.Phosphor.Font in '..\units\DelphiDevShellTools.Phosphor.Font.pas',
+  DelphiDevShellTools.Phosphor.Names in '..\units\DelphiDevShellTools.Phosphor.Names.pas',
+  DelphiDevShellTools.Icons in '..\units\DelphiDevShellTools.Icons.pas',
   DelphiDevShellTools.GUI.CheckSum in 'DelphiDevShellTools.GUI.CheckSum.pas' {FrmCheckSum};
 
 {$R 'GUIResources.res' 'GUIResources.rc'}

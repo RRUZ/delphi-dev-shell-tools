@@ -59,6 +59,7 @@ type
     [Test] procedure DllEmbedsShellManifest;
     [Test] procedure GuiEmbedsDpiManifest;
     [Test] procedure ResourceMappingsAndGuiIconMetadataAreStable;
+    [Test] procedure HighResolutionLogoFramesAreEmbedded;
     [TestCase('96 DPI', '96,16')]
     [TestCase('120 DPI', '120,20')]
     [TestCase('144 DPI', '144,24')]
@@ -91,7 +92,7 @@ uses
   Winapi.Windows, Winapi.Messages, Winapi.ActiveX,
   Winapi.ShlObj, Vcl.Graphics, System.Types, DelphiDevShellTools.ProjectInfoPanel,
   DelphiDevShellTools.Tasks, DelphiDevShellTools.DelphiVersions, DelphiDevShellTools.Misc,
-  DelphiDevShellTools.UI,
+  DelphiDevShellTools.UI, DelphiDevShellTools.Icons,
   ShellTools.TestSupport;
 
 function RepositoryFile(const RelativeName: string): string;
@@ -471,17 +472,69 @@ end;
 
 procedure TBasicTests.ResourceMappingsAndGuiIconMetadataAreStable;
 var
-  ProjectText, ResourceText: string;
+  LProjectText, LResourceText: string;
 begin
-  ResourceText := TFile.ReadAllText(RepositoryFile('Icons\images.RC'));
-  Assert.IsTrue(Pos('settings_ico  ICON "settings.ico"', ResourceText) > 0);
-  Assert.IsTrue(Pos('platforms_ico ICON "platforms.ico"', ResourceText) > 0);
-  Assert.IsFalse(Pos('settings_ico  ICON "platforms.ico"', ResourceText) > 0);
-  ResourceText := TFile.ReadAllText(RepositoryFile('GUI\GUIResources.rc'));
-  Assert.IsTrue(Pos('MAINICON ICON "GUIDelphiDevShell_Icon.ico"', ResourceText) > 0);
-  ProjectText := TFile.ReadAllText(RepositoryFile('GUI\GUIDelphiDevShell.dproj'));
-  Assert.AreEqual(1, CountText('<Icon_MainIcon>', ProjectText));
-  Assert.IsTrue(Pos('<Icon_MainIcon>GUIDelphiDevShell_Icon.ico</Icon_MainIcon>', ProjectText) > 0);
+  LProjectText := TFile.ReadAllText(RepositoryFile('Build.bat'));
+  Assert.IsTrue(Pos('if /i "%~1"=="Icons\images.RC"', LProjectText) > 0);
+  Assert.IsTrue(Pos('bin64\llvm-rc.exe" /no-preprocess', LProjectText) > 0,
+    'Modern high-resolution ICO frames require LLVM-RC');
+  LProjectText := TFile.ReadAllText(RepositoryFile('DelphiDevShellTools.dproj'));
+  Assert.IsFalse(Pos('<RcCompile Include="Icons\images.RC"/>', LProjectText) > 0,
+    'MSBuild must not send the high-resolution icon bundle to BRCC32');
+  Assert.IsTrue(Pos('<Target Name="CompileHighResolutionImages"', LProjectText) > 0);
+  Assert.IsTrue(Pos('<None Include="Icons\images.RC"/>', LProjectText) > 0);
+  LResourceText := TFile.ReadAllText(RepositoryFile('Icons\images.RC'));
+  Assert.IsTrue(Pos('settings_ico  ICON "settings.ico"', LResourceText) > 0);
+  Assert.IsTrue(Pos('platforms_ico ICON "platforms.ico"', LResourceText) > 0);
+  Assert.IsFalse(Pos('settings_ico  ICON "platforms.ico"', LResourceText) > 0);
+  LResourceText := TFile.ReadAllText(RepositoryFile('GUI\GUIResources.rc'));
+  Assert.IsTrue(Pos('MAINICON ICON "GUIDelphiDevShell_Icon.ico"', LResourceText) > 0);
+  LProjectText := TFile.ReadAllText(RepositoryFile('GUI\GUIDelphiDevShell.dproj'));
+  Assert.AreEqual(1, CountText('<Icon_MainIcon>', LProjectText));
+  Assert.IsTrue(Pos('<Icon_MainIcon>GUIDelphiDevShell_Icon.ico</Icon_MainIcon>', LProjectText) > 0);
+end;
+
+procedure TBasicTests.HighResolutionLogoFramesAreEmbedded;
+var
+  LBitmap: Winapi.Windows.TBitmap;
+  LIcon: HICON;
+  LIconInfo: TIconInfo;
+  LModule: HMODULE;
+  LSize: Integer;
+begin
+  LModule := LoadLibraryEx(PChar(TestDllPath), 0, LOAD_LIBRARY_AS_DATAFILE);
+  Assert.IsTrue(LModule <> 0);
+  try
+    for LSize in [16, 24, 32, 48, 128, 256] do
+    begin
+      LIcon := LoadImage(LModule, 'logo_ico', IMAGE_ICON, LSize, LSize,
+        LR_DEFAULTCOLOR);
+      Assert.IsTrue(LIcon <> 0, Format('Missing %d-pixel logo frame', [LSize]));
+      try
+        Assert.IsTrue(GetIconInfo(LIcon, LIconInfo));
+        try
+          try
+            Assert.IsTrue(LIconInfo.hbmColor <> 0);
+            Assert.IsTrue(LIconInfo.hbmMask <> 0);
+            Assert.IsTrue(GetObject(LIconInfo.hbmColor, SizeOf(LBitmap),
+              @LBitmap) <> 0);
+            Assert.AreEqual(LSize, LBitmap.bmWidth);
+            Assert.AreEqual(LSize, LBitmap.bmHeight);
+          finally
+            if LIconInfo.hbmMask <> 0 then
+              DeleteObject(LIconInfo.hbmMask);
+          end;
+        finally
+          if LIconInfo.hbmColor <> 0 then
+            DeleteObject(LIconInfo.hbmColor);
+        end;
+      finally
+        DestroyIcon(LIcon);
+      end;
+    end;
+  finally
+    FreeLibrary(LModule);
+  end;
 end;
 
 procedure TBasicTests.MenuImageDpiContract(Dpi, ExpectedPixels: Integer);
@@ -697,8 +750,7 @@ var
   Palette: Integer;
   Module: HMODULE;
   Row: TProjectInfoRow;
-  IconInfo: TIconInfo;
-  IconBitmap: Winapi.Windows.TBitmap;
+  LDescriptor: TProjectIconDescriptor;
   IconCount, X, Y, Padding, IconSize: Integer;
 begin
   Module := LoadLibraryEx(PChar(TestDllPath), 0, LOAD_LIBRARY_AS_DATAFILE);
@@ -713,18 +765,13 @@ begin
     IconSize := MulDiv(16, Dpi, 96);
     IconCount := 0;
     for Row in Panel.Rows do
-      if Row.Icon <> 0 then
+      if Row.IconKey <> '' then
       begin
         Inc(IconCount);
-        Assert.IsTrue(GetIconInfo(Row.Icon, IconInfo));
-        try
-          Assert.IsTrue(GetObject(IconInfo.hbmColor, SizeOf(IconBitmap), @IconBitmap) <> 0);
-          Assert.AreEqual(IconSize, IconBitmap.bmWidth, 'Icon width follows menu DPI');
-          Assert.AreEqual(IconSize, IconBitmap.bmHeight, 'Icon height follows menu DPI');
-        finally
-          if IconInfo.hbmColor <> 0 then DeleteObject(IconInfo.hbmColor);
-          if IconInfo.hbmMask <> 0 then DeleteObject(IconInfo.hbmMask);
-        end;
+        Assert.IsTrue(TryGetProjectIcon(Row.IconKey, LDescriptor),
+          'Panel row must use a semantic project-icon key: ' + Row.IconKey);
+        Assert.IsTrue(LDescriptor.Key = Row.IconKey,
+          'Panel row must store the canonical key');
       end;
     Assert.AreEqual(5, IconCount, 'Version, framework, configuration and platform icons');
     Assert.IsTrue(Panel.Width >= Standard.Width);

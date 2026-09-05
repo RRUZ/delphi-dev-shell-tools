@@ -34,11 +34,16 @@
         <DCCReference Include="..\units\DelphiDevShellTools.Installations.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Execution.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.UI.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.Phosphor.Font.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.Phosphor.Names.pas"/>
+        <DCCReference Include="..\units\DelphiDevShellTools.Icons.pas"/>
+        <RcCompile Include="..\units\DelphiDevShellTools.Phosphor.Font.rc"/>
 
     <DelphiCompile Include="$(MainSource)"><MainSource>MainSource</MainSource></DelphiCompile>
     <DCCReference Include="ShellTools.ExecutionTests.pas"/>
     <DCCReference Include="ShellTools.SettingsTests.pas"/>
     <DCCReference Include="ShellTools.BasicTests.pas"/>
+    <DCCReference Include="ShellTools.IconTests.pas"/>
     <DCCReference Include="ShellTools.RegistrationTests.pas"/>
     <DCCReference Include="ShellTools.TestSupport.pas"/>
     <BuildConfiguration Include="Debug"><Key>Debug</Key><CfgParent>Base</CfgParent></BuildConfiguration>

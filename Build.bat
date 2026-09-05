@@ -72,7 +72,7 @@ for %%F in (libeay32.dll ssleay32.dll) do if not exist "%DDS_OPENSSL%\%%F" (
     echo ERROR: Missing "%DDS_OPENSSL%\%%F". Restore it from Git.
     goto failed
 )
-for %%R in (VersionInfo.rc ShellExtensionManifest.rc Icons\images.RC GUI\GUIManifest.rc GUI\GUIResources.rc GUI\AwesomeFont.rc) do (
+for %%R in (VersionInfo.rc ShellExtensionManifest.rc Icons\images.RC GUI\GUIManifest.rc GUI\GUIResources.rc GUI\AwesomeFont.rc units\DelphiDevShellTools.Phosphor.Font.rc) do (
     call :compile_resource "%%R"
     if errorlevel 1 goto failed
 )
@@ -150,7 +150,12 @@ rem Resolve asset paths relative to each RC source, never the caller's directory
 for %%R in ("%DDS_ROOT%\%~1") do (
     pushd "%%~dpR"
     if errorlevel 1 exit /b 1
-    "%DDS_DELPHI%\bin\brcc32.exe" "%%~nxR"
+    if /i "%~1"=="Icons\images.RC" (
+        rem BRCC32 cannot allocate modern ICO frames. LLVM-RC preserves high-resolution PNG-compressed frames.
+        "%DDS_DELPHI%\bin64\llvm-rc.exe" /no-preprocess /FO "%%~nR.res" "%%~nxR"
+    ) else (
+        "%DDS_DELPHI%\bin\brcc32.exe" "%%~nxR"
+    )
 )
 set "DDS_RESOURCE_RESULT=%errorlevel%"
 popd
@@ -177,6 +182,8 @@ set "DDS_RELOAD_LIVE=%DDS_ROOT%\%DDS_PLATFORM%\%DDS_CONFIG%"
 set "DDS_RELOAD_NEW=%DDS_RELOAD_STAGE%\%DDS_PLATFORM%\%DDS_CONFIG%"
 set "DDS_RELOAD_BACKUP=%DDS_RELOAD_NEW%\previous"
 set "DDS_RELOAD_FILES=GUIDelphiDevShell.exe libeay32.dll ssleay32.dll DelphiDevShellTools.dll"
+set "DDS_RELOAD_LOG=%DDS_ROOT%\build\logs\reload-%DDS_PLATFORM%-%DDS_CONFIG%.log"
+>"%DDS_RELOAD_LOG%" echo [%date% %time%] Reload started.
 set "DDS_ARCH=%DDS_PLATFORM%"
 call :registry_view
 call :read_registered
@@ -217,6 +224,7 @@ for %%F in (%DDS_RELOAD_FILES%) do (
     if errorlevel 1 goto failed
 )
 set "DDS_RELOAD_EXPLORER="
+set "DDS_RELOAD_EXPLORER_PID="
 set "DDS_RELOAD_BLOCKED="
 "%DDS_SYSTEM%\tasklist.exe" /m DelphiDevShellTools.dll /fo csv /nh >"%DDS_RELOAD_NEW%\holders.csv"
 if errorlevel 1 goto failed
@@ -228,24 +236,33 @@ if errorlevel 1 goto reload_recover
 if defined DDS_RELOAD_EXPLORER (
     echo Restarting Explorer in session %DDS_RELOAD_SESSION%; its folder windows will close.
     "%DDS_SYSTEM%\taskkill.exe" /f /fi "SESSION eq %DDS_RELOAD_SESSION%" /fi "USERNAME eq %USERDOMAIN%\%USERNAME%" /im explorer.exe
+    if errorlevel 1 (
+        call :reload_log "Explorer termination failed."
+        goto reload_recover
+    )
+    call :reload_wait_for_explorer
     if errorlevel 1 goto reload_recover
 )
 if not exist "%DDS_RELOAD_LIVE%\" mkdir "%DDS_RELOAD_LIVE%"
 if not exist "%DDS_RELOAD_LIVE%\" goto reload_recover
 set "DDS_RELOAD_COPYING=1"
 for %%F in (%DDS_RELOAD_FILES%) do (
-    copy /y "%DDS_RELOAD_NEW%\%%F" "%DDS_RELOAD_LIVE%\%%F" >nul
+    call :reload_replace_file %%F
     if errorlevel 1 goto reload_recover
 )
 set "DDS_ACTION=register"
 call :register_one %DDS_PLATFORM%
-if errorlevel 1 goto reload_recover
+if errorlevel 1 (
+    call :reload_log "New COM registration failed."
+    goto reload_recover
+)
 call :reload_start_explorer
 if errorlevel 1 (
     echo ERROR: Could not start Explorer. Run explorer.exe manually.
     goto failed
 )
 set "DDS_ACTION=%DDS_RELOAD_ACTION%"
+call :reload_log "Reload completed."
 echo Reload complete: "%DDS_RELOAD_LIVE%\DelphiDevShellTools.dll"
 goto success
 
@@ -265,14 +282,56 @@ if errorlevel 1 goto reload_foreign_holder
 findstr /i /c:"explorer.exe" "%DDS_RELOAD_NEW%\session-holder.csv" >nul
 if errorlevel 1 goto reload_foreign_holder
 set "DDS_RELOAD_EXPLORER=1"
+set "DDS_RELOAD_EXPLORER_PID=%~2"
 exit /b 0
 :reload_foreign_holder
 echo ERROR: %~1 PID %~2 holds a shell DLL outside this session's Explorer. Close it and retry --reload.
 set "DDS_RELOAD_BLOCKED=1"
 exit /b 0
 
+:reload_wait_for_explorer
+if not defined DDS_RELOAD_EXPLORER_PID exit /b 0
+set "DDS_RELOAD_WAIT_COUNT=0"
+:reload_wait_for_explorer_loop
+"%DDS_SYSTEM%\tasklist.exe" /fi "PID eq %DDS_RELOAD_EXPLORER_PID%" /fo csv /nh >"%DDS_RELOAD_NEW%\explorer-wait.csv" 2>&1
+findstr /i /c:"explorer.exe" "%DDS_RELOAD_NEW%\explorer-wait.csv" >nul
+if errorlevel 1 (
+    call :reload_log "Explorer PID %DDS_RELOAD_EXPLORER_PID% released the shell DLL."
+    exit /b 0
+)
+set /a DDS_RELOAD_WAIT_COUNT+=1
+if %DDS_RELOAD_WAIT_COUNT% GEQ 15 (
+    echo ERROR: Explorer PID %DDS_RELOAD_EXPLORER_PID% did not exit within 15 seconds.
+    call :reload_log "Timed out waiting for Explorer PID %DDS_RELOAD_EXPLORER_PID%."
+    exit /b 1
+)
+"%DDS_SYSTEM%\timeout.exe" /t 1 /nobreak >nul
+goto reload_wait_for_explorer_loop
+
+:reload_replace_file
+set "DDS_RELOAD_FILE=%~1"
+set "DDS_RELOAD_COPY_ATTEMPT=0"
+:reload_replace_file_loop
+copy /y "%DDS_RELOAD_NEW%\%DDS_RELOAD_FILE%" "%DDS_RELOAD_LIVE%\%DDS_RELOAD_FILE%" >nul 2>&1
+if not errorlevel 1 (
+    fc /b "%DDS_RELOAD_NEW%\%DDS_RELOAD_FILE%" "%DDS_RELOAD_LIVE%\%DDS_RELOAD_FILE%" >nul 2>&1
+    if not errorlevel 1 (
+        call :reload_log "Replaced and verified %DDS_RELOAD_FILE%."
+        exit /b 0
+    )
+)
+set /a DDS_RELOAD_COPY_ATTEMPT+=1
+if %DDS_RELOAD_COPY_ATTEMPT% GEQ 5 (
+    echo ERROR: Could not replace and verify "%DDS_RELOAD_LIVE%\%DDS_RELOAD_FILE%" after 5 attempts.
+    call :reload_log "Replacement failed for %DDS_RELOAD_FILE%."
+    exit /b 1
+)
+"%DDS_SYSTEM%\timeout.exe" /t 1 /nobreak >nul
+goto reload_replace_file_loop
+
 :reload_recover
 echo ERROR: Reload failed; restoring the previous files and registration.
+call :reload_log "Reload failed; recovery started."
 set "DDS_RELOAD_RECOVERY_FAILED="
 if defined DDS_RELOAD_COPYING (
     set "DDS_ACTION=unregister"
@@ -292,6 +351,8 @@ if defined DDS_RELOAD_OLD_DLL (
 )
 call :reload_start_explorer
 if defined DDS_RELOAD_RECOVERY_FAILED echo ERROR: Recovery needs attention. Previous files: "%DDS_RELOAD_BACKUP%".
+if defined DDS_RELOAD_RECOVERY_FAILED call :reload_log "Recovery needs attention."
+if not defined DDS_RELOAD_RECOVERY_FAILED call :reload_log "Recovery completed."
 set "DDS_ACTION=%DDS_RELOAD_ACTION%"
 goto failed
 
@@ -344,6 +405,10 @@ if not exist "%DDS_MSBUILD%" (
     exit /b 1
 )
 if not exist "%DDS_DELPHI%\bin\brcc32.exe" exit /b 1
+if not exist "%DDS_DELPHI%\bin64\llvm-rc.exe" (
+    echo ERROR: Delphi LLVM resource compiler is missing: "%DDS_DELPHI%\bin64\llvm-rc.exe".
+    exit /b 1
+)
 echo Compiler: "%DDS_DELPHI%"
 exit /b 0
 
@@ -484,10 +549,13 @@ set "DDS_REG_OPTIONS=/s /u"
 set "DDS_REGSVR=%DDS_SYSTEM%\regsvr32.exe"
 if defined DDS_64BIT if /i "%DDS_ARCH%"=="Win32" set "DDS_REGSVR=%SystemRoot%\SysWOW64\regsvr32.exe"
 start "" /wait "%DDS_REGSVR%" %DDS_REG_OPTIONS% "%DDS_DLL%"
-if errorlevel 1 (
-    echo ERROR: regsvr32 failed for "%DDS_DLL%".
+set "DDS_REGSVR_RESULT=%errorlevel%"
+if not "%DDS_REGSVR_RESULT%"=="0" (
+    echo ERROR: regsvr32 failed with exit code %DDS_REGSVR_RESULT% for "%DDS_DLL%".
+    call :reload_log "regsvr32 exit code %DDS_REGSVR_RESULT% for %DDS_ACTION%: %DDS_DLL%"
     exit /b 1
 )
+call :reload_log "regsvr32 completed for %DDS_ACTION%: %DDS_DLL%"
 call :read_registered
 call :read_handler
 if /i "%DDS_ACTION%"=="unregister" goto verify_unregistered
@@ -538,11 +606,16 @@ exit /b 0
 if not exist "%DDS_ROOT%\build\logs\" mkdir "%DDS_ROOT%\build\logs"
 if not exist "%DDS_ROOT%\build\logs\" exit /b 1
 exit /b 0
+
+:reload_log
+if defined DDS_RELOAD_LOG >>"%DDS_RELOAD_LOG%" echo [%date% %time%] %~1
+exit /b 0
 :success
 popd
 exit /b 0
 :failed
 echo ERROR: %DDS_ACTION% failed.
+if defined DDS_RELOAD_LOG echo Reload log: "%DDS_RELOAD_LOG%".
 popd
 exit /b 1
 :usage_error

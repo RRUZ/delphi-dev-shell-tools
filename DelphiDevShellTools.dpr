@@ -1,6 +1,7 @@
 library DelphiDevShellTools;
 
 uses
+  Winapi.Windows,
   DelphiDevShellTools.Logging in 'units\DelphiDevShellTools.Logging.pas',
   DelphiDevShellTools.SettingsStore in 'units\DelphiDevShellTools.SettingsStore.pas',
   DelphiDevShellTools.Commands in 'units\DelphiDevShellTools.Commands.pas',
@@ -15,15 +16,26 @@ uses
   DelphiDevShellTools.ComRegistration in 'units\DelphiDevShellTools.ComRegistration.pas',
   DelphiDevShellTools.DelphiVersions in 'units\DelphiDevShellTools.DelphiVersions.pas',
   DelphiDevShellTools.Misc in 'units\DelphiDevShellTools.Misc.pas',
+  DelphiDevShellTools.UI in 'units\DelphiDevShellTools.UI.pas',
+  DelphiDevShellTools.Phosphor.Font in 'units\DelphiDevShellTools.Phosphor.Font.pas',
+  DelphiDevShellTools.Phosphor.Names in 'units\DelphiDevShellTools.Phosphor.Names.pas',
+  DelphiDevShellTools.Icons in 'units\DelphiDevShellTools.Icons.pas',
   DelphiDevShellTools.ProjectInfoPanel in 'units\DelphiDevShellTools.ProjectInfoPanel.pas',
   DelphiDevShellTools.Registry in 'units\DelphiDevShellTools.Registry.pas',
   DelphiDevShellTools.SupportedIDEs in 'units\DelphiDevShellTools.SupportedIDEs.pas',
   DelphiDevShellTools.LazarusVersions in 'units\DelphiDevShellTools.LazarusVersions.pas',
   DelphiDevShellTools.Tasks in 'units\DelphiDevShellTools.Tasks.pas';
 
+function DelphiDevShellToolsDllCanUnloadNow: HResult; stdcall;
+begin
+  Result := System.Win.ComServ.DllCanUnloadNow;
+  if (Result = S_OK) and not TryShutdownPhosphorFont then
+    Result := S_FALSE;
+end;
+
 exports
   DllGetClassObject,
-  DllCanUnloadNow,
+  DelphiDevShellToolsDllCanUnloadNow name 'DllCanUnloadNow',
   DllRegisterServer,
   DllUnregisterServer,
   DllInstall;
