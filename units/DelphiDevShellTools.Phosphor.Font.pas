@@ -58,7 +58,8 @@ type
     function TryShutdown: Boolean;
     procedure RenderBitmap(ABitmap: TBitmap; ACode: Word; ASize: Integer;
       APrimaryColor, ASecondaryColor: TColor; ASecondaryOpacity: Byte;
-      ADuotone: Boolean; APrimaryWeight: TPhosphorFontWeight);
+      ADuotone: Boolean; APrimaryWeight: TPhosphorFontWeight;
+      AReinforcePrimary: Boolean);
   public
     constructor Create;
     destructor Destroy; override;
@@ -68,7 +69,7 @@ type
       AColor: TColor; AWeight: TPhosphorFontWeight = pfwRegular);
     procedure DrawDuotoneIcon(ADC: HDC; ACode: Word;
       const ADestRect: TRect; APrimaryColor, ASecondaryColor: TColor;
-      ASecondaryOpacity: Byte = 76);
+      ASecondaryOpacity: Byte = 76; AReinforcePrimary: Boolean = True);
     function GetIconCodes(
       AWeight: TPhosphorFontWeight = pfwRegular): TArray<Word>;
     function HasGlyph(ACode: Word;
@@ -77,7 +78,7 @@ type
       AColor: TColor; AWeight: TPhosphorFontWeight = pfwRegular);
     procedure RenderDuotoneBitmap(ABitmap: TBitmap; ACode: Word;
       ASize: Integer; APrimaryColor, ASecondaryColor: TColor;
-      ASecondaryOpacity: Byte = 76);
+      ASecondaryOpacity: Byte = 76; AReinforcePrimary: Boolean = True);
   end;
 
   TPhosphorIcon = class(TCustomControl)
@@ -108,6 +109,8 @@ const
   cPhPulse = $E000;
   cPhArrowsClockwise = $E094;
   cPhAndroidLogo = $E008;
+  cPhBrowser = $E0F4;
+  cPhChartBar = $E150;
   cPhClipboardText = $E198;
   cPhClockCounterClockwise = $E1A0;
   cPhAppWindow = $E5DA;
@@ -121,6 +124,7 @@ const
   cPhFingerprint = $E23E;
   cPhFolderOpen = $E256;
   cPhGear = $E270;
+  cPhGlobe = $E288;
   cPhHash = $E2A2;
   cPhInfo = $E2CE;
   cPhLeaf = $E2DA;
@@ -133,16 +137,23 @@ const
   cPhNumberCircleOne = $E36A;
   cPhNumberCircleThree = $E37C;
   cPhNumberCircleTwo = $E382;
+  cPhPalette = $E6C8;
   cPhPath = $E39C;
+  cPhPlus = $E3D4;
+  cPhShield = $E40A;
   cPhShieldCheck = $E40C;
+  cPhShieldSlash = $E410;
   cPhSignIn = $E428;
   cPhSlidersHorizontal = $E434;
   cPhStack = $E466;
   cPhSun = $E472;
   cPhTable = $E476;
   cPhTerminal = $E47E;
+  cPhTrash = $E4A6;
   cPhWarning = $E4E0;
+  cPhUser = $E4C2;
   cPhAppleLogo = $E516;
+  cPhGithubLogo = $E576;
   cPhWrench = $E5D4;
   cPhArrowSquareOut = $E5DE;
   cPhBug = $E5F4;
@@ -151,14 +162,18 @@ const
   cPhTreeStructure = $E67C;
   cPhWindowsLogo = $E692;
   cPhFiles = $E710;
+  cPhCpu = $E610;
   cPhHammer = $E80E;
+  cPhBracketsCurly = $E860;
   cPhTerminalWindow = $EAE8;
   cPhDevices = $EBA4;
   cPhToolbox = $ECA0;
   cPhListChecks = $EADC;
   cPhCodeBlock = $EAFE;
+  cPhHandTap = $EC90;
   cPhNetwork = $EDDE;
   cPhBinary = $EE60;
+  cPhScales = $E750;
 
 function TryGetPhosphorFont(out AFont: TPhosphorFont): Boolean;
 function TryShutdownPhosphorFont: Boolean;
@@ -450,13 +465,12 @@ end;
 
 procedure TPhosphorFont.DrawDuotoneIcon(ADC: HDC; ACode: Word;
   const ADestRect: TRect; APrimaryColor, ASecondaryColor: TColor;
-  ASecondaryOpacity: Byte);
+  ASecondaryOpacity: Byte; AReinforcePrimary: Boolean);
 begin
   if (ADC = 0) or (ADestRect.Width <= 0) or (ADestRect.Height <= 0) then
     Exit;
   BeginRenderSession;
   try
-    var LPrimaryCollection := GetFontCollection(pfwBold);
     var LDuotoneCollection := GetFontCollection(pfwDuotone);
     var LSavedDC := SaveDC(ADC);
     if LSavedDC = 0 then
@@ -472,8 +486,9 @@ begin
           ADestRect, ASecondaryColor, ASecondaryOpacity, pfwDuotone);
         DrawIconLayer(LGraphics, LDuotoneCollection, ACode + 1,
           ADestRect, APrimaryColor, 255, pfwDuotone);
-        DrawIconLayer(LGraphics, LPrimaryCollection, ACode,
-          ADestRect, APrimaryColor, 255, pfwBold);
+        if AReinforcePrimary then
+          DrawIconLayer(LGraphics, GetFontCollection(pfwBold), ACode,
+            ADestRect, APrimaryColor, 255, pfwBold);
       finally
         LGraphics.Free;
       end;
@@ -621,7 +636,7 @@ end;
 procedure TPhosphorFont.RenderBitmap(ABitmap: TBitmap; ACode: Word;
   ASize: Integer; APrimaryColor, ASecondaryColor: TColor;
   ASecondaryOpacity: Byte; ADuotone: Boolean;
-  APrimaryWeight: TPhosphorFontWeight);
+  APrimaryWeight: TPhosphorFontWeight; AReinforcePrimary: Boolean);
 var
   LBitmapInfo: TBitmapInfo;
   LBits: Pointer;
@@ -676,8 +691,9 @@ begin
               LRect, ASecondaryColor, ASecondaryOpacity, pfwDuotone);
             DrawIconLayer(LGraphics, LDuotoneCollection, ACode + 1,
               LRect, APrimaryColor, 255, pfwDuotone);
-            DrawIconLayer(LGraphics, LPrimaryCollection, ACode,
-              LRect, APrimaryColor, 255, APrimaryWeight);
+            if AReinforcePrimary then
+              DrawIconLayer(LGraphics, LPrimaryCollection, ACode,
+                LRect, APrimaryColor, 255, APrimaryWeight);
           end
           else
             DrawIconLayer(LGraphics, LPrimaryCollection, ACode, LRect,
@@ -703,17 +719,17 @@ end;
 
 procedure TPhosphorFont.RenderDuotoneBitmap(ABitmap: TBitmap; ACode: Word;
   ASize: Integer; APrimaryColor, ASecondaryColor: TColor;
-  ASecondaryOpacity: Byte);
+  ASecondaryOpacity: Byte; AReinforcePrimary: Boolean);
 begin
   RenderBitmap(ABitmap, ACode, ASize, APrimaryColor, ASecondaryColor,
-    ASecondaryOpacity, True, pfwBold);
+    ASecondaryOpacity, True, pfwBold, AReinforcePrimary);
 end;
 
 procedure TPhosphorFont.RenderIconBitmap(ABitmap: TBitmap; ACode: Word;
   ASize: Integer; AColor: TColor; AWeight: TPhosphorFontWeight);
 begin
   RenderBitmap(ABitmap, ACode, ASize, AColor, AColor, 255, False,
-    AWeight);
+    AWeight, False);
 end;
 
 { TPhosphorIcon }

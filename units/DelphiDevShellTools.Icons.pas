@@ -64,7 +64,21 @@ type
     piiCopyPath,
     piiAdministrator,
     piiFPCTools,
-    piiExternalTools);
+    piiExternalTools,
+    piiCustomFormatter,
+    piiCustomPackage,
+    piiCustomDependency,
+    piiCustomHeader,
+    piiCustomTerminal,
+    piiCustomTouch,
+    piiCustomResource,
+    piiCustomMetrics,
+    piiCustomAudits,
+    piiCustomStyle,
+    piiCustomDump32,
+    piiCustomDump64,
+    piiCustomRegister,
+    piiCustomUnregister);
 
   TProjectIconPaletteRole = (
     pipNeutral,
@@ -92,6 +106,8 @@ type
   end;
 
 function GetProjectIconDescriptors: TArray<TProjectIconDescriptor>;
+function ProjectIconDisplayName(const AKey: string): string;
+function DefaultCustomToolIconKey(const AToolName: string): string;
 procedure ResolveProjectIconPalette(ARole: TProjectIconPaletteRole;
   const ATheme: TDevShellTheme;
   out APrimaryColor, ASecondaryColor: TColor);
@@ -146,7 +162,7 @@ type
 
 const
   cDefaultSecondaryOpacity = 76;
-  cProjectIcons: array[0..33] of TProjectIconDescriptor = (
+  cProjectIcons: array[0..47] of TProjectIconDescriptor = (
     (Id: piiNotepad; Key: 'notepad'; PhosphorName: 'notepad';
       Code: cPhNotepad; PaletteRole: pipEdit;
       SecondaryOpacity: cDefaultSecondaryOpacity;
@@ -301,7 +317,63 @@ const
     (Id: piiExternalTools; Key: 'wrench'; PhosphorName: 'wrench';
       Code: cPhWrench; PaletteRole: pipNeutral;
       SecondaryOpacity: cDefaultSecondaryOpacity;
-      FallbackBitmapResource: 'wrench'; FallbackIconResource: 'wrench_ico')
+      FallbackBitmapResource: 'wrench'; FallbackIconResource: 'wrench_ico'),
+    (Id: piiCustomFormatter; Key: 'tool_formatter'; PhosphorName: 'code';
+      Code: cPhCode; PaletteRole: pipFramework;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomPackage; Key: 'tool_package'; PhosphorName: 'cube';
+      Code: cPhCube; PaletteRole: pipBuild;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomDependency; Key: 'tool_dependency';
+      PhosphorName: 'magnifying-glass'; Code: cPhMagnifyingGlass;
+      PaletteRole: pipCopy; SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomHeader; Key: 'tool_header'; PhosphorName: 'file-text';
+      Code: cPhFileText; PaletteRole: pipCopy;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomTerminal; Key: 'tool_terminal'; PhosphorName: 'terminal';
+      Code: cPhTerminal; PaletteRole: pipEdit;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomTouch; Key: 'tool_touch'; PhosphorName: 'hand-tap';
+      Code: cPhHandTap; PaletteRole: pipWarning;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomResource; Key: 'tool_resource'; PhosphorName: 'cpu';
+      Code: cPhCpu; PaletteRole: pipBuild;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomMetrics; Key: 'tool_metrics'; PhosphorName: 'chart-bar';
+      Code: cPhChartBar; PaletteRole: pipCopy;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomAudits; Key: 'tool_audits'; PhosphorName: 'list-checks';
+      Code: cPhListChecks; PaletteRole: pipCopy;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomStyle; Key: 'tool_style'; PhosphorName: 'palette';
+      Code: cPhPalette; PaletteRole: pipFramework;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomDump32; Key: 'tool_dump32'; PhosphorName: 'app-window';
+      Code: cPhAppWindow; PaletteRole: pipCopy;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomDump64; Key: 'tool_dump64'; PhosphorName: 'app-window';
+      Code: cPhAppWindow; PaletteRole: pipCopy;
+      SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomRegister; Key: 'tool_register';
+      PhosphorName: 'shield-check'; Code: cPhShieldCheck;
+      PaletteRole: pipEdit; SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: ''),
+    (Id: piiCustomUnregister; Key: 'tool_unregister';
+      PhosphorName: 'shield-slash'; Code: cPhShieldSlash;
+      PaletteRole: pipWarning; SecondaryOpacity: cDefaultSecondaryOpacity;
+      FallbackBitmapResource: ''; FallbackIconResource: '')
   );
 
   cProjectIconOverlays: array[0..11] of TProjectIconOverlay = (
@@ -358,6 +430,95 @@ begin
   SetLength(Result, Length(cProjectIcons));
   for var LIndex := Low(cProjectIcons) to High(cProjectIcons) do
     Result[LIndex] := cProjectIcons[LIndex];
+end;
+
+function ProjectIconDisplayName(const AKey: string): string;
+var
+  LDescriptor: TProjectIconDescriptor;
+begin
+  if not TryGetProjectIcon(AKey, LDescriptor) then
+    Exit(ChangeFileExt(ExtractFileName(AKey), ''));
+
+  case LDescriptor.Id of
+    piiCommandPrompt: Result := 'Command prompt';
+    piiMacOS: Result := 'macOS';
+    piiIOS: Result := 'iOS';
+    piiWindows: Result := 'Windows';
+    piiDelphiUnavailable: Result := 'Delphi unavailable';
+    piiRadStudioCommandPrompt: Result := 'RAD Studio command prompt';
+    piiMSBuild: Result := 'MSBuild';
+    piiFireMonkey: Result := 'FireMonkey';
+    piiVCL: Result := 'VCL';
+    piiLazarus: Result := 'Lazarus';
+    piiLazBuild: Result := 'Lazarus build';
+    piiBuildConfiguration: Result := 'Build configuration';
+    piiCommonTasks: Result := 'Common tasks';
+    piiChecksumCRC32: Result := 'Checksum CRC32';
+    piiChecksumMD4: Result := 'Checksum MD4';
+    piiChecksumMD5: Result := 'Checksum MD5';
+    piiChecksumSHA1: Result := 'Checksum SHA-1';
+    piiChecksumSHA256: Result := 'Checksum SHA-256';
+    piiChecksumSHA384: Result := 'Checksum SHA-384';
+    piiChecksumSHA512: Result := 'Checksum SHA-512';
+    piiCopyUNC: Result := 'Copy UNC path';
+    piiCopyURL: Result := 'Copy URL';
+    piiCopyContent: Result := 'Copy content';
+    piiCopyPath: Result := 'Copy path';
+    piiFPCTools: Result := 'FPC tools';
+    piiExternalTools: Result := 'External tools';
+    piiCustomFormatter: Result := 'Formatter';
+    piiCustomPackage: Result := 'Package';
+    piiCustomDependency: Result := 'Dependency';
+    piiCustomHeader: Result := 'Header';
+    piiCustomTerminal: Result := 'Terminal';
+    piiCustomTouch: Result := 'Touch file';
+    piiCustomResource: Result := 'Resource';
+    piiCustomMetrics: Result := 'Metrics';
+    piiCustomAudits: Result := 'Audits';
+    piiCustomStyle: Result := 'Styles';
+    piiCustomDump32: Result := 'TDump 32';
+    piiCustomDump64: Result := 'TDump 64';
+    piiCustomRegister: Result := 'Register';
+    piiCustomUnregister: Result := 'Unregister';
+  else
+    Result := StringReplace(LDescriptor.Key, '_', ' ', [rfReplaceAll]);
+    if Result <> '' then
+      Result[1] := UpCase(Result[1]);
+  end;
+end;
+
+function DefaultCustomToolIconKey(const AToolName: string): string;
+begin
+  if SameText(AToolName, 'Formatter Delphi') then
+    Result := 'tool_formatter'
+  else if SameText(AToolName, 'ppudump') then
+    Result := 'tool_package'
+  else if SameText(AToolName, 'ppdep') then
+    Result := 'tool_dependency'
+  else if SameText(AToolName, 'h2pas') then
+    Result := 'tool_header'
+  else if SameText(AToolName, 'ptop') then
+    Result := 'tool_terminal'
+  else if SameText(AToolName, 'Touch') then
+    Result := 'tool_touch'
+  else if SameText(AToolName, 'BRCC32') then
+    Result := 'tool_resource'
+  else if SameText(AToolName, 'AuditsCLI Metrics') then
+    Result := 'tool_metrics'
+  else if SameText(AToolName, 'AuditsCLI Audits') then
+    Result := 'tool_audits'
+  else if SameText(AToolName, 'OpenFMXStyle') then
+    Result := 'tool_style'
+  else if SameText(AToolName, 'TDump 32') then
+    Result := 'tool_dump32'
+  else if SameText(AToolName, 'TDump 64') then
+    Result := 'tool_dump64'
+  else if SameText(AToolName, 'RegSvr32 Install') then
+    Result := 'tool_register'
+  else if SameText(AToolName, 'RegSvr32 Uninstall') then
+    Result := 'tool_unregister'
+  else
+    Result := 'wrench';
 end;
 
 function BeginProjectIconRenderBatch: Boolean;

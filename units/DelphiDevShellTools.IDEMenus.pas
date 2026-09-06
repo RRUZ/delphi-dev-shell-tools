@@ -895,7 +895,9 @@ begin
                LArray:= SplitString(LClientDataSet.FieldByName('Extensions').AsString, ',');
                if MatchText(Context.FileExt, LArray) then
                begin
-                if (LClientDataSet.FieldByName('Image').IsNull) or (not FileExists(GetDevShellToolsImagesFolder+LClientDataSet.FieldByName('Image').AsString)) then
+                if LClientDataSet.FieldByName('Image').IsNull or
+                  not Context.IsMenuIconAvailable(
+                    LClientDataSet.FieldByName('Image').AsString) then
                   Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(LCurrentDelphiVersionData.Name+' - '+TDelphiDevShellTasks.ParseMacros(LClientDataSet.FieldByName('Menu').AsString, LCurrentDelphiVersionData, Context.FileName)), nil)
                 else
                 begin

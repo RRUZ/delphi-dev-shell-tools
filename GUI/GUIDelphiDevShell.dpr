@@ -81,6 +81,8 @@ begin
   OnlyOne;
 
   Application.Initialize;
+  if (ParamCount > 0) and SameText('-settings', ParamStr(1)) then
+    ActivateSettingsVclStyle;
   Application.MainFormOnTaskbar := True;
   if (ParamCount = 2) and SameText(ParamStr(1), '--execute') then
   begin

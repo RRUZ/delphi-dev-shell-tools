@@ -1,11 +1,14 @@
 // Application icon and version; generated RES files are not source inputs.
+GLOW VCLSTYLE "styles\\Glow.vsf"
+
 MAINICON ICON "GUIDelphiDevShell_Icon.ico"
+SETTINGS_LOGO RCDATA "..\\Icons\\logo.png"
 
 1 VERSIONINFO
  FILEVERSION 1,0,0,0
  PRODUCTVERSION 1,0,0,0
- FILEOS VOS__WINDOWS32
- FILETYPE VFT_APP
+ FILEOS 0x00000004
+ FILETYPE 0x00000001
  BEGIN
    BLOCK "StringFileInfo"
    BEGIN

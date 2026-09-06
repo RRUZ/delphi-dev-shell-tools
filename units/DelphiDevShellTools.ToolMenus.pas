@@ -428,7 +428,9 @@ begin
              if MatchText(Context.FileExt, LArray) then
              begin
 
-              if (LClientDataSet.FieldByName('Image').IsNull) or (not FileExists(GetDevShellToolsImagesFolder+LClientDataSet.FieldByName('Image').AsString)) then
+              if LClientDataSet.FieldByName('Image').IsNull or
+                not Context.IsMenuIconAvailable(
+                  LClientDataSet.FieldByName('Image').AsString) then
                Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(TDelphiDevShellTasks.ParseMacros(LClientDataSet.FieldByName('Menu').AsString, nil, Context.FileName)), nil)
               else
               begin
@@ -531,7 +533,9 @@ begin
              if MatchText(Context.FileExt, LArray) then
              begin
 
-              if (LClientDataSet.FieldByName('Image').IsNull) or (not FileExists(GetDevShellToolsImagesFolder+LClientDataSet.FieldByName('Image').AsString)) then
+              if LClientDataSet.FieldByName('Image').IsNull or
+                not Context.IsMenuIconAvailable(
+                  LClientDataSet.FieldByName('Image').AsString) then
                Context.InsertMenuDevShell(LSubMenu, LSubMenuIndex, uIDNewItem, PWideChar(TDelphiDevShellTasks.ParseMacros(LClientDataSet.FieldByName('Menu').AsString, nil, Context.FileName)), nil)
               else
               begin

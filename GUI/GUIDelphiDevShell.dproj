@@ -109,7 +109,7 @@
     </PropertyGroup>
     <ItemGroup>
         <RcCompile Include="GUIManifest.rc"/>
-        <RcCompile Include="GUIResources.rc"/>
+        <None Include="GUIResources.rc"/>
         <RcCompile Include="..\units\DelphiDevShellTools.Phosphor.Font.rc"/>
         <None Include="GUIDelphiDevShell.manifest"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Logging.pas"/>

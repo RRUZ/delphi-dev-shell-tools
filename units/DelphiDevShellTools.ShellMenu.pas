@@ -74,6 +74,7 @@ type
     procedure AddMenuSeparatorEx(hMenu: HMENU; var MenuIndex: Integer);
 
     procedure RegisterBitmap32(const ResourceName: string);
+    function IsMenuIconAvailable(const AIconName: string): Boolean;
 
     function ShellExtInitialize(pidlFolder: PItemIDList; lpdobj: IDataObject; hKeyProgID: HKEY): HResult;
     function QueryContextMenu(Menu: HMENU; indexMenu, idCmdFirst, idCmdLast, uFlags: UINT): HResult;
@@ -215,11 +216,31 @@ procedure TShellMenu.RegisterBitmap32(const ResourceName: string);
 var
   BulletColor: TColor;
   BulletHandle: HICON;
+  LDescriptor: TProjectIconDescriptor;
+  LSource: TProjectIconSource;
   LPicture: TPicture;
   SourceBitmap: TBitmap;
   FileName: string;
 begin
   try
+    if TryGetProjectIcon(ResourceName, LDescriptor) then
+    begin
+      if IsVistaOrLater and not FBitmapsDict.ContainsKey(ResourceName) then
+      begin
+        var LBitmap := TBitmap.Create;
+        try
+          if TryRenderProjectIconForSurface(LBitmap, ResourceName,
+            FMenuImageSize, FMenuTheme, False, HInstance, LSource) then
+          begin
+            FBitmapsDict.Add(ResourceName, LBitmap);
+            LBitmap := nil;
+          end;
+        finally
+          LBitmap.Free;
+        end;
+      end;
+      Exit;
+    end;
     if TryGetBulletColor(ResourceName, FMenuTheme, BulletColor) then
     begin
       if IsVistaOrLater then
@@ -274,6 +295,20 @@ begin
     on E: Exception do
       log(Format('RegisterBitmap32 Message %s Trace %s', [E.Message, E.StackTrace]));
   end;
+end;
+
+function TShellMenu.IsMenuIconAvailable(const AIconName: string): Boolean;
+var
+  LBulletColor: TColor;
+  LDescriptor: TProjectIconDescriptor;
+begin
+  if AIconName = '' then
+    Exit(False);
+  if TryGetProjectIcon(AIconName, LDescriptor) then
+    Exit(True);
+  if TryGetBulletColor(AIconName, FMenuTheme, LBulletColor) then
+    Exit(True);
+  Result := FileExists(GetDevShellToolsImagesFolder + AIconName);
 end;
 
 procedure TShellMenu.InitResources;

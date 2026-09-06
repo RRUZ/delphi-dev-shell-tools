@@ -6,6 +6,10 @@ set "DDS_ACTION=build"
 set "DDS_PLATFORM=Win64"
 set "DDS_CONFIG=Release"
 if not "%~1"=="" set "DDS_ACTION=%~1"
+if /i "%DDS_ACTION%"=="settings" (
+    set "DDS_PLATFORM=Win32"
+    set "DDS_CONFIG=Debug"
+)
 if not "%~2"=="" set "DDS_PLATFORM=%~2"
 if not "%~3"=="" set "DDS_CONFIG=%~3"
 if not "%~5"=="" goto usage_error
@@ -13,7 +17,7 @@ if /i "%~4"=="--reload" set "DDS_RELOAD=1"
 if not "%~4"=="" if not defined DDS_RELOAD goto usage_error
 if /i "%DDS_ACTION%"=="help" goto help
 set "DDS_VALID="
-for %%A in (build rebuild clean test test-registration register unregister status) do if /i "%DDS_ACTION%"=="%%A" set "DDS_VALID=1"
+for %%A in (build rebuild clean test test-registration register unregister status settings) do if /i "%DDS_ACTION%"=="%%A" set "DDS_VALID=1"
 if not defined DDS_VALID goto usage_error
 set "DDS_PLATFORMS="
 for %%A in (Win32 Win64) do if /i "%DDS_PLATFORM%"=="%%A" set "DDS_PLATFORMS=%%A"
@@ -25,6 +29,8 @@ if /i "%DDS_CONFIG%"=="All" set "DDS_CONFIGS=Debug Release"
 if not defined DDS_CONFIGS goto usage_error
 if /i "%DDS_ACTION%"=="register" if /i "%DDS_PLATFORM%"=="All" goto usage_error
 if /i "%DDS_ACTION%"=="register" if /i "%DDS_CONFIG%"=="All" goto usage_error
+if /i "%DDS_ACTION%"=="settings" if /i not "%DDS_PLATFORM%"=="Win32" goto usage_error
+if /i "%DDS_ACTION%"=="settings" if /i "%DDS_CONFIG%"=="All" goto usage_error
 if defined DDS_RELOAD (
     if /i not "%DDS_ACTION%"=="build" if /i not "%DDS_ACTION%"=="rebuild" goto usage_error
     if /i "%DDS_PLATFORM%"=="All" goto usage_error
@@ -63,6 +69,7 @@ call :initialize_compiler
 if errorlevel 1 goto failed
 call :logs
 if errorlevel 1 goto failed
+if /i "%DDS_ACTION%"=="settings" goto settings_host
 set "DDS_TARGET=Build"
 if /i "%DDS_ACTION%"=="rebuild" set "DDS_TARGET=Clean;Build"
 if /i "%DDS_ACTION%"=="clean" set "DDS_TARGET=Clean"
@@ -85,6 +92,28 @@ for %%C in (%DDS_CONFIGS%) do (
 call :cleanup_transient_resources
 if errorlevel 1 goto failed
 if /i "%DDS_ACTION%"=="test" goto tests
+goto success
+
+:settings_host
+set "DDS_CURRENT_CONFIG=%DDS_CONFIGS%"
+set "DDS_TARGET=Build"
+for %%R in (GUI\GUIManifest.rc GUI\GUIResources.rc units\DelphiDevShellTools.Phosphor.Font.rc) do (
+    call :compile_resource "%%R"
+    if errorlevel 1 goto failed
+)
+set "DDS_PROJECT=GUI\DelphiDevShellTools.GUI.SettingsHost.dproj"
+set "DDS_ARCH=Win32"
+set "DDS_OUTPUT=%DDS_ROOT%\Win32\SettingsHost\%DDS_CURRENT_CONFIG%"
+call :project_build
+if errorlevel 1 goto failed
+set "DDS_SETTINGS_HOST=%DDS_OUTPUT%\DelphiDevShellTools.GUI.SettingsHost.exe"
+if not exist "%DDS_SETTINGS_HOST%" (
+    echo ERROR: Missing Settings host: "%DDS_SETTINGS_HOST%".
+    goto failed
+)
+echo Launching: "%DDS_SETTINGS_HOST%"
+start "" "%DDS_SETTINGS_HOST%"
+if errorlevel 1 goto failed
 goto success
 
 :build_config
@@ -152,6 +181,9 @@ for %%R in ("%DDS_ROOT%\%~1") do (
     if errorlevel 1 exit /b 1
     if /i "%~1"=="Icons\images.RC" (
         rem BRCC32 cannot allocate modern ICO frames. LLVM-RC preserves high-resolution PNG-compressed frames.
+        "%DDS_DELPHI%\bin64\llvm-rc.exe" /no-preprocess /FO "%%~nR.res" "%%~nxR"
+    ) else if /i "%~1"=="GUI\GUIResources.rc" (
+        rem The GUI application icon also contains modern high-resolution PNG-compressed frames.
         "%DDS_DELPHI%\bin64\llvm-rc.exe" /no-preprocess /FO "%%~nR.res" "%%~nxR"
     ) else (
         "%DDS_DELPHI%\bin\brcc32.exe" "%%~nxR"
@@ -624,9 +656,11 @@ exit /b 2
 :help
 echo Build.bat [build^|rebuild^|clean^|test^|test-registration] [Win64^|Win32^|All] [Release^|Debug^|All]
 echo Build.bat [build^|rebuild] [Win64^|Win32] [Release^|Debug] --reload
+echo Build.bat settings [Win32] [Release^|Debug]
 echo Build.bat register [Win64^|Win32] [Release^|Debug]
 echo Build.bat [unregister^|status] [Win64^|Win32^|All]
 echo Defaults: build Win64 Release. Overrides: DELPHI_ROOT, DUNITX_ROOT.
+echo Settings defaults: Win32 Debug; builds and launches the standalone Settings host.
 echo DUnitX default: C:\dev\DUnitX-0.4.1. Logs: build\logs.
 echo Register/unregister/test-registration/--reload require an Administrator Command Prompt.
 echo --reload stages the build, registers it and restarts this session's Explorer if loaded.
