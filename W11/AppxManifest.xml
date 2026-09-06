@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
+  IgnorableNamespaces="uap uap10 rescap com desktop4 desktop5">
+  <Identity Name="RRUZ.DelphiDevShellTools.Modern" Publisher="CN=RRUZ.DelphiDevShellTools.Development" Version="0.1.0.0" ProcessorArchitecture="x64" />
+  <Properties>
+    <DisplayName>Delphi Dev Shell Tools</DisplayName>
+    <PublisherDisplayName>Rodrigo Ruz</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <uap10:AllowExternalContent>true</uap10:AllowExternalContent>
+  </Properties>
+  <Resources><Resource Language="en-us" /></Resources>
+  <Dependencies><TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.22000.0" MaxVersionTested="10.0.22621.0" /></Dependencies>
+  <Applications>
+    <Application Id="DelphiDevShellTools" Executable="GUIDelphiDevShell.exe" uap10:TrustLevel="mediumIL" uap10:RuntimeBehavior="win32App">
+      <uap:VisualElements AppListEntry="none" DisplayName="Delphi Dev Shell Tools" Description="Delphi development tools for File Explorer" BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" />
+      <Extensions>
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:SurrogateServer DisplayName="Delphi Dev Shell Tools modern commands">
+              <com:Class Id="E91A76D4-28C2-4E6D-A52A-6A39F28320C7" Path="DelphiDevShellTools.Modern.dll" ThreadingModel="STA" />
+            </com:SurrogateServer>
+          </com:ComServer>
+        </com:Extension>
+        <desktop4:Extension Category="windows.fileExplorerContextMenus">
+          <desktop4:FileExplorerContextMenus>
+            <desktop5:ItemType Type=".pas"><desktop5:Verb Id="DelphiSettings" Clsid="E91A76D4-28C2-4E6D-A52A-6A39F28320C7" /></desktop5:ItemType>
+            <desktop5:ItemType Type=".dpr"><desktop5:Verb Id="DelphiSettings" Clsid="E91A76D4-28C2-4E6D-A52A-6A39F28320C7" /></desktop5:ItemType>
+            <desktop5:ItemType Type=".dproj"><desktop5:Verb Id="DelphiSettings" Clsid="E91A76D4-28C2-4E6D-A52A-6A39F28320C7" /></desktop5:ItemType>
+            <desktop5:ItemType Type=".groupproj"><desktop5:Verb Id="DelphiSettings" Clsid="E91A76D4-28C2-4E6D-A52A-6A39F28320C7" /></desktop5:ItemType>
+          </desktop4:FileExplorerContextMenus>
+        </desktop4:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities><rescap:Capability Name="runFullTrust" /><rescap:Capability Name="unvirtualizedResources" /></Capabilities>
+</Package>

@@ -1,0 +1,47 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{A1F3DC57-676E-42FB-A963-0EC706A24C1E}</ProjectGuid>
+    <ProjectVersion>20.4</ProjectVersion>
+    <MainSource>DelphiDevShellTools.Modern.dpr</MainSource>
+    <ProjectName>DelphiDevShellTools.Modern</ProjectName>
+    <Config Condition="'$(Config)'==''">Release</Config>
+    <Platform Condition="'$(Platform)'==''">Win64</Platform>
+    <AppType>Library</AppType>
+    <FrameworkType>None</FrameworkType>
+    <TargetedPlatforms>2</TargetedPlatforms>
+    <Base>true</Base>
+    <GenDll>true</GenDll>
+    <UsePackages>false</UsePackages>
+    <DCC_EnabledPackages>false</DCC_EnabledPackages>
+    <DCC_Namespace>System;Winapi;System.Win</DCC_Namespace>
+    <DCC_UnitSearchPath>..\units;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+    <DCC_DcuOutput>..\build\modern\$(Config)\dcu</DCC_DcuOutput>
+    <DCC_ExeOutput>..\build\modern\$(Config)\app</DCC_ExeOutput>
+    <DCC_Optimize>true</DCC_Optimize>
+    <DCC_DebugInformation>0</DCC_DebugInformation>
+    <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+    <Manifest_File>None</Manifest_File>
+    <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Config)'=='Debug'">
+    <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+    <DCC_Optimize>false</DCC_Optimize>
+    <DCC_DebugInformation>2</DCC_DebugInformation>
+    <DCC_LocalDebugSymbols>true</DCC_LocalDebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <DelphiCompile Include="$(MainSource)"><MainSource>MainSource</MainSource></DelphiCompile>
+    <DCCReference Include="DelphiDevShellTools.Modern.SettingsCommand.pas" />
+    <DCCReference Include="..\units\DelphiDevShellTools.Commands.pas" />
+    <DCCReference Include="..\units\DelphiDevShellTools.Execution.pas" />
+    <DCCReference Include="..\units\DelphiDevShellTools.Installations.pas" />
+    <BuildConfiguration Include="Release"><Key>Cfg_Release</Key><CfgParent>Base</CfgParent></BuildConfiguration>
+    <BuildConfiguration Include="Debug"><Key>Cfg_Debug</Key><CfgParent>Base</CfgParent></BuildConfiguration>
+  </ItemGroup>
+  <ProjectExtensions><Borland.Personality>Delphi.Personality.12</Borland.Personality><Borland.ProjectType>Library</Borland.ProjectType><BorlandProject><Platforms><Platform value="Win64">True</Platform></Platforms></BorlandProject></ProjectExtensions>
+  <Target Name="ModernResources" BeforeTargets="ResourceBuild">
+    <Error Condition="'$(Platform)'!='Win64'" Text="The M1 modern adapter supports Win64 only." />
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="&quot;$(BDS)\bin64\llvm-rc.exe&quot; /no-preprocess /FO ModernResources.res ModernResources.rc" />
+  </Target>
+  <Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" />
+</Project>
