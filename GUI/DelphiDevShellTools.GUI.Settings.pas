@@ -309,6 +309,11 @@ const
   cCustomInputPaddingY = 4;
   cCustomListRowHeight = 23;
   cAboutValueLeft = 184;
+  cSideBarCaptions: array[cSideBarGeneral..cSideBarAbout] of string = (
+    'General', 'Menu', 'Custom tools', 'About');
+  cSideBarDescriptions: array[cSideBarGeneral..cSideBarAbout] of string = (
+    'File extensions and integration', 'Explorer context menu',
+    'Create and edit tools', 'Version and information');
 
 function TFrmSettings.GetLayoutPPI: Integer;
 begin
@@ -2977,11 +2982,6 @@ const
   cSideBarAccentWidth = 3;
   cSideBarHotFillBlend = 0.96;
   cSideBarHotBorderBlend = 0.86;
-  cSideBarCaptions: array[cSideBarGeneral..cSideBarAbout] of string = (
-    'General', 'Menu', 'Custom tools', 'About');
-  cSideBarDescriptions: array[cSideBarGeneral..cSideBarAbout] of string = (
-    'File extensions and integration', 'Explorer context menu',
-    'Create and edit tools', 'Version and information');
   cSideBarIconCodes: array[cSideBarGeneral..cSideBarAbout] of Word = (
     cPhSlidersHorizontal, cPhListChecks, cPhToolbox, cPhInfo);
 var
@@ -3106,13 +3106,6 @@ const
   cCustomViewHeaderLeft = 20;
   cCustomViewHeaderTitleTop = 6;
   cCustomViewHeaderDescriptionTop = 29;
-  cViewTitles: array[cSideBarGeneral..cSideBarAbout] of string = (
-    'General', 'Menu', 'Custom tools', 'About');
-  cViewDescriptions: array[cSideBarGeneral..cSideBarAbout] of string = (
-    'Configure the file extensions used by each shell feature.',
-    'Choose how commands are grouped in the Explorer context menu.',
-    'Create and edit Explorer context-menu tools.',
-    'Application information, project links and third-party credits.');
 var
   LHeaderLeft: Integer;
   LTitleTop: Integer;
@@ -3137,8 +3130,8 @@ begin
   LabelViewDescription.SetBounds(MulDiv(LHeaderLeft, CurrentPPI, cDesignPPI),
     MulDiv(LDescriptionTop, CurrentPPI, cDesignPPI),
     LabelViewDescription.Width, LabelViewDescription.Height);
-  LabelViewTitle.Caption := cViewTitles[AIndex];
-  LabelViewDescription.Caption := cViewDescriptions[AIndex];
+  LabelViewTitle.Caption := cSideBarCaptions[AIndex];
+  LabelViewDescription.Caption := cSideBarDescriptions[AIndex];
   if Assigned(FFooterStatusLabel) then
   begin
     if AIndex = cSideBarGeneral then
@@ -3146,7 +3139,7 @@ begin
         'Configure file extensions and integrations for the Windows Explorer context menu.'
     else
       FFooterStatusLabel.Caption := 'Delphi Dev. Shell Tools   |   ' +
-        cViewDescriptions[AIndex];
+        cSideBarDescriptions[AIndex];
   end;
 end;
 procedure TFrmSettings.BtnInsertMacroClick(Sender: TObject);

@@ -103,26 +103,14 @@ type
 implementation
 
 uses
-  DelphiDevShellTools.Logging,
-  Winapi.ShellAPI,
-  Winapi.Messages,
-  System.SysUtils,
-  System.IOUtils,
-  System.StrUtils,
-  System.Math,
-  System.Win.ComObj,
-  Vcl.GraphUtil,
-  Vcl.Imaging.PngImage,
-  DelphiDevShellTools.Icons,
-  DelphiDevShellTools.Tasks,
-  DelphiDevShellTools.LazarusVersions,
-  DelphiDevShellTools.ToolMenus,
-  DelphiDevShellTools.IDEMenus;
-
+  DelphiDevShellTools.Logging, Winapi.ShellAPI, Winapi.Messages, System.SysUtils, System.IOUtils,
+  System.StrUtils, System.Math, System.Win.ComObj, Vcl.GraphUtil, Vcl.Imaging.PngImage, 
+  DelphiDevShellTools.Icons, DelphiDevShellTools.Tasks, DelphiDevShellTools.LazarusVersions, 
+  DelphiDevShellTools.ToolMenus, DelphiDevShellTools.IDEMenus;
 
 constructor TShellMenu.Create;
 begin
-  FMethodsDict:=TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues]);
+  FMethodsDict := TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues]);
   log('TShellMenu.Create');
   inherited;
 end;
@@ -131,7 +119,7 @@ destructor TShellMenu.Destroy;
 begin
   log('TShellMenu.Destroy');
   FreeResources;
-  if FMethodsDict<>nil then
+  if FMethodsDict <> nil then
     FMethodsDict.Free;
   inherited;
 end;
@@ -336,11 +324,11 @@ begin
     FMenuTheme := LTheme;
     FImageCacheKey := LCacheKey;
     FSettings:=TSettings.Create;
-    FInstalledDelphiVersions:=GetListInstalledDelphiVersions(FMenuImageSize);
-    FPAClientProfiles:=TPAClientProfileList.Create(FInstalledDelphiVersions);
-    FBitmapsDict        :=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
-    FIconsExternals     :=TObjectDictionary<string, TIcon>.Create([doOwnsValues]);
-    FIconsDictExternal  :=TDictionary<Integer, TIcon>.Create;
+    FInstalledDelphiVersions := GetListInstalledDelphiVersions(FMenuImageSize);
+    FPAClientProfiles := TPAClientProfileList.Create(FInstalledDelphiVersions);
+    FBitmapsDict :=TObjectDictionary<string, TBitmap>.Create([doOwnsValues]);
+    FIconsExternals :=TObjectDictionary<string, TIcon>.Create([doOwnsValues]);
+    FIconsDictExternal :=TDictionary<Integer, TIcon>.Create;
     FIconsDictResources := TDictionary<Integer, string>.Create;
     ReadSettings(FSettings);
     var LIconBatchActive := BeginProjectIconRenderBatch;
@@ -435,24 +423,24 @@ begin
        end;
      except
        on  E: Exception do
-       log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
+         log(Format('Message %s  Trace %s',[E.Message, e.StackTrace]));
      end;
 
      try
-       FDelphiToolsExts:=GetGroupToolsExtensions('Delphi Tools');
+       FDelphiToolsExts := GetGroupToolsExtensions('Delphi Tools');
      except
        on  E: Exception do
        log(Format('GetGroupToolsExtensions Message %s  Trace %s',[E.Message, e.StackTrace]));
      end;
 
      try
-       FExternalToolsExts:=GetGroupToolsExtensions('External Tools');
+       FExternalToolsExts := GetGroupToolsExtensions('External Tools');
      except
        on  E: Exception do
        log(Format('GetGroupToolsExtensions Message %s  Trace %s',[E.Message, e.StackTrace]));
      end;
 
-     FLazarusInstalled:=IsLazarusInstalled and TFile.Exists(GetLazarusIDEFileName);
+     FLazarusInstalled := IsLazarusInstalled and TFile.Exists(GetLazarusIDEFileName);
 
      if FLazarusInstalled then
      begin
@@ -488,19 +476,19 @@ begin
   try
     ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
     LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-    LMenuItem.fMask  := MIIM_FTYPE or MIIM_ID or MIIM_BITMAP or MIIM_STRING;
-    LMenuItem.fType  := MFT_STRING;
-    LMenuItem.wID    := uIDNewItem;
+    LMenuItem.fMask := MIIM_FTYPE or MIIM_ID or MIIM_BITMAP or MIIM_STRING;
+    LMenuItem.fType := MFT_STRING;
+    LMenuItem.wID := uIDNewItem;
     LMenuItem.dwTypeData := lpNewItem;
     if (IconName<>nil) and (IsVistaOrLater and FBitmapsDict.ContainsKey(IconName)) then
-      LMenuItem.hbmpItem   := FBitmapsDict[IconName].Handle
+      LMenuItem.hbmpItem := FBitmapsDict[IconName].Handle
     else
     if (IconName<>nil) and not IsVistaOrLater then
       LMenuItem.hbmpItem   :=HBMMENU_CALLBACK;
 
      //LMenuItem.hbmpItem   := IfThen(IsVistaOrLater, BitmapsDict[IconName].Handle ,HBMMENU_CALLBACK);
     //log('InsertMenuEx HBMMENU_CALLBACK '+IntToStr(uIDNewItem));
-    Result:=InsertMenuItem(hMenu, uPosition, True, LMenuItem);
+    Result := InsertMenuItem(hMenu, uPosition, True, LMenuItem);
 
     if not Result then
      log('TShellMenu.InsertMenuDevShell SysErrorMessage ' + SysErrorMessage(GetLastError));
@@ -618,13 +606,13 @@ begin
     if FMSBuildDProj<>nil then
     begin
       FMSBuildDProj.Free;
-      FMSBuildDProj:=nil;
+      FMSBuildDProj := nil;
     end;
 
     if FMSBuildGroupDProj<>nil then
     begin
       FMSBuildGroupDProj.Free;
-      FMSBuildGroupDProj:=nil;
+      FMSBuildGroupDProj := nil;
     end;
 
 
@@ -652,7 +640,7 @@ end;
 
 function TShellMenu.IsSeparator(MenuType: UINT): Boolean;
 begin
- Result := (MenuType and MFT_SEPARATOR) = MFT_SEPARATOR;
+  Result := (MenuType and MFT_SEPARATOR) = MFT_SEPARATOR;
 end;
 
 function TShellMenu.MenuMessageHandler(uMsg: UINT; wParam: WPARAM;
@@ -741,10 +729,10 @@ end;
 
 function TShellMenu.HandleMenuMsg(uMsg: UINT; WParam: WPARAM; LParam: LPARAM): HResult;
 var
- res: Winapi.Windows.LPARAM;
+  res: Winapi.Windows.LPARAM;
 begin
- //log('HandleMenuMsg');
- Result:=MenuMessageHandler ( uMsg, wParam, lParam, res);
+  //log('HandleMenuMsg');
+  Result := MenuMessageHandler ( uMsg, wParam, lParam, res);
 end;
 
 //IContextMenu3
@@ -772,62 +760,58 @@ var
   hSubMenuIndex: Integer;
   Found: Boolean;
   LMethodInfo: TMethodInfo;
-
 begin
- try
-  log(Format('QueryContextMenu file=%s index=%d first=%d last=%d flags=%.8x',
+  try
+    log(Format('QueryContextMenu file=%s index=%d first=%d last=%d flags=%.8x',
     [FFileName, indexMenu, idCmdFirst, idCmdLast, uFlags]));
-  InitResources;
+    InitResources;
 
-  ReadSettings(FSettings);
-  if (uFlags and CMF_DEFAULTONLY)<> 0 then
-    Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0))
-  else
-    LMenuCaption := 'Delphi Dev Shell Tools';
+    ReadSettings(FSettings);
+    if (uFlags and CMF_DEFAULTONLY) <> 0 then
+      Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0))
+    else
+      LMenuCaption := 'Delphi Dev Shell Tools';
+    
+    if FMethodsDict = nil then
+      FMethodsDict := TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues])
+    else
+      FMethodsDict.Clear;
+    
+    if (not MatchText(FFileExt,[
+      '.pas','.dpr','.inc','.pp','.proj','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm',
+      '.lfm','.fmx','.vsf','.style','.lpi','.lpr','.lpk','.h','.ppu']))
+      and (not MatchText(FFileExt, FExternalToolsExts))
+      and (not MatchText(FFileExt, FPCToolsExts))
+      and (not MatchText(FFileExt, FDelphiToolsExts))
+      and (not MatchText(FFileExt, SplitString(FSettings.CommonTaskExt,',')))
+      and (not MatchText(FFileExt, SplitString(FSettings.OpenDelphiExt,',')))
+      and (not MatchText(FFileExt, SplitString(FSettings.OpenLazarusExt,',')))
+      and (not MatchText(FFileExt, SplitString(FSettings.CheckSumExt,','))) then
+    Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0));
+    
+    if MatchText(FFileExt ,['.dproj', '.bdsproj','.dpr']) then
+    begin
+      if SameText(FFileExt, '.dpr') then
+      begin
+        sValue := ChangeFileExt(FFileName,'.dproj');
+        if TFile.Exists(sValue) then FDProjectVersion := GetDelphiVersions(sValue);
+      end
+      else
+        FDProjectVersion := GetDelphiVersions(FFileName)
+    end
+    else
+    if MatchText(FFileExt ,['.groupproj']) then
+    begin
+      if (FMSBuildGroupDProj <> nil) and (FMSBuildGroupDProj.ValidData) and (FMSBuildGroupDProj.Projects.Count > 0) and
+        (FMSBuildGroupDProj.Projects[0].ValidData) then
+        FDProjectVersion := GetDelphiVersions(FMSBuildGroupDProj.Projects[0].ProjectFile)
+      else
+        SetLength(FDProjectVersion, 0);
+    end
+    else
+      SetLength(FDProjectVersion, 0);
 
-  if FMethodsDict=nil then
-    FMethodsDict:=TObjectDictionary<Integer, TMethodInfo>.Create([doOwnsValues])
-  else
-    FMethodsDict.Clear;
-
-
-  if (not MatchText(FFileExt,[
-     '.pas','.dpr','.inc','.pp','.proj','.dproj', '.bdsproj','.dpk','.groupproj','.rc','.dfm',
-     '.lfm','.fmx','.vsf','.style','.lpi','.lpr','.lpk','.h','.ppu']))
-     and (not MatchText(FFileExt, FExternalToolsExts))
-     and (not MatchText(FFileExt, FPCToolsExts))
-     and (not MatchText(FFileExt, FDelphiToolsExts))
-     and (not MatchText(FFileExt, SplitString(FSettings.CommonTaskExt,',')))
-     and (not MatchText(FFileExt, SplitString(FSettings.OpenDelphiExt,',')))
-     and (not MatchText(FFileExt, SplitString(FSettings.OpenLazarusExt,',')))
-     and (not MatchText(FFileExt, SplitString(FSettings.CheckSumExt,',')))
-
-  then
-   Exit(MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, 0));
-
-   if  MatchText(FFileExt ,['.dproj', '.bdsproj','.dpr']) then
-   begin
-     if SameText(FFileExt, '.dpr') then
-     begin
-      sValue:=ChangeFileExt(FFileName,'.dproj');
-      if TFile.Exists(sValue) then
-         FDProjectVersion:=GetDelphiVersions(sValue);
-     end
-     else
-     FDProjectVersion:=GetDelphiVersions(FFileName)
-   end
-   else
-   if MatchText(FFileExt ,['.groupproj']) then
-   begin
-     if (FMSBuildGroupDProj<>nil) and (FMSBuildGroupDProj.ValidData) and (FMSBuildGroupDProj.Projects.Count>0) and (FMSBuildGroupDProj.Projects[0].ValidData) then
-       FDProjectVersion:=GetDelphiVersions(FMSBuildGroupDProj.Projects[0].ProjectFile)
-     else
-       SetLength(FDProjectVersion, 0);
-   end
-   else
-     SetLength(FDProjectVersion, 0);
-
-    hSubMenu   := CreatePopupMenu;
+    hSubMenu := CreatePopupMenu;
     uIDNewItem := idCmdFirst;
     hSubMenuIndex := 0;
 
@@ -881,12 +865,10 @@ begin
 
      if  MatchText(ExtractFileExt(FFileName),['.dproj','.dpr']) then
      begin
-
        if Length(FDProjectVersion)>0 then
        begin
-         LCurrentDelphiVersion:=FDProjectVersion[0];
-
-         Found:=FInstalledDelphiVersions.ContainsKey(LCurrentDelphiVersion);
+         LCurrentDelphiVersion := FDProjectVersion[0];
+         Found := FInstalledDelphiVersions.ContainsKey(LCurrentDelphiVersion);
 
 //         for LCurrentDelphiVersion in DProjectVersion do
 //           for LCurrentDelphiVersionData in InstalledDelphiVersions do
@@ -916,7 +898,6 @@ begin
     //AddAuditsCLITasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
     //AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
-
     AddMSBuildRAD_AllTasks(Self, hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.groupproj','.dpr','.proj']);
     AddMenuSeparatorEx(hSubMenu, hSubMenuIndex);
     AddMSBuildPAClientTasks(Self, hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.dproj','.dpr']);
@@ -945,7 +926,6 @@ begin
     //AddTouchRADTasks(hSubMenu, hSubMenuIndex, uIDNewItem, idCmdFirst, ['.pas','.dpr','.inc','.pp','.dproj', '.bdsproj','.dpk','.groupproj']);
     //AddMenuSeparator(hSubMenu, hSubMenuIndex);
 
-
     InsertMenuDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, PWideChar('Settings'), 'settings');
     if not IsVistaOrLater then
     RegisterMenuItemBitmapDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, 'settings_ico');
@@ -956,38 +936,38 @@ begin
     Inc(uIDNewItem);
     Inc(hSubMenuIndex);
 
-
+    {
     InsertMenuDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, PWideChar('About'), 'logo');
     if not IsVistaOrLater then
     RegisterMenuItemBitmapDevShell(hSubMenu, hSubMenuIndex, uIDNewItem, 'logo_ico');
-    LMethodInfo:=TMethodInfo.Create;
-    LMethodInfo.Method:=TDelphiDevShellTasks.OpenGUI;
-    LMethodInfo.Value1:='-about';
+    LMethodInfo := TMethodInfo.Create;
+    LMethodInfo.Method := TDelphiDevShellTasks.OpenGUI;
+    LMethodInfo.Value1 := '-about';
     FMethodsDict.Add(uIDNewItem-idCmdFirst, LMethodInfo);
     Inc(uIDNewItem);
     Inc(hSubMenuIndex);
-
+    }
     ZeroMemory(@LMenuItem, SizeOf(TMenuItemInfo));
     LMenuItem.cbSize := SizeOf(TMenuItemInfo);
-    LMenuItem.fMask  := MIIM_FTYPE or MIIM_ID or MIIM_SUBMENU or MIIM_DATA or MIIM_BITMAP or  MIIM_STRING;
-    LMenuItem.fType  := MFT_STRING;
-    LMenuItem.wID    := uIDNewItem;
+    LMenuItem.fMask := MIIM_FTYPE or MIIM_ID or MIIM_SUBMENU or MIIM_DATA or MIIM_BITMAP or  MIIM_STRING;
+    LMenuItem.fType := MFT_STRING;
+    LMenuItem.wID  := uIDNewItem;
     log('Main Logo uIDNewItem '+IntToStr(uIDNewItem));
     LMenuItem.hSubMenu := hSubMenu;
     LMenuItem.dwTypeData := PWideChar(LMenuCaption);
     LMenuItem.cch := Length(LMenuCaption);
-    //LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, BitmapsDict['logo'].Handle, HBMMENU_CALLBACK);
-    LMenuItem.hbmpItem      := IfThen(IsVistaOrLater, FBitmapsDict['logo'].Handle, FBitmapsDict['logo24'].Handle);
-    LMenuItem.hbmpChecked   := 0;
+    //LMenuItem.hbmpItem := IfThen(IsVistaOrLater, BitmapsDict['logo'].Handle, HBMMENU_CALLBACK);
+    LMenuItem.hbmpItem := IfThen(IsVistaOrLater, FBitmapsDict['logo'].Handle, FBitmapsDict['logo24'].Handle);
+    LMenuItem.hbmpChecked := 0;
     LMenuItem.hbmpUnchecked := 0;
     if IsVistaOrLater then
     begin
-      LMenuItem.hbmpChecked   := FBitmapsDict['logo'].Handle;
+      LMenuItem.hbmpChecked := FBitmapsDict['logo'].Handle;
       LMenuItem.hbmpUnchecked := FBitmapsDict['logo'].Handle;
     end;
 
     if not InsertMenuItem(Menu, indexMenu, True, LMenuItem) then
-         log('TShellMenu.QueryContextMenu RootMenu SysErrorMessage '+SysErrorMessage(GetLastError));
+      log('TShellMenu.QueryContextMenu RootMenu SysErrorMessage '+SysErrorMessage(GetLastError));
 
     if not IsVistaOrLater then
       RegisterMenuItemBitmapDevShell(Menu, indexMenu, uIDNewItem, 'logo_ico');
@@ -997,12 +977,12 @@ begin
     Inc(uIDNewItem);
     log('QueryContextMenu reserved IDs='+IntToStr(uIDNewItem-idCmdFirst));
     Result := MakeResult(SEVERITY_SUCCESS, FACILITY_NULL, uIDNewItem-idCmdFirst);
- except on  E: Exception do
+  except on  E: Exception do
     begin
      log(Format('TShellMenu.QueryContextMenu Message %s  Trace %s',[E.Message, E.StackTrace]));
      Result := E_FAIL;
     end;
- end;
+  end;
 end;
 
 function TShellMenu.ShellExtInitialize(pidlFolder: PItemIDList;
@@ -1014,8 +994,8 @@ var
   LProjName: string;
 begin
   Result := E_FAIL;
- try
-   log('TShellMenu.ShellExtInitialize Init');
+  try
+    log('TShellMenu.ShellExtInitialize Init');
 
     if lpdobj = nil then
       Exit;
@@ -1035,20 +1015,19 @@ begin
       SetLength(FFileName, FileNameLength + 1);
       DragQueryFile(medium.hGlobal, 0, PChar(FFileName), FileNameLength + 1);
       SetLength(FFileName, FileNameLength);
-      FFileExt:=ExtractFileExt(FFileName);
+      FFileExt := ExtractFileExt(FFileName);
 
       if FMSBuildDProj<>nil then
       begin
         FMSBuildDProj.Free;
-        FMSBuildDProj:=nil;
+        FMSBuildDProj := nil;
       end;
 
       if FMSBuildGroupDProj<>nil then
       begin
         FMSBuildGroupDProj.Free;
-        FMSBuildGroupDProj:=nil;
+        FMSBuildGroupDProj := nil;
       end;
-
 
       LProjName:=FFileName;
       if SameText(FFileExt, '.dpr') then
@@ -1068,31 +1047,30 @@ begin
     end
     else
     begin
-
       if FMSBuildDProj<>nil then
       begin
         FMSBuildDProj.Free;
-        FMSBuildDProj:=nil;
+        FMSBuildDProj := nil;
       end;
 
-      if FMSBuildGroupDProj<>nil then
+      if FMSBuildGroupDProj <> nil then
       begin
         FMSBuildGroupDProj.Free;
-        FMSBuildGroupDProj:=nil;
+        FMSBuildGroupDProj := nil;
       end;
 
       FFileName := EmptyStr;
-      FFileExt  := EmptyStr;
+      FFileExt := EmptyStr;
       Result := E_FAIL;
     end;
     ReleaseStgMedium(medium);
-   log('TShellMenu.ShellExtInitialize Done');
- except on  E: Exception do
+    log('TShellMenu.ShellExtInitialize Done');
+  except on E: Exception do
     begin
-     log(Format('TShellMenu.ShellExtInitialize Message %s  Trace %s',[E.Message, e.StackTrace]));
-     Result := E_FAIL;
+      log(Format('TShellMenu.ShellExtInitialize Message %s  Trace %s',[E.Message, e.StackTrace]));
+      Result := E_FAIL;
     end;
- end;
+  end;
 end;
 
 
