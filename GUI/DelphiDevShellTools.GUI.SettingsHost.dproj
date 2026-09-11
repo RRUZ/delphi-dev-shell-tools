@@ -83,6 +83,7 @@
         <DCCReference Include="DelphiDevShellTools.GUI.Settings.pas">
             <Form>FrmSettings</Form>
         </DCCReference>
+        <DCCReference Include="DelphiDevShellTools.GUI.SettingsModel.pas"/>
         <DCCReference Include="DelphiDevShellTools.GUI.About.pas">
             <Form>FrmAbout</Form>
         </DCCReference>

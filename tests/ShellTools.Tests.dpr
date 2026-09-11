@@ -2,8 +2,21 @@ program ShellTools.Tests;
 
 {$APPTYPE CONSOLE}
 {$STRONGLINKTYPES ON}
+{$R '..\GUI\GUIResources.res'}
 
 uses
+  ShellTools.SettingsFormTests in 'ShellTools.SettingsFormTests.pas',
+  ShellTools.DialogTests in 'ShellTools.DialogTests.pas',
+  DelphiDevShellTools.GUI.PaletteDialog in '..\GUI\DelphiDevShellTools.GUI.PaletteDialog.pas',
+  DelphiDevShellTools.GUI.ExtensionDialog in '..\GUI\DelphiDevShellTools.GUI.ExtensionDialog.pas',
+  DelphiDevShellTools.GUI.CheckSum in '..\GUI\DelphiDevShellTools.GUI.CheckSum.pas',
+  DelphiDevShellTools.GUI.Settings in '..\GUI\DelphiDevShellTools.GUI.Settings.pas',
+  DelphiDevShellTools.GUI.MiscGUI in '..\GUI\DelphiDevShellTools.GUI.MiscGUI.pas',
+  ShellTools.SettingsModelTests in 'ShellTools.SettingsModelTests.pas',
+  DelphiDevShellTools.GUI.SettingsModel in '..\GUI\DelphiDevShellTools.GUI.SettingsModel.pas',
+  ShellTools.CheckBoxTests in 'ShellTools.CheckBoxTests.pas',
+  ShellTools.ScrollBarTests in 'ShellTools.ScrollBarTests.pas',
+  ShellTools.ComboBoxTests in 'ShellTools.ComboBoxTests.pas',
   ShellTools.LoggingTests in 'ShellTools.LoggingTests.pas',
   DelphiDevShellTools.Logging in '..\units\DelphiDevShellTools.Logging.pas',
   ShellTools.SettingsTests in 'ShellTools.SettingsTests.pas',
@@ -38,11 +51,17 @@ begin
     OleCheck(CoInitialize(nil));
     try
       TDUnitX.CheckCommandLine;
+      TDUnitX.RegisterTestFixture(TComboBoxTests);
+      TDUnitX.RegisterTestFixture(TCheckBoxTests);
+      TDUnitX.RegisterTestFixture(TScrollBarTests);
       TDUnitX.RegisterTestFixture(TBasicTests);
       TDUnitX.RegisterTestFixture(TIconTests);
       TDUnitX.RegisterTestFixture(TLoggingTests);
       TDUnitX.RegisterTestFixture(TExecutionTests);
       TDUnitX.RegisterTestFixture(TSettingsTests);
+      TDUnitX.RegisterTestFixture(TSettingsModelTests);
+      TDUnitX.RegisterTestFixture(TSettingsFormTests);
+      TDUnitX.RegisterTestFixture(TDialogTests);
       if GetEnvironmentVariable('DDS_TEST_UNC_ROOT') <> '' then
         TDUnitX.RegisterTestFixture(TUNCExecutionTests);
       // This class intentionally has no TestFixture attribute: opt-in only.
@@ -51,9 +70,13 @@ begin
       Runner := TDUnitX.CreateRunner;
       Runner.UseRTTI := True;
       Runner.FailsOnNoAsserts := True;
-      Runner.AddLogger(TDUnitXConsoleLogger.Create(True));
+      Runner.AddLogger(TDUnitXConsoleLogger.Create(GetEnvironmentVariable('DDS_TEST_VERBOSE') <> '1'));
       Runner.AddLogger(TDUnitXXMLNUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile));
-      Results := Runner.Execute;
+      RunWithIsolatedSettings(
+        procedure
+        begin
+          Results := Runner.Execute;
+        end);
       if not Results.AllPassed then
         ExitCode := 1;
       Results := nil;

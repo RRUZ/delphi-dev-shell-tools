@@ -74,7 +74,8 @@ implementation
 uses
   System.SysUtils, System.Classes, System.IOUtils, System.Math,
   Vcl.Graphics, Xml.XMLDoc, Xml.XMLIntf,
-  DelphiDevShellTools.DelphiVersions, DelphiDevShellTools.Icons;
+  DelphiDevShellTools.DelphiVersions, DelphiDevShellTools.Icons,
+  DelphiDevShellTools.Misc;
 
 const
   cBadgeSpacing = 4;
@@ -276,7 +277,7 @@ constructor TProjectInfoPanel.Create(const AFileName: string; ADpi: Integer;
 begin
   inherited Create;
   FDpi := Max(96, ADpi);
-  FIconSize := MulDiv(16, FDpi, 96);
+  FIconSize := MulDiv(MenuImageLogicalSize, FDpi, 96);
   FIconColumn := FIconSize + MulDiv(6, FDpi, 96);
   FResourceModule := AResourceModule;
   if FResourceModule = 0 then

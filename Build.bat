@@ -10,6 +10,14 @@ if /i "%DDS_ACTION%"=="settings" (
     set "DDS_PLATFORM=Win32"
     set "DDS_CONFIG=Debug"
 )
+if /i "%DDS_ACTION%"=="extension" (
+    set "DDS_PLATFORM=Win32"
+    set "DDS_CONFIG=Debug"
+)
+if /i "%DDS_ACTION%"=="checksum" (
+    set "DDS_PLATFORM=Win32"
+    set "DDS_CONFIG=Debug"
+)
 if not "%~2"=="" set "DDS_PLATFORM=%~2"
 if not "%~3"=="" set "DDS_CONFIG=%~3"
 if not "%~5"=="" goto usage_error
@@ -17,7 +25,7 @@ if /i "%~4"=="--reload" set "DDS_RELOAD=1"
 if not "%~4"=="" if not defined DDS_RELOAD goto usage_error
 if /i "%DDS_ACTION%"=="help" goto help
 set "DDS_VALID="
-for %%A in (build rebuild clean test test-registration register unregister status settings) do if /i "%DDS_ACTION%"=="%%A" set "DDS_VALID=1"
+for %%A in (build rebuild clean test test-registration register unregister status settings extension checksum) do if /i "%DDS_ACTION%"=="%%A" set "DDS_VALID=1"
 if not defined DDS_VALID goto usage_error
 set "DDS_PLATFORMS="
 for %%A in (Win32 Win64) do if /i "%DDS_PLATFORM%"=="%%A" set "DDS_PLATFORMS=%%A"
@@ -31,6 +39,10 @@ if /i "%DDS_ACTION%"=="register" if /i "%DDS_PLATFORM%"=="All" goto usage_error
 if /i "%DDS_ACTION%"=="register" if /i "%DDS_CONFIG%"=="All" goto usage_error
 if /i "%DDS_ACTION%"=="settings" if /i not "%DDS_PLATFORM%"=="Win32" goto usage_error
 if /i "%DDS_ACTION%"=="settings" if /i "%DDS_CONFIG%"=="All" goto usage_error
+if /i "%DDS_ACTION%"=="extension" if /i not "%DDS_PLATFORM%"=="Win32" goto usage_error
+if /i "%DDS_ACTION%"=="extension" if /i "%DDS_CONFIG%"=="All" goto usage_error
+if /i "%DDS_ACTION%"=="checksum" if /i not "%DDS_PLATFORM%"=="Win32" goto usage_error
+if /i "%DDS_ACTION%"=="checksum" if /i "%DDS_CONFIG%"=="All" goto usage_error
 if defined DDS_RELOAD (
     if /i not "%DDS_ACTION%"=="build" if /i not "%DDS_ACTION%"=="rebuild" goto usage_error
     if /i "%DDS_PLATFORM%"=="All" goto usage_error
@@ -70,6 +82,8 @@ if errorlevel 1 goto failed
 call :logs
 if errorlevel 1 goto failed
 if /i "%DDS_ACTION%"=="settings" goto settings_host
+if /i "%DDS_ACTION%"=="extension" goto extension_dialog
+if /i "%DDS_ACTION%"=="checksum" goto checksum_dialog
 set "DDS_TARGET=Build"
 if /i "%DDS_ACTION%"=="rebuild" set "DDS_TARGET=Clean;Build"
 if /i "%DDS_ACTION%"=="clean" set "DDS_TARGET=Clean"
@@ -113,6 +127,41 @@ if not exist "%DDS_SETTINGS_HOST%" (
 )
 echo Launching: "%DDS_SETTINGS_HOST%"
 start "" "%DDS_SETTINGS_HOST%"
+if errorlevel 1 goto failed
+goto success
+
+:build_gui_review
+set "DDS_CURRENT_CONFIG=%DDS_CONFIGS%"
+set "DDS_TARGET=Build"
+for %%R in (GUI\GUIManifest.rc GUI\GUIResources.rc units\DelphiDevShellTools.Phosphor.Font.rc) do (
+    call :compile_resource "%%R"
+    if errorlevel 1 exit /b 1
+)
+set "DDS_PROJECT=GUI\GUIDelphiDevShell.dproj"
+set "DDS_ARCH=Win32"
+set "DDS_OUTPUT=%DDS_ROOT%\GUI\Win32\%DDS_CURRENT_CONFIG%"
+call :project_build
+if errorlevel 1 exit /b 1
+set "DDS_GUI_REVIEW=%DDS_OUTPUT%\GUIDelphiDevShell.exe"
+if not exist "%DDS_GUI_REVIEW%" (
+    echo ERROR: Missing GUI review executable: "%DDS_GUI_REVIEW%".
+    exit /b 1
+)
+exit /b 0
+
+:extension_dialog
+call :build_gui_review
+if errorlevel 1 goto failed
+echo Launching extension dialog: "%DDS_GUI_REVIEW%"
+start "" "%DDS_GUI_REVIEW%" --extension-dialog
+if errorlevel 1 goto failed
+goto success
+
+:checksum_dialog
+call :build_gui_review
+if errorlevel 1 goto failed
+echo Launching checksum dialog: "%DDS_GUI_REVIEW%"
+start "" "%DDS_GUI_REVIEW%" CRC32 "%DDS_ROOT%\DelphiDevShellTools.dproj"
 if errorlevel 1 goto failed
 goto success
 
@@ -483,7 +532,8 @@ if not exist "%DDS_TEST_DLL%" goto tests_missing
 if not exist "%DDS_TEST_EXE%" goto tests_missing
 echo Running %DDS_ACTION% / %~1 / %~2
 "%DDS_TEST_EXE%" "--xml:%DDS_ROOT%\build\logs\%DDS_ACTION%-%~1-%~2.xml"
-if not errorlevel 1 exit /b 0
+rem Windows crash exit codes can be negative; only zero means success.
+if "%errorlevel%"=="0" exit /b 0
 echo ERROR: Tests failed. Report: "build\logs\%DDS_ACTION%-%~1-%~2.xml".
 exit /b 1
 :tests_missing
@@ -657,10 +707,13 @@ exit /b 2
 echo Build.bat [build^|rebuild^|clean^|test^|test-registration] [Win64^|Win32^|All] [Release^|Debug^|All]
 echo Build.bat [build^|rebuild] [Win64^|Win32] [Release^|Debug] --reload
 echo Build.bat settings [Win32] [Release^|Debug]
+echo Build.bat extension [Win32] [Release^|Debug]
+echo Build.bat checksum [Win32] [Release^|Debug]
 echo Build.bat register [Win64^|Win32] [Release^|Debug]
 echo Build.bat [unregister^|status] [Win64^|Win32^|All]
 echo Defaults: build Win64 Release. Overrides: DELPHI_ROOT, DUNITX_ROOT.
 echo Settings defaults: Win32 Debug; builds and launches the standalone Settings host.
+echo Extension/checksum default to Win32 Debug; build and launch the GUI review dialogs without the shell extension.
 echo DUnitX default: C:\dev\DUnitX-0.4.1. Logs: build\logs.
 echo Register/unregister/test-registration/--reload require an Administrator Command Prompt.
 echo --reload stages the build, registers it and restarts this session's Explorer if loaded.

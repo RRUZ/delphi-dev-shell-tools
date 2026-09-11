@@ -35,6 +35,10 @@ type
     [SetupFixture] procedure BeginRenderBatch;
     [TearDownFixture] procedure EndRenderBatch;
     [Test] procedure CatalogMapsEveryGlyphAndExclusion;
+    [TestCase('16 px', '16')]
+    [TestCase('24 px', '24')]
+    [TestCase('32 px', '32')]
+    procedure EveryCatalogIconRendersAtMenuSize(APixelSize: Integer);
     [Test] procedure AliasesAndCacheIdentityAreStable;
     [TestCase('16 px', '16')]
     [TestCase('20 px', '20')]
@@ -53,6 +57,7 @@ type
     [Test] procedure AlgorithmAndCopyVariantsRenderDistinctCompositions;
     [Test] procedure DirectDrawingPreservesHostDCStateAndClip;
     [Test] procedure HighContrastUsesTheBoldGlyph;
+    [Test] procedure ChecksumUsesTheFingerprintGlyph;
     [Test] procedure PaletteRolesUseTheActiveShellTheme;
     [Test] procedure RepeatedRenderingReleasesGdiObjects;
   end;
@@ -177,12 +182,50 @@ begin
   end;
 end;
 
+procedure TIconTests.EveryCatalogIconRendersAtMenuSize(APixelSize: Integer);
+var
+  LSource: TProjectIconSource;
+begin
+  var LBitmap := TBitmap.Create;
+  try
+    for var LDescriptor in GetProjectIconDescriptors do
+    begin
+      Assert.IsTrue(TryRenderProjectIcon(LBitmap, LDescriptor.Key, APixelSize,
+        RGB(85, 178, 239), RGB(50, 140, 220), False, False, HInstance, LSource),
+        LDescriptor.Key);
+      Assert.AreEqual(Ord(pisPhosphor), Ord(LSource), LDescriptor.Key);
+      Assert.IsTrue(VisiblePixelCount(LBitmap) > 0, LDescriptor.Key);
+      Assert.AreEqual(APixelSize, LBitmap.Width, LDescriptor.Key);
+      Assert.AreEqual(APixelSize, LBitmap.Height, LDescriptor.Key);
+    end;
+  finally
+    LBitmap.Free;
+  end;
+end;
+
+
 procedure TIconTests.CatalogMapsEveryGlyphAndExclusion;
+const
+  cExpectedKeys: array[0..47] of string = (
+    'notepad', 'cmd', 'copy', 'osx',
+    'ios', 'win', 'android', 'delphi',
+    'delphig', 'radcmd', 'msbuild', 'firemonkey',
+    'vcl', 'lazarusmenu', 'lazbuild', 'buildconf',
+    'platforms', 'settings', 'common', 'checksum',
+    'checksum_crc32', 'checksum_md4', 'checksum_md5', 'checksum_sha1',
+    'checksum_sha256', 'checksum_sha384', 'checksum_sha512', 'copy_unc',
+    'copy_url', 'copy_content', 'copy_path', 'shield',
+    'fpc_tools', 'wrench', 'tool_formatter', 'tool_package',
+    'tool_dependency', 'tool_header', 'tool_terminal', 'tool_touch',
+    'tool_resource', 'tool_metrics', 'tool_audits', 'tool_style',
+    'tool_dump32', 'tool_dump64', 'tool_register', 'tool_unregister');
 var
   LDescriptor: TProjectIconDescriptor;
   LError: string;
 begin
-  Assert.AreEqual<Integer>(34, Length(GetProjectIconDescriptors));
+  Assert.AreEqual<Integer>(Length(cExpectedKeys), Length(GetProjectIconDescriptors));
+  for var LKey in cExpectedKeys do
+    Assert.IsTrue(TryGetProjectIcon(LKey, LDescriptor), LKey);
   Assert.IsTrue(ValidateProjectIconCatalog(LError), LError);
   Assert.IsFalse(TryGetProjectIcon('logo', LDescriptor));
   Assert.IsFalse(TryGetProjectIcon('logo_ico', LDescriptor));
@@ -445,6 +488,16 @@ begin
   end;
 end;
 
+procedure TIconTests.ChecksumUsesTheFingerprintGlyph;
+var
+  LDescriptor: TProjectIconDescriptor;
+begin
+  Assert.IsTrue(TryGetProjectIcon('checksum', LDescriptor));
+  Assert.AreEqual('fingerprint', LDescriptor.PhosphorName);
+  Assert.AreEqual(cPhFingerprint, LDescriptor.Code);
+  Assert.AreEqual(Ord(pipChecksum), Ord(LDescriptor.PaletteRole));
+end;
+
 procedure TIconTests.PaletteRolesUseTheActiveShellTheme;
 var
   LActiveTheme: TDevShellTheme;
@@ -469,7 +522,7 @@ begin
     LHighContrastPrimary, LHighContrastSecondary);
   Assert.AreEqual<Cardinal>(ColorToRGB(clWebSteelBlue),
     ColorToRGB(LLightPrimary));
-  Assert.AreEqual<Cardinal>(ColorToRGB(clWebCornflowerBlue),
+  Assert.AreEqual<Cardinal>(ColorToRGB(RGB($21, $96, $FF)),
     ColorToRGB(LDarkPrimary));
   Assert.AreEqual<Cardinal>(ColorToRGB(LLightPrimary),
     ColorToRGB(LLightSecondary));

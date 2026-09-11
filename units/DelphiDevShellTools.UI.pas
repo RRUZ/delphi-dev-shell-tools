@@ -30,6 +30,9 @@ uses
   System.Types,
   System.UITypes,
   Vcl.Controls,
+  Vcl.ComCtrls,
+  Vcl.ControlList,
+  Vcl.ExtCtrls,
   Vcl.Forms,
   Vcl.Graphics,
   Vcl.ImgList,
@@ -41,7 +44,7 @@ const
 
 type
   TDevShellThemeKind = (dstLight, dstDark);
-  TDevShellChevronDirection = (dscdUp, dscdDown);
+  TDevShellChevronDirection = (dscdUp, dscdDown, dscdLeft, dscdRight);
 
   TDevShellTheme = record
     const cFontName: string = 'Segoe UI';
@@ -64,9 +67,49 @@ type
     class function ActiveTheme: TDevShellTheme; static;
   end;
 
+  // Palette rendering over Delphi 13's native combo selection/scrolling machinery.
   TDevShellComboBoxStyleHook = class(TComboBoxStyleHook)
+  private
+    FPaintingPopup: Boolean;
+    procedure PaintItem(ACanvas: TCanvas; AIndex: Integer;
+      const ARect: TRect; ASelected, AComboEdit: Boolean);
+    procedure PaintPopup(ADC: HDC);
+    procedure PaintPopupScrollBar(ACanvas: TCanvas; const ABounds: TRect);
   protected
     procedure PaintBorder(ACanvas: TCanvas); override;
+    procedure DrawItem(ACanvas: TCanvas; AIndex: Integer;
+      const ARect: TRect; ASelected: Boolean); override;
+    procedure WndProc(var AMessage: TMessage); override;
+    procedure ListBoxWndProc(var AMessage: TMessage); override;
+  end;
+
+  // Override only VCL's virtual scrollbar painters; input remains in the base hooks.
+  TDevShellMemoStyleHook = class(TMemoStyleHook)
+  protected
+    procedure DrawVertScroll(ADC: HDC); override;
+    procedure DrawHorzScroll(ADC: HDC); override;
+    procedure DrawBorder; override;
+    procedure WndProc(var AMessage: TMessage); override;
+  end;
+
+  TDevShellControlListStyleHook = class(TScrollingStyleHook)
+  protected
+    procedure DrawVertScroll(ADC: HDC); override;
+    procedure DrawHorzScroll(ADC: HDC); override;
+    procedure DrawBorder; override;
+  end;
+
+  TDevShellListViewStyleHook = class(TListViewStyleHook)
+  protected
+    procedure DrawVertScroll(ADC: HDC); override;
+    procedure DrawHorzScroll(ADC: HDC); override;
+    procedure DrawBorder; override;
+  end;
+
+  TDevShellCheckBoxStyleHook = class(TCheckBoxStyleHook)
+  protected
+    procedure Paint(ACanvas: TCanvas); override;
+    procedure PaintBackground(ACanvas: TCanvas); override;
   end;
 
   TSimpleUIButtonImagePosition = (buipLeft, buipRight, buipTop, buipBottom);
@@ -294,7 +337,10 @@ const
   );
 
 function IsWindowsLightTheme: Boolean;
+procedure SetDevShellThemeOverride(AThemeKind: TDevShellThemeKind);
+procedure ClearDevShellThemeOverride;
 function BlendColor(AColor, ATarget: TColor; AAmount: Single): TColor;
+
 function ResolveMenuSurfaceTheme(ADC: HDC;
   const ABounds: TRect): TDevShellTheme;
 procedure DrawRoundedRectangle(ADC: HDC; const ABounds: TRect;
@@ -337,8 +383,13 @@ uses
   Winapi.GDIPAPI,
   Winapi.GDIPOBJ;
 
+var
+  GHasDevShellThemeOverride: Boolean;
+  GDevShellThemeOverride: TDevShellThemeKind;
+
 type
   TDevShellFontControl = class(TControl);
+  TDevShellCheckBoxAccess = class(TCustomCheckBox);
 
 const
   cBadgeHorizontalPadding = 8;
@@ -413,6 +464,21 @@ begin
               ACenter.Y + LHalfHeight, ACenter.X + LHalfWidth,
               ACenter.Y - (LHalfHeight / 2));
           end;
+
+        dscdLeft:
+          begin
+            LGraphics.DrawLine(LPen, ACenter.X + (LHalfHeight / 2),
+              ACenter.Y - LHalfWidth, ACenter.X - LHalfHeight, ACenter.Y);
+            LGraphics.DrawLine(LPen, ACenter.X - LHalfHeight, ACenter.Y,
+              ACenter.X + (LHalfHeight / 2), ACenter.Y + LHalfWidth);
+          end;
+        dscdRight:
+          begin
+            LGraphics.DrawLine(LPen, ACenter.X - (LHalfHeight / 2),
+              ACenter.Y - LHalfWidth, ACenter.X + LHalfHeight, ACenter.Y);
+            LGraphics.DrawLine(LPen, ACenter.X + LHalfHeight, ACenter.Y,
+              ACenter.X - (LHalfHeight / 2), ACenter.Y + LHalfWidth);
+          end;
       end;
     finally
       LPen.Free;
@@ -422,50 +488,640 @@ begin
   end;
 end;
 
-procedure TDevShellComboBoxStyleHook.PaintBorder(ACanvas: TCanvas);
+
+procedure TDevShellCheckBoxStyleHook.PaintBackground(ACanvas: TCanvas);
 begin
-  if not (Control is TCustomComboBox) then
+    var LSavedDC := SaveDC(ACanvas.Handle);
+  try
+    var LBackgroundColor := TDevShellTheme.ActiveTheme.BackgroundColor;
+    if Control.Parent is TPanel then
+      LBackgroundColor := TDevShellFontControl(Control.Parent).Color;
+    ACanvas.Brush.Color := LBackgroundColor;
+    ACanvas.FillRect(Control.ClientRect);
+  finally
+    var LDC := ACanvas.Handle;
+    ACanvas.Refresh;
+    RestoreDC(LDC, LSavedDC);
+  end;
+end;
+
+procedure TDevShellCheckBoxStyleHook.Paint(ACanvas: TCanvas);
+begin
+  var LSavedDC := SaveDC(ACanvas.Handle);
+  try
+    var LBounds := Control.ClientRect;
+    IntersectClipRect(ACanvas.Handle, LBounds.Left, LBounds.Top,
+      LBounds.Right, LBounds.Bottom);
+    PaintBackground(ACanvas);
+    var LTheme := TDevShellTheme.ActiveTheme;
+    var LScale := Control.CurrentPPI / 96;
+    var LSize := Min(Round(14 * LScale), Min(LBounds.Width, LBounds.Height));
+    var LBox := Rect(0, (LBounds.Height - LSize) div 2,
+      LSize, (LBounds.Height + LSize) div 2);
+    // Match Vcl.StdCtrls.TCheckBoxStyleHook.RightAlignment, including RTL.
+    var LRightAligned := (Control.BiDiMode = bdRightToLeft) or
+      ((GetWindowLong(Handle, GWL_STYLE) and BS_RIGHTBUTTON) <> 0);
+    if LRightAligned then
+      OffsetRect(LBox, LBounds.Width - LSize, 0);
+    var LState := SendMessage(Handle, BM_GETCHECK, 0, 0);
+    var LUIState := SendMessage(Handle, WM_QUERYUISTATE, 0, 0);
+    var LFocused := Control.Focused and ((LUIState and UISF_HIDEFOCUS) = 0);
+    var LPressed := Pressed or
+      ((SendMessage(Handle, BM_GETSTATE, 0, 0) and BST_PUSHED) <> 0);
+    var LBorder := BlendColor(LTheme.BackgroundColor, LTheme.MutedColor, 0.75);
+    var LFill := LTheme.BackgroundColor;
+    var LMark := LTheme.AccentColor;
+    if Control.Enabled then
+    begin
+      if (LState <> BST_UNCHECKED) or MouseInControl or LFocused then
+        LBorder := LTheme.AccentColor;
+      if LState <> BST_UNCHECKED then
+        LFill := BlendColor(LTheme.BackgroundColor, LTheme.AccentColor, 0.16);
+      if MouseInControl then
+        LFill := BlendColor(LFill, LTheme.AccentColor, 0.10);
+      if LPressed then
+        LFill := BlendColor(LFill, LTheme.AccentColor, 0.20);
+    end
+    else
+    begin
+      LBorder := BlendColor(LTheme.BackgroundColor, LTheme.MutedColor, 0.35);
+      LMark := LTheme.MutedColor;
+    end;
+    DrawAntialiasedRoundedRectangle(ACanvas, LBox, LFill, LBorder,
+      3 * LScale, LScale);
+    if LState <> BST_UNCHECKED then
+    begin
+      var LGraphics := TGPGraphics.Create(ACanvas.Handle);
+      try
+        LGraphics.SetSmoothingMode(SmoothingModeAntiAlias);
+        LGraphics.SetPixelOffsetMode(PixelOffsetModeHalf);
+        var LPen := TGPPen.Create(GPColor(LMark), 1.7 * LScale);
+        try
+          LPen.SetStartCap(LineCapRound);
+          LPen.SetEndCap(LineCapRound);
+          LPen.SetLineJoin(LineJoinRound);
+          if LState = BST_INDETERMINATE then
+            LGraphics.DrawLine(LPen, LBox.Left + LSize * 0.28,
+              LBox.Top + LSize * 0.5, LBox.Left + LSize * 0.72,
+              LBox.Top + LSize * 0.5)
+          else
+          begin
+            LGraphics.DrawLine(LPen, LBox.Left + LSize * 0.24,
+              LBox.Top + LSize * 0.50, LBox.Left + LSize * 0.43,
+              LBox.Top + LSize * 0.70);
+            LGraphics.DrawLine(LPen, LBox.Left + LSize * 0.43,
+              LBox.Top + LSize * 0.70, LBox.Left + LSize * 0.77,
+              LBox.Top + LSize * 0.29);
+          end;
+        finally
+          LPen.Free;
+        end;
+      finally
+        LGraphics.Free;
+      end;
+    end;
+    var LTextRect := LBounds;
+    if LRightAligned then
+      LTextRect.Right := LBox.Left - Round(3 * LScale)
+    else
+      LTextRect.Left := LBox.Right + Round(3 * LScale);
+    ACanvas.Font.Assign(TDevShellFontControl(Control).Font);
+    if Control.Enabled then
+      ACanvas.Font.Color := LTheme.TextColor
+    else
+      ACanvas.Font.Color := LTheme.MutedColor;
+    SetBkMode(ACanvas.Handle, TRANSPARENT);
+    var LFlags: Cardinal := DT_EXPANDTABS;
+    if TDevShellCheckBoxAccess(Control).WordWrap then
+      LFlags := LFlags or DT_WORDBREAK
+    else
+      LFlags := LFlags or DT_SINGLELINE;
+    LFlags := Control.DrawTextBiDiModeFlags(LFlags);
+    if (LUIState and UISF_HIDEACCEL) <> 0 then
+      LFlags := LFlags or DT_HIDEPREFIX;
+    var LCaption := Text;
+    var LMeasured := LTextRect;
+    DrawText(ACanvas.Handle, PChar(LCaption), Length(LCaption),
+      LMeasured, LFlags or DT_CALCRECT);
+    LTextRect.Top := Max(0, (LBounds.Height - LMeasured.Height) div 2);
+    DrawText(ACanvas.Handle, PChar(LCaption), Length(LCaption),
+      LTextRect, LFlags);
+    if LFocused then
+    begin
+      var LFocusRect := LBounds;
+      InflateRect(LFocusRect, -1, -1);
+      DrawAntialiasedRoundedRectangle(ACanvas, LFocusRect, clNone,
+        LTheme.AccentColor, 3 * LScale, LScale);
+    end;
+  finally
+    var LDC := ACanvas.Handle;
+    ACanvas.Refresh;
+    RestoreDC(LDC, LSavedDC);
+  end;
+end;
+
+function ScrollPartColor(const ATheme: TDevShellTheme;
+  AState: TThemedScrollBar; AEnabled, AThumb: Boolean): TColor;
+begin
+  if not AEnabled or (AState in [tsArrowBtnUpDisabled, tsArrowBtnDownDisabled,
+    tsArrowBtnLeftDisabled, tsArrowBtnRightDisabled,
+    tsThumbBtnHorzDisabled, tsThumbBtnVertDisabled]) then
+    Exit(BlendColor(ATheme.BackgroundColor, ATheme.MutedColor, 0.35));
+  case AState of
+    tsArrowBtnUpPressed, tsArrowBtnDownPressed,
+    tsArrowBtnLeftPressed, tsArrowBtnRightPressed,
+    tsThumbBtnHorzPressed, tsThumbBtnVertPressed:
+      Result := ATheme.AccentColor;
+    tsArrowBtnUpHot, tsArrowBtnDownHot,
+    tsArrowBtnLeftHot, tsArrowBtnRightHot,
+    tsThumbBtnHorzHot, tsThumbBtnVertHot:
+      Result := BlendColor(ATheme.MutedColor, ATheme.AccentColor, 0.65);
+  else
+    if AThumb then
+      Result := BlendColor(ATheme.BackgroundColor, ATheme.MutedColor, 0.62)
+    else
+      Result := ATheme.MutedColor;
+  end;
+end;
+
+procedure PaintDevShellScrollBar(ADC: HDC; AControl: TWinControl;
+  const ABounds, AThumb, AFirstButton, ALastButton: TRect;
+  AThumbState, AFirstState, ALastState: TThemedScrollBar; AVertical: Boolean);
+var
+  LFirstDirection, LLastDirection: TDevShellChevronDirection;
+begin
+  if (ADC = 0) or ABounds.IsEmpty then
+    Exit;
+  // Vcl.Forms.TScrollWindow supplies a DC whose origin is already shifted to
+  // the control window. Use the base hook's rectangles for exact hit alignment.
+  var LSavedDC := SaveDC(ADC);
+  try
+    IntersectClipRect(ADC, ABounds.Left, ABounds.Top,
+      ABounds.Right, ABounds.Bottom);
+    var LCanvas := TCanvas.Create;
+    try
+      LCanvas.Handle := ADC;
+      var LTheme := TDevShellTheme.ActiveTheme;
+      var LScale := AControl.CurrentPPI / 96;
+      LCanvas.Brush.Color := LTheme.BackgroundColor;
+      LCanvas.FillRect(ABounds);
+      var LEnabled := AControl.Enabled and not AThumb.IsEmpty;
+      if LEnabled then
+      begin
+        var LThumb := AThumb;
+        var LInset := Max(1, Round(4 * LScale));
+        if AVertical then
+          InflateRect(LThumb, -Min(LInset, (LThumb.Width - 2) div 2), -1)
+        else
+          InflateRect(LThumb, -1, -Min(LInset, (LThumb.Height - 2) div 2));
+        DrawAntialiasedRoundedRectangle(LCanvas, LThumb,
+          ScrollPartColor(LTheme, AThumbState, True, True), clNone,
+          Min(LThumb.Width, LThumb.Height) / 2, 0);
+      end;
+      if AVertical then
+      begin
+        LFirstDirection := dscdUp;
+        LLastDirection := dscdDown;
+      end
+      else
+      begin
+        LFirstDirection := dscdLeft;
+        LLastDirection := dscdRight;
+      end;
+      DrawDevShellChevron(LCanvas, AFirstButton.CenterPoint,
+        ScrollPartColor(LTheme, AFirstState, LEnabled, False),
+        LFirstDirection, LScale);
+      DrawDevShellChevron(LCanvas, ALastButton.CenterPoint,
+        ScrollPartColor(LTheme, ALastState, LEnabled, False),
+        LLastDirection, LScale);
+    finally
+      LCanvas.Handle := 0;
+      LCanvas.Free;
+    end;
+  finally
+    RestoreDC(ADC, LSavedDC);
+  end;
+end;
+
+procedure PaintDevShellScrollFrame(AControl: TWinControl);
+var
+  LWindowRect, LClientRect: TRect;
+  LClientOrigin: TPoint;
+begin
+  if not AControl.HandleAllocated then
+    Exit;
+  var LDC := GetWindowDC(AControl.Handle);
+  if LDC = 0 then
+    Exit;
+  try
+    var LSavedDC := SaveDC(LDC);
+    try
+      GetWindowRect(AControl.Handle, LWindowRect);
+      GetClientRect(AControl.Handle, LClientRect);
+      LClientOrigin := Point(0, 0);
+      ClientToScreen(AControl.Handle, LClientOrigin);
+      OffsetRect(LClientRect, LClientOrigin.X - LWindowRect.Left,
+        LClientOrigin.Y - LWindowRect.Top);
+      OffsetRect(LWindowRect, -LWindowRect.Left, -LWindowRect.Top);
+      ExcludeClipRect(LDC, LClientRect.Left, LClientRect.Top,
+        LClientRect.Right, LClientRect.Bottom);
+      var LCanvas := TCanvas.Create;
+      try
+        LCanvas.Handle := LDC;
+        var LTheme := TDevShellTheme.ActiveTheme;
+        LCanvas.Brush.Color := LTheme.BackgroundColor;
+        // Also covers the square where horizontal and vertical bars meet.
+        LCanvas.FillRect(LWindowRect);
+        if ((GetWindowLong(AControl.Handle, GWL_STYLE) and WS_BORDER) <> 0) or
+          ((GetWindowLong(AControl.Handle, GWL_EXSTYLE) and WS_EX_CLIENTEDGE) <> 0) then
+          DrawAntialiasedRoundedRectangle(LCanvas, LWindowRect, clNone,
+            BlendColor(LTheme.BackgroundColor, LTheme.MutedColor, 0.4),
+            2 * AControl.ScaleFactor, AControl.ScaleFactor);
+      finally
+        LCanvas.Handle := 0;
+        LCanvas.Free;
+      end;
+    finally
+      RestoreDC(LDC, LSavedDC);
+    end;
+  finally
+    ReleaseDC(AControl.Handle, LDC);
+  end;
+end;
+
+procedure TDevShellMemoStyleHook.DrawVertScroll(ADC: HDC);
+begin
+  PaintDevShellScrollBar(ADC, Control, VertScrollRect, VertSliderRect,
+    VertUpButtonRect, VertDownButtonRect, VertSliderState,
+    VertUpState, VertDownState, True);
+end;
+
+procedure TDevShellMemoStyleHook.DrawHorzScroll(ADC: HDC);
+begin
+  PaintDevShellScrollBar(ADC, Control, HorzScrollRect, HorzSliderRect,
+    HorzUpButtonRect, HorzDownButtonRect, HorzSliderState,
+    HorzUpState, HorzDownState, False);
+end;
+
+procedure TDevShellMemoStyleHook.DrawBorder;
+begin
+  PaintDevShellScrollFrame(Control);
+end;
+
+procedure TDevShellControlListStyleHook.DrawVertScroll(ADC: HDC);
+begin
+  PaintDevShellScrollBar(ADC, Control, VertScrollRect, VertSliderRect,
+    VertUpButtonRect, VertDownButtonRect, VertSliderState,
+    VertUpState, VertDownState, True);
+end;
+
+procedure TDevShellControlListStyleHook.DrawHorzScroll(ADC: HDC);
+begin
+  PaintDevShellScrollBar(ADC, Control, HorzScrollRect, HorzSliderRect,
+    HorzUpButtonRect, HorzDownButtonRect, HorzSliderState,
+    HorzUpState, HorzDownState, False);
+end;
+
+procedure TDevShellControlListStyleHook.DrawBorder;
+begin
+  PaintDevShellScrollFrame(Control);
+end;
+
+procedure TDevShellListViewStyleHook.DrawVertScroll(ADC: HDC);
+begin
+  PaintDevShellScrollBar(ADC, Control, VertScrollRect, VertSliderRect,
+    VertUpButtonRect, VertDownButtonRect, VertSliderState,
+    VertUpState, VertDownState, True);
+end;
+
+procedure TDevShellListViewStyleHook.DrawHorzScroll(ADC: HDC);
+begin
+  PaintDevShellScrollBar(ADC, Control, HorzScrollRect, HorzSliderRect,
+    HorzUpButtonRect, HorzDownButtonRect, HorzSliderState,
+    HorzUpState, HorzDownState, False);
+end;
+
+procedure TDevShellListViewStyleHook.DrawBorder;
+begin
+  PaintDevShellScrollFrame(Control);
+end;
+
+procedure TDevShellMemoStyleHook.WndProc(var AMessage: TMessage);
+begin
+  // TMemoStyleHook.UpdateColors is private and normally substitutes VSF colors.
+  // Keep the native memo and caret, but supply the same palette as its bars.
+  case AMessage.Msg of
+    CN_CTLCOLORMSGBOX..CN_CTLCOLORSTATIC:
+      begin
+        var LTheme := TDevShellTheme.ActiveTheme;
+        Brush.Color := LTheme.BackgroundColor;
+        if Control.Enabled then
+          FontColor := LTheme.TextColor
+        else
+          FontColor := LTheme.MutedColor;
+        SetTextColor(AMessage.WParam, ColorToRGB(FontColor));
+        SetBkColor(AMessage.WParam, ColorToRGB(Brush.Color));
+        AMessage.Result := LRESULT(Brush.Handle);
+        Handled := True;
+        Exit;
+      end;
+  end;
+  inherited WndProc(AMessage);
+end;
+
+procedure TDevShellComboBoxStyleHook.PaintBorder(ACanvas: TCanvas);
+var
+  LInfo: TComboBoxInfo;
+begin
+  var LTheme := TDevShellTheme.ActiveTheme;
+  Brush.Color := LTheme.BackgroundColor;
+  FontColor := LTheme.TextColor;
+  var LCombo := TComboBox(Control);
+  var LBounds := Control.ClientRect;
+  var LSavedDC := SaveDC(ACanvas.Handle);
+  try
+    // VCL keeps an actual EDIT child for editable combos. Never paint over it.
+    LInfo := Default(TComboBoxInfo);
+    LInfo.cbSize := SizeOf(LInfo);
+    if GetComboBoxInfo(Handle, LInfo) and
+       (LCombo.Style in [csDropDown, csSimple]) then
+      ExcludeClipRect(ACanvas.Handle, LInfo.rcItem.Left, LInfo.rcItem.Top,
+        LInfo.rcItem.Right, LInfo.rcItem.Bottom);
+    ACanvas.Brush.Color := LTheme.BackgroundColor;
+    ACanvas.FillRect(LBounds);
+    var LBorder := BlendColor(LTheme.TextColor, LTheme.BackgroundColor, 0.78);
+    var LArrow := LTheme.MutedColor;
+    if Control.Enabled and (Focused or MouseInControl or LCombo.DroppedDown) then
+    begin
+      LBorder := LTheme.AccentColor;
+      LArrow := LTheme.TextColor;
+    end;
+    DrawAntialiasedRoundedRectangle(ACanvas, LBounds,
+      LTheme.BackgroundColor, LBorder,
+      MulDiv(cInputCornerRadius, Control.CurrentPPI, 96),
+      Max(Single(1), Single(Control.CurrentPPI / 96.0)));
+    if LCombo.Style = csSimple then
+      Exit;
+    // Use the VCL button geometry: it is also used for hit testing and text clipping.
+    var LButton := ButtonRect;
+    var LDivider := LButton.Left;
+    if Control.BiDiMode = bdRightToLeft then
+      LDivider := LButton.Right;
+    ACanvas.Pen.Color := BlendColor(LTheme.TextColor, LTheme.BackgroundColor, 0.88);
+    ACanvas.Pen.Width := 1;
+    ACanvas.MoveTo(LDivider, LButton.Top + 3);
+    ACanvas.LineTo(LDivider, LButton.Bottom - 3);
+    var LDirection := dscdDown;
+    if LCombo.DroppedDown then
+      LDirection := dscdUp;
+    DrawDevShellChevron(ACanvas, LButton.CenterPoint, LArrow,
+      LDirection, Control.CurrentPPI / 96.0);
+  finally
+    // SaveDC restores GDI objects without updating TCanvas's cached state.
+    var LDC := ACanvas.Handle;
+    ACanvas.Refresh;
+    RestoreDC(LDC, LSavedDC);
+  end;
+end;
+
+procedure TDevShellComboBoxStyleHook.PaintItem(ACanvas: TCanvas;
+  AIndex: Integer; const ARect: TRect; ASelected, AComboEdit: Boolean);
+var
+  LState: TOwnerDrawState;
+begin
+  var LTheme := TDevShellTheme.ActiveTheme;
+  var LCombo := TComboBox(Control);
+  var LSavedDC := SaveDC(ACanvas.Handle);
+  try
+    IntersectClipRect(ACanvas.Handle, ARect.Left, ARect.Top,
+      ARect.Right, ARect.Bottom);
+    ACanvas.Font.Assign(LCombo.Font);
+    ACanvas.Font.Color := LTheme.TextColor;
+    ACanvas.Brush.Style := bsSolid;
+    ACanvas.Brush.Color := LTheme.BackgroundColor;
+    if not Control.Enabled then
+      ACanvas.Font.Color := LTheme.MutedColor
+    else if ASelected and not AComboEdit then
+      ACanvas.Brush.Color := BlendColor(LTheme.AccentColor,
+        LTheme.BackgroundColor, 0.82);
+    ACanvas.FillRect(ARect);
+    if (AIndex < 0) or (AIndex >= LCombo.Items.Count) then
+      Exit;
+    if Assigned(LCombo.OnDrawItem) then
+    begin
+      LState := [];
+      if AComboEdit then Include(LState, odComboBoxEdit);
+      if ASelected and not AComboEdit then Include(LState, odSelected);
+      if not Control.Enabled then Include(LState, odDisabled);
+      var LPreviousDC := LCombo.Canvas.Handle;
+      LCombo.Canvas.Handle := ACanvas.Handle;
+      try
+        LCombo.Canvas.Font.Assign(ACanvas.Font);
+        LCombo.Canvas.Brush.Assign(ACanvas.Brush);
+        LCombo.OnDrawItem(LCombo, AIndex, ARect, LState);
+      finally
+        LCombo.Canvas.Handle := LPreviousDC;
+      end;
+    end
+    else
+    begin
+      var LTextRect := ARect;
+      InflateRect(LTextRect, -MulDiv(5, Control.CurrentPPI, 96), 0);
+      var LFlags: Cardinal := DT_SINGLELINE or DT_VCENTER or DT_END_ELLIPSIS or DT_NOPREFIX;
+      if Control.BiDiMode = bdRightToLeft then
+        LFlags := LFlags or DT_RIGHT or DT_RTLREADING;
+      var LText := LCombo.Items[AIndex];
+      SetBkMode(ACanvas.Handle, TRANSPARENT);
+      DrawText(ACanvas.Handle, PChar(LText), Length(LText), LTextRect, LFlags);
+    end;
+  finally
+    // SaveDC restores GDI objects without updating TCanvas's cached state.
+    var LDC := ACanvas.Handle;
+    ACanvas.Refresh;
+    RestoreDC(LDC, LSavedDC);
+  end;
+end;
+
+procedure TDevShellComboBoxStyleHook.DrawItem(ACanvas: TCanvas;
+  AIndex: Integer; const ARect: TRect; ASelected: Boolean);
+begin
+  PaintItem(ACanvas, AIndex, ARect, False, True);
+end;
+
+procedure TDevShellComboBoxStyleHook.WndProc(var AMessage: TMessage);
+var
+  LItem: TDrawItemStruct;
+begin
+  case AMessage.Msg of
+    WM_CTLCOLORMSGBOX..WM_CTLCOLORSTATIC,
+    CN_CTLCOLORMSGBOX..CN_CTLCOLORSTATIC:
+      begin
+        var LTheme := TDevShellTheme.ActiveTheme;
+        Brush.Color := LTheme.BackgroundColor;
+        FontColor := LTheme.TextColor;
+        if not Control.Enabled then FontColor := LTheme.MutedColor;
+        SetTextColor(AMessage.WParam, ColorToRGB(FontColor));
+        SetBkColor(AMessage.WParam, ColorToRGB(Brush.Color));
+        AMessage.Result := LRESULT(Brush.Handle);
+        Handled := True;
+        Exit;
+      end;
+  end;
+  if ((AMessage.Msg = WM_DRAWITEM) or (AMessage.Msg = CN_DRAWITEM)) and
+     (AMessage.LParam <> 0) then
   begin
-    inherited PaintBorder(ACanvas);
+    LItem := PDrawItemStruct(AMessage.LParam)^;
+    LItem.itemState := LItem.itemState and not ODS_FOCUS;
+    var LOriginalItem := AMessage.LParam;
+    AMessage.LParam := LPARAM(@LItem);
+    try
+      // Keep VCL's canvas binding and owner-draw event dispatch. The palette
+      // selection and combo border already communicate keyboard focus.
+      inherited WndProc(AMessage);
+    finally
+      AMessage.LParam := LOriginalItem;
+    end;
     Exit;
   end;
-
-  var LTheme := TDevShellTheme.ActiveTheme;
-  var LInputColor := LTheme.BackgroundColor;
-  Brush.Color := LInputColor;
-  FontColor := LTheme.TextColor;
-  ACanvas.Brush.Style := bsSolid;
-  ACanvas.Brush.Color := LTheme.BackgroundColor;
-  ACanvas.FillRect(Control.ClientRect);
-
-  var LBorderColor := BlendColor(LTheme.TextColor, LTheme.BackgroundColor,
-    0.78);
-  var LComboBox := TCustomComboBox(Control);
-  if Control.Focused or MouseInControl or LComboBox.DroppedDown then
-    LBorderColor := LTheme.AccentColor;
-  var LControlRect := Control.ClientRect;
-  DrawAntialiasedRoundedRectangle(ACanvas, LControlRect, LInputColor,
-    LBorderColor, MulDiv(cInputCornerRadius, Control.CurrentPPI, 96),
-    Max(Single(1.0), Single(Control.CurrentPPI / 96.0)));
-
-  var LButtonBounds := LControlRect;
-  LButtonBounds.Left := LButtonBounds.Right -
-    MulDiv(cDevShellComboBoxButtonWidth, Control.CurrentPPI, 96);
-  LButtonBounds.Top := LControlRect.Top + 1;
-  LButtonBounds.Bottom := LControlRect.Bottom - 1;
-  ACanvas.Pen.Color := LBorderColor;
-  ACanvas.Pen.Width := 1;
-  ACanvas.MoveTo(LButtonBounds.Left, LButtonBounds.Top + 2);
-  ACanvas.LineTo(LButtonBounds.Left, LButtonBounds.Bottom - 1);
-
-  var LArrowColor := LTheme.MutedColor;
-  if not Control.Enabled then
-    LArrowColor := LTheme.MutedColor;
-  var LCenterX := (LButtonBounds.Left + LButtonBounds.Right) div 2;
-  var LCenterY := (LButtonBounds.Top + LButtonBounds.Bottom) div 2;
-  DrawDevShellChevron(ACanvas, Point(LCenterX, LCenterY), LArrowColor,
-    dscdDown, Control.CurrentPPI / 96.0);
+  inherited WndProc(AMessage);
 end;
+
+procedure TDevShellComboBoxStyleHook.PaintPopup(ADC: HDC);
+var
+  LWindowRect, LClientRect, LItemRect: TRect;
+  LOrigin: TPoint;
+begin
+  if FPaintingPopup or (ListHandle = 0) or not IsWindowVisible(ListHandle) then
+    Exit;
+  FPaintingPopup := True;
+  try
+    GetWindowRect(ListHandle, LWindowRect);
+    GetClientRect(ListHandle, LClientRect);
+    LOrigin := Point(0, 0);
+    ClientToScreen(ListHandle, LOrigin);
+    Dec(LOrigin.X, LWindowRect.Left);
+    Dec(LOrigin.Y, LWindowRect.Top);
+    OffsetRect(LWindowRect, -LWindowRect.Left, -LWindowRect.Top);
+    var LDC := ADC;
+    if LDC = 0 then LDC := GetWindowDC(ListHandle);
+    if LDC = 0 then Exit;
+    try
+      var LCanvas := TCanvas.Create;
+      try
+        LCanvas.Handle := LDC;
+        try
+          var LSavedDC := SaveDC(LDC);
+          try
+            var LTheme := TDevShellTheme.ActiveTheme;
+            var LOwnerDraw := TComboBox(Control).Style in
+              [csOwnerDrawFixed, csOwnerDrawVariable];
+            if LOwnerDraw then
+              ExcludeClipRect(LDC, LOrigin.X, LOrigin.Y,
+                LOrigin.X + LClientRect.Width, LOrigin.Y + LClientRect.Height);
+            LCanvas.Brush.Color := LTheme.BackgroundColor;
+            LCanvas.FillRect(LWindowRect);
+            LCanvas.Brush.Color := BlendColor(LTheme.TextColor,
+              LTheme.BackgroundColor, 0.78);
+            LCanvas.FrameRect(LWindowRect);
+            var LTop := Integer(SendMessage(ListHandle, LB_GETTOPINDEX, 0, 0));
+            var LCount := Integer(SendMessage(ListHandle, LB_GETCOUNT, 0, 0));
+            var LSelected := Integer(SendMessage(ListHandle, LB_GETCURSEL, 0, 0));
+            // LB_GETITEMRECT also handles variable-height owner-drawn rows.
+            if not LOwnerDraw then
+            for var LIndex := Max(0, LTop) to LCount - 1 do
+            begin
+              if SendMessage(ListHandle, LB_GETITEMRECT, LIndex,
+                LPARAM(@LItemRect)) = LB_ERR then Break;
+              if LItemRect.Top >= LClientRect.Bottom then Break;
+              LItemRect.Bottom := Min(LItemRect.Bottom, LClientRect.Bottom);
+              OffsetRect(LItemRect, LOrigin.X, LOrigin.Y);
+              PaintItem(LCanvas, LIndex, LItemRect, LIndex = LSelected, False);
+            end;
+            if GetWindowLong(ListHandle, GWL_STYLE) and WS_VSCROLL <> 0 then
+              PaintPopupScrollBar(LCanvas, LWindowRect);
+          finally
+            RestoreDC(LDC, LSavedDC);
+          end;
+        finally
+          LCanvas.Handle := 0;
+        end;
+      finally
+        LCanvas.Free;
+      end;
+    finally
+      if ADC = 0 then ReleaseDC(ListHandle, LDC);
+    end;
+  finally
+    FPaintingPopup := False;
+  end;
+end;
+
+procedure TDevShellComboBoxStyleHook.PaintPopupScrollBar(ACanvas: TCanvas;
+  const ABounds: TRect);
+begin
+  // Match Vcl.StdCtrls.ListBoxVert*Rect: inherited VCL owns drag, capture,
+  // repeat timers and scrolling. Only the pixels are replaced here.
+  var LTheme := TDevShellTheme.ActiveTheme;
+  var LScroll := ABounds;
+  InflateRect(LScroll, -1, -1);
+  if Control.BiDiMode <> bdRightToLeft then
+    LScroll.Left := LScroll.Right - GetSystemMetrics(SM_CXVSCROLL)
+  else
+    LScroll.Right := LScroll.Left + GetSystemMetrics(SM_CXVSCROLL);
+  ACanvas.Brush.Color := LTheme.BackgroundColor;
+  ACanvas.FillRect(LScroll);
+  var LButtonHeight := Min(GetSystemMetrics(SM_CYVTHUMB), LScroll.Height div 2);
+  var LUp := LScroll;
+  LUp.Bottom := LUp.Top + LButtonHeight;
+  var LDown := LScroll;
+  LDown.Top := LDown.Bottom - LButtonHeight;
+  DrawDevShellChevron(ACanvas, LUp.CenterPoint, LTheme.MutedColor,
+    dscdUp, Control.CurrentPPI / 96.0);
+  DrawDevShellChevron(ACanvas, LDown.CenterPoint, LTheme.MutedColor,
+    dscdDown, Control.CurrentPPI / 96.0);
+  var LCount := Integer(SendMessage(ListHandle, LB_GETCOUNT, 0, 0));
+  var LTop := Integer(SendMessage(ListHandle, LB_GETTOPINDEX, 0, 0));
+  var LItemHeight := Integer(SendMessage(ListHandle, LB_GETITEMHEIGHT, 0, 0));
+  if (LCount <= 0) or (LItemHeight <= 0) then Exit;
+  var LTrackSize := LDown.Top - LUp.Bottom;
+  var LVisible := Min(LCount - LTop,
+    (ABounds.Height - 2 + LItemHeight - 1) div LItemHeight);
+  var LThumbHeight := Round(LVisible * LItemHeight /
+    (1.0 + LCount * LItemHeight) * LTrackSize);
+  var LMinSize := GetSystemMetrics(SM_CXHTHUMB) div 2;
+  if LThumbHeight < LMinSize then
+  begin
+    Dec(LTrackSize, LMinSize - LThumbHeight + 1);
+    LThumbHeight := LMinSize;
+  end;
+  var LThumb := LScroll;
+  LThumb.Top := LUp.Bottom + Round(LTop / LCount * LTrackSize);
+  LThumb.Bottom := LThumb.Top + LThumbHeight;
+  if LTop + LVisible >= LCount then
+  begin
+    LThumb.Bottom := LDown.Top;
+    LThumb.Top := LThumb.Bottom - LThumbHeight;
+  end;
+  InflateRect(LThumb, -Max(2, LScroll.Width div 4), 0);
+  var LThumbColor := BlendColor(LTheme.MutedColor, LTheme.BackgroundColor, 0.45);
+  DrawAntialiasedRoundedRectangle(ACanvas, LThumb, LThumbColor,
+    clNone, LThumb.Width / 2, 0);
+end;
+
+procedure TDevShellComboBoxStyleHook.ListBoxWndProc(var AMessage: TMessage);
+begin
+  inherited ListBoxWndProc(AMessage);
+  case AMessage.Msg of
+    WM_PAINT, WM_NCPAINT, WM_MOUSEMOVE, WM_NCMOUSEMOVE,
+    WM_MOUSELEAVE, WM_NCMOUSELEAVE, WM_LBUTTONDOWN, WM_LBUTTONUP,
+    WM_NCLBUTTONDOWN, WM_NCLBUTTONUP, WM_MOUSEWHEEL, WM_TIMER,
+    WM_KEYDOWN, WM_KEYUP, LB_SETTOPINDEX, LB_SETCURSEL:
+      PaintPopup(0);
+    WM_PRINT:
+      if AMessage.WParam <> 0 then PaintPopup(AMessage.WParam);
+  end;
+end;
+
 
 function BadgeAccentColor(const ATheme: TDevShellTheme;
   ARole: TDevShellBadgeRole): TColor;
@@ -623,15 +1279,17 @@ class function TDevShellTheme.DarkTheme: TDevShellTheme;
 begin
   Result := Default(TDevShellTheme);
   Result.Kind := dstDark;
-  Result.BackgroundColor := BlendColor(clWebBlack, clWebWhite, 0.17);
-  Result.TextColor := clWebWhiteSmoke;
-  Result.MutedColor := clWebSilver;
-  Result.AccentColor := clHighlight;
-  Result.PrimaryColor := clWebCornflowerBlue;
-  Result.SecondaryColor := clWebMediumTurquoise;
-  Result.SuccessColor := clWebDarkSeaGreen;
-  Result.WarningColor := clWebSandyBrown;
-  Result.DangerColor := clWebIndianRed;
+  // Match the mockup's navy canvas.  Individual cards use a restrained
+  // foreground blend, keeping their edge visible without a charcoal cast.
+  Result.BackgroundColor := RGB($10, $21, $33);
+  Result.TextColor := RGB($EA, $F3, $FF);
+  Result.MutedColor := RGB($9C, $B8, $D8);
+  Result.AccentColor := RGB($0A, $84, $FF);
+  Result.PrimaryColor := RGB($21, $96, $FF);
+  Result.SecondaryColor := RGB($16, $D9, $E8);
+  Result.SuccessColor := RGB($70, $D9, $8C);
+  Result.WarningColor := RGB($FD, $B2, $4A);
+  Result.DangerColor := RGB($FF, $6B, $77);
 end;
 
 class function TDevShellTheme.LightTheme: TDevShellTheme;
@@ -651,7 +1309,14 @@ end;
 
 class function TDevShellTheme.ActiveTheme: TDevShellTheme;
 begin
-  if IsWindowsLightTheme then
+  if GHasDevShellThemeOverride then
+  begin
+    if GDevShellThemeOverride = dstLight then
+      Result := LightTheme
+    else
+      Result := DarkTheme;
+  end
+  else if IsWindowsLightTheme then
     Result := LightTheme
   else
     Result := DarkTheme;
@@ -667,6 +1332,17 @@ begin
   Result.SuccessColor := Result.TextColor;
   Result.WarningColor := Result.TextColor;
   Result.DangerColor := Result.TextColor;
+end;
+
+procedure SetDevShellThemeOverride(AThemeKind: TDevShellThemeKind);
+begin
+  GDevShellThemeOverride := AThemeKind;
+  GHasDevShellThemeOverride := True;
+end;
+
+procedure ClearDevShellThemeOverride;
+begin
+  GHasDevShellThemeOverride := False;
 end;
 
 function ResolveMenuSurfaceTheme(ADC: HDC;
@@ -1642,11 +2318,31 @@ begin
 end;
 
 initialization
+  TCustomStyleEngine.RegisterStyleHook(TCheckBox, TDevShellCheckBoxStyleHook);
+  TCustomStyleEngine.RegisterStyleHook(TCustomCheckBox, TDevShellCheckBoxStyleHook);
+  TCustomStyleEngine.RegisterStyleHook(TMemo, TDevShellMemoStyleHook);
+  TCustomStyleEngine.RegisterStyleHook(TCustomMemo, TDevShellMemoStyleHook);
+  TCustomStyleEngine.RegisterStyleHook(TControlList, TDevShellControlListStyleHook);
+  TCustomStyleEngine.RegisterStyleHook(TCustomControlList, TDevShellControlListStyleHook);
+  TCustomStyleEngine.RegisterStyleHook(TListView, TDevShellListViewStyleHook);
+  TCustomStyleEngine.RegisterStyleHook(TCustomListView, TDevShellListViewStyleHook);
+  TCustomStyleEngine.RegisterStyleHook(TComboBox,
+    TDevShellComboBoxStyleHook);
   TCustomStyleEngine.RegisterStyleHook(TCustomComboBox,
     TDevShellComboBoxStyleHook);
   RegisterClass(TSimpleUIButton);
 
 finalization
+  TCustomStyleEngine.UnRegisterStyleHook(TCheckBox, TDevShellCheckBoxStyleHook);
+  TCustomStyleEngine.UnRegisterStyleHook(TCustomCheckBox, TDevShellCheckBoxStyleHook);
+  TCustomStyleEngine.UnRegisterStyleHook(TMemo, TDevShellMemoStyleHook);
+  TCustomStyleEngine.UnRegisterStyleHook(TCustomMemo, TDevShellMemoStyleHook);
+  TCustomStyleEngine.UnRegisterStyleHook(TControlList, TDevShellControlListStyleHook);
+  TCustomStyleEngine.UnRegisterStyleHook(TCustomControlList, TDevShellControlListStyleHook);
+  TCustomStyleEngine.UnRegisterStyleHook(TListView, TDevShellListViewStyleHook);
+  TCustomStyleEngine.UnRegisterStyleHook(TCustomListView, TDevShellListViewStyleHook);
+  TCustomStyleEngine.UnRegisterStyleHook(TComboBox,
+    TDevShellComboBoxStyleHook);
   TCustomStyleEngine.UnRegisterStyleHook(TCustomComboBox,
     TDevShellComboBoxStyleHook);
   UnRegisterClass(TSimpleUIButton);

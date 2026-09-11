@@ -27,6 +27,9 @@
     <DCC_DebugInformation>0</DCC_DebugInformation>
   </PropertyGroup>
   <ItemGroup>
+    <DCCReference Include="ShellTools.CheckBoxTests.pas"/>
+    <DCCReference Include="ShellTools.ComboBoxTests.pas"/>
+        <DCCReference Include="ShellTools.ScrollBarTests.pas"/>
         <DCCReference Include="ShellTools.LoggingTests.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Logging.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.SettingsStore.pas"/>
@@ -42,6 +45,15 @@
     <DelphiCompile Include="$(MainSource)"><MainSource>MainSource</MainSource></DelphiCompile>
     <DCCReference Include="ShellTools.ExecutionTests.pas"/>
     <DCCReference Include="ShellTools.SettingsTests.pas"/>
+    <DCCReference Include="ShellTools.SettingsModelTests.pas"/>
+    <DCCReference Include="ShellTools.SettingsFormTests.pas"/>
+    <DCCReference Include="ShellTools.DialogTests.pas"/>
+    <DCCReference Include="..\GUI\DelphiDevShellTools.GUI.ExtensionDialog.pas"/>
+    <DCCReference Include="..\GUI\DelphiDevShellTools.GUI.PaletteDialog.pas"/>
+    <DCCReference Include="..\GUI\DelphiDevShellTools.GUI.CheckSum.pas"/>
+    <DCCReference Include="..\GUI\DelphiDevShellTools.GUI.Settings.pas"/>
+    <DCCReference Include="..\GUI\DelphiDevShellTools.GUI.MiscGUI.pas"/>
+    <DCCReference Include="..\GUI\DelphiDevShellTools.GUI.SettingsModel.pas"/>
     <DCCReference Include="ShellTools.BasicTests.pas"/>
     <DCCReference Include="ShellTools.IconTests.pas"/>
     <DCCReference Include="ShellTools.RegistrationTests.pas"/>

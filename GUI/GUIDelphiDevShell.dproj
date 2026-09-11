@@ -129,6 +129,9 @@
         <DCCReference Include="DelphiDevShellTools.GUI.Settings.pas">
             <Form>FrmSettings</Form>
         </DCCReference>
+        <DCCReference Include="DelphiDevShellTools.GUI.ExtensionDialog.pas"/>
+        <DCCReference Include="DelphiDevShellTools.GUI.PaletteDialog.pas"/>
+        <DCCReference Include="DelphiDevShellTools.GUI.SettingsModel.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Misc.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.UI.pas"/>
         <DCCReference Include="..\units\DelphiDevShellTools.Phosphor.Font.pas"/>

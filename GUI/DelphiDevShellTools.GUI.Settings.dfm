@@ -4,12 +4,12 @@ object FrmSettings: TFrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Delphi Dev. Shell Tools Settings'
-  ClientHeight = 794
-  ClientWidth = 1250
+  ClientHeight = 552
+  ClientWidth = 880
   Color = clBtnFace
   CustomTitleBar.Control = TitleBarPanel1
   CustomTitleBar.Enabled = True
-  CustomTitleBar.Height = 45
+  CustomTitleBar.Height = 40
   CustomTitleBar.SystemHeight = False
   CustomTitleBar.BackgroundColor = clWhite
   CustomTitleBar.ForegroundColor = 65793
@@ -30,7 +30,7 @@ object FrmSettings: TFrmSettings
   Font.Name = 'Tahoma'
   Font.Style = []
   GlassFrame.Enabled = True
-  GlassFrame.Top = 30
+  GlassFrame.Top = 40
   Position = poScreenCenter
   RoundedCorners = rcOn
   StyleElements = [seFont, seClient]
@@ -39,10 +39,10 @@ object FrmSettings: TFrmSettings
   OnDestroy = FormDestroy
   TextHeight = 13
   object Panel1: TPanel
-    Left = 210
-    Top = 45
-    Width = 1030
-    Height = 749
+    Left = 149
+    Top = 40
+    Width = 731
+    Height = 520
     Align = alClient
     BevelInner = bvNone
     BevelOuter = bvNone
@@ -55,8 +55,8 @@ object FrmSettings: TFrmSettings
     object PanelViewHeader: TPanel
       Left = 0
       Top = 0
-      Width = 1030
-      Height = 42
+      Width = 731
+      Height = 58
       Align = alTop
       BevelInner = bvNone
       BevelOuter = bvNone
@@ -65,37 +65,37 @@ object FrmSettings: TFrmSettings
       ParentBackground = False
       TabOrder = 0
       object LabelViewTitle: TLabel
-        Left = 47
-        Top = -4
+        Left = 20
+        Top = 10
         Width = 54
-        Height = 26
+        Height = 22
         Caption = 'General'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
-        Font.Height = -20
+        Font.Height = -17
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
         ParentFont = False
       end
       object LabelViewDescription: TLabel
-        Left = 47
-        Top = 22
+        Left = 20
+        Top = 37
         Width = 258
-        Height = 19
+        Height = 17
         Caption = 'Configure the file extensions used by each shell feature.'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
-        Font.Height = -15
+        Font.Height = -13
         Font.Name = 'Segoe UI'
         Font.Style = []
         ParentFont = False
       end
     end
-    object PageControl1: TFlatPageControl
+    object PageControl1: TPageControl
       Left = 0
-      Top = 42
-      Width = 1030
-      Height = 629
+      Top = 58
+      Width = 731
+      Height = 410
       ActivePage = TabSheet2
       Align = alClient
       TabOrder = 1
@@ -734,41 +734,25 @@ object FrmSettings: TFrmSettings
               679F6A27C9018D467392B88C2CCBD7254972932DBCBF3BF6098B1F5520B7DECB
               500000000049454E44AE426082}
           end
-          object DBNavigator1: TDBNavigator
-            Left = 139
-            Top = 3
-            Width = 240
-            Height = 25
-            DataSource = DataSource1
-            ParentShowHint = False
-            ShowHint = True
-            TabOrder = 0
-            Visible = False
-          end
-          object DBEditMenu: TDBEdit
+          object DBEditMenu: TEdit
             Left = 139
             Top = 101
             Width = 247
             Height = 21
-            DataField = 'Men'
-            DataSource = DataSource1
             TabOrder = 3
           end
-          object DBEditName: TDBEdit
+          object DBEditName: TEdit
             Left = 392
             Top = 55
             Width = 127
             Height = 21
-            DataField = 'Name'
-            DataSource = DataSource1
             TabOrder = 2
           end
-          object DBMemoScript: TDBMemo
+          object DBMemoScript: TMemo
             Left = 139
             Top = 199
             Width = 380
             Height = 140
-            DataSource = DataSource1
             Font.Charset = ANSI_CHARSET
             Font.Color = clWindowText
             Font.Height = -13
@@ -778,12 +762,11 @@ object FrmSettings: TFrmSettings
             ScrollBars = ssBoth
             TabOrder = 5
           end
-          object DBEditExtensions: TDBEdit
+          object DBEditExtensions: TEdit
             Left = 139
             Top = 147
             Width = 380
             Height = 21
-            DataSource = DataSource1
             TabOrder = 4
           end
           object ListViewMacros: TListView
@@ -814,69 +797,51 @@ object FrmSettings: TFrmSettings
             TabOrder = 7
             OnClick = BtnInsertMacroClick
           end
-          object DBComboBoxGroup: TDevShellDBComboBox
+          object DBComboBoxGroup: TComboBox
             Left = 139
             Top = 55
             Width = 110
             Height = 21
             Style = csDropDownList
-            DataSource = DataSource1
             Items.Strings = (
               'FPC Tools'
               'Delphi Tools'
               'External Tools')
             TabOrder = 1
           end
-          object DBLookupComboBoxDelphi: TDevShellLookupComboBox
+          object DBLookupComboBoxDelphi: TComboBox
             Left = 255
             Top = 55
             Width = 131
             Height = 21
-            DataSource = DataSource1
-            ListSource = DataSource2
+            Style = csDropDownList
             TabOrder = 8
           end
-          object DBGrid1: TFlatDBGrid
+          object DBGrid1: TControlList
             Left = 3
             Top = 3
             Width = 130
             Height = 465
-            DataSource = DataSource1
-            Options = [dgTitles, dgColumnResize, dgColLines, dgRowLines, dgTabs, dgRowSelect, dgConfirmDelete, dgCancelOnExit, dgTitleClick, dgTitleHotTrack]
-            ReadOnly = True
+            ItemHeight = 24
+            ItemCount = 0
             TabOrder = 9
-            TitleFont.Charset = DEFAULT_CHARSET
-            TitleFont.Color = clWindowText
-            TitleFont.Height = -11
-            TitleFont.Name = 'Tahoma'
-            TitleFont.Style = []
-            Columns = <
-              item
-                Expanded = False
-                FieldName = 'Name'
-                Title.Caption = 'Tool'
-                Width = 100
-                Visible = True
-              end>
-            OnDrawColumnCell = DBGridToolsDrawColumnCell
+            OnAfterDrawItem = ToolListAfterDrawItem
           end
-          object DBComboBoxImage: TDevShellDBComboBox
+          object DBComboBoxImage: TComboBox
             Left = 392
             Top = 101
             Width = 127
             Height = 22
             Style = csOwnerDrawFixed
-            DataSource = DataSource1
             TabOrder = 10
             OnDrawItem = DBComboBoxImageDrawItem
           end
-          object DBCheckBoxRunAs: TDBCheckBox
+          object DBCheckBoxRunAs: TCheckBox
             Left = 400
             Top = 176
             Width = 119
             Height = 17
             Caption = 'Run As Administrator'
-            DataSource = DataSource1
             TabOrder = 11
           end
         end
@@ -884,9 +849,9 @@ object FrmSettings: TFrmSettings
     end
     object Panel2: TPanel
       Left = 0
-      Top = 671
-      Width = 1030
-      Height = 80
+      Top = 468
+      Width = 731
+      Height = 52
       Align = alBottom
       BevelInner = bvNone
       BevelOuter = bvNone
@@ -928,9 +893,9 @@ object FrmSettings: TFrmSettings
   end
   object PanelSideBar: TPanel
     Left = 0
-    Top = 29
-    Width = 210
-    Height = 765
+    Top = 40
+    Width = 149
+    Height = 520
     Align = alLeft
     BevelInner = bvNone
     BevelOuter = bvNone
@@ -940,9 +905,9 @@ object FrmSettings: TFrmSettings
     TabOrder = 0
     object PanelSideBarFooter: TPanel
       Left = 0
-      Top = 685
-      Width = 210
-      Height = 80
+      Top = 468
+      Width = 149
+      Height = 52
       Align = alBottom
       BevelInner = bvNone
       BevelOuter = bvNone
@@ -960,22 +925,22 @@ object FrmSettings: TFrmSettings
       end
     end
     object PaintBoxSideBarBorder: TPaintBox
-      Left = 209
+      Left = 148
       Top = 0
       Width = 1
-      Height = 685
+      Height = 468
       Align = alRight
       OnPaint = ChromeBorderPaint
     end
     object SideBar: TControlList
       Left = 0
       Top = 0
-      Width = 209
-      Height = 685
+      Width = 148
+      Height = 468
       Align = alClient
       BorderStyle = bsNone
       ItemCount = 4
-      ItemHeight = 56
+      ItemHeight = 40
       ItemIndex = 0
       ItemMargins.Left = 0
       ItemMargins.Top = 4
@@ -989,8 +954,8 @@ object FrmSettings: TFrmSettings
   object TitleBarPanel1: TTitleBarPanel
     Left = 0
     Top = 0
-    Width = 1250
-    Height = 45
+    Width = 880
+    Height = 40
     CustomButtons = <>
   end
   object DataSource1: TDataSource

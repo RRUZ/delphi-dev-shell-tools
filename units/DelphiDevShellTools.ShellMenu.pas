@@ -592,30 +592,22 @@ end;
 procedure TShellMenu.AddMenuSeparatorEx(hMenu: HMENU; var MenuIndex: Integer);
 var
   LMenuInfo: TMenuItemInfo;
-  Buffer: array [0..79] of char;
 begin
-  try
-    LMenuInfo.cbSize := sizeof(LMenuInfo);
-    LMenuInfo.fMask  := MIIM_TYPE;
-    LMenuInfo.dwTypeData := Buffer;
-    LMenuInfo.cch := SizeOf(Buffer);
-    if GetMenuItemInfo(hMenu, MenuIndex-1, True, LMenuInfo) then
-    begin
-      //log('GetMenuItemInfo ok '+IntToStr(LMenuInfo.fType));
-
-      if not IsSeparator(LMenuInfo.fType)  then
-      begin
-        //log('adding separator');
-        InsertMenu(hMenu, MenuIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil);
-        inc(MenuIndex);
-      end;
-    end
-    else
-      log('TShellMenu.AddMenuSeparatorEx SysErrorMessage ' + SysErrorMessage(GetLastError));
-  except
-   on  E: Exception do
-   log(Format('TShellMenu.AddMenuSeparatorEx Message %s  Trace %s',[E.Message, e.StackTrace]));
-  end;
+  if MenuIndex <= 0 then
+    Exit;
+  // Only the type is needed. MIIM_TYPE also copies the caption into a caller
+  // buffer, whose capacity is measured in characters rather than bytes.
+  ZeroMemory(@LMenuInfo, SizeOf(LMenuInfo));
+  LMenuInfo.cbSize := SizeOf(LMenuInfo);
+  LMenuInfo.fMask := MIIM_FTYPE;
+  if GetMenuItemInfo(hMenu, MenuIndex - 1, True, LMenuInfo) then
+  begin
+    if not IsSeparator(LMenuInfo.fType) and
+      InsertMenu(hMenu, MenuIndex, MF_BYPOSITION or MF_SEPARATOR, 0, nil) then
+      Inc(MenuIndex);
+  end
+  else
+    Log('TShellMenu.AddMenuSeparatorEx SysErrorMessage ' + SysErrorMessage(GetLastError));
 end;
 
 function TShellMenu.InvokeCommand(var lpici: TCMInvokeCommandInfo): HResult;

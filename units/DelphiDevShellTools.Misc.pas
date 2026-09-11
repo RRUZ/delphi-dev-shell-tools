@@ -34,7 +34,7 @@ uses
  ImgList;
 
 const
-  MenuImageLogicalSize = 16;
+  MenuImageLogicalSize = 20;
 
 type
 
@@ -117,7 +117,8 @@ type
   function  GetDevShellToolsDbDelphi: String;
   function  GetDevShellToolsImagesFolder: String;
 
-  procedure ReadSettings(var Settings: TSettings);
+  procedure ReadSettings(var Settings: TSettings; ADocument: TJSONObject = nil);
+  procedure UpdateSettingsDocument(const Settings: TSettings);
   procedure WriteSettings(const Settings: TSettings);
 
   function GetUNCNameEx(const lpLocalPath: string): string;
@@ -307,11 +308,16 @@ begin
   inherited;
 end;
 
-procedure ReadSettings(var Settings: TSettings);
+procedure ReadSettings(var Settings: TSettings; ADocument: TJSONObject);
 var Context: TRttiContext; Prop: TRttiProperty; Globals: TJSONObject; Value: string;
+  LDocument: TJSONObject;
 begin
+  if Assigned(ADocument) then
+    LDocument := ADocument.Clone as TJSONObject
+  else
+    LDocument := LoadUserConfiguration;
   FreeAndNil(Settings.FDocument);
-  Settings.FDocument := LoadUserConfiguration;
+  Settings.FDocument := LDocument;
   Globals := Settings.FDocument.GetValue<TJSONObject>('settings');
   Context := TRttiContext.Create;
   try
@@ -328,7 +334,7 @@ begin
   end;
 end;
 
-procedure WriteSettings(const Settings: TSettings);
+procedure UpdateSettingsDocument(const Settings: TSettings);
 var Context: TRttiContext; Prop: TRttiProperty; Globals: TJSONObject; Value: string;
 begin
   Globals := Settings.FDocument.GetValue<TJSONObject>('settings');
@@ -344,10 +350,15 @@ begin
       else Continue;
       PutJSON(Globals, Prop.Name, TJSONString.Create(Value));
     end;
-    SaveConfiguration(UserSettingsDirectory, Settings.FDocument);
   finally
     Context.Free;
   end;
+end;
+
+procedure WriteSettings(const Settings: TSettings);
+begin
+  UpdateSettingsDocument(Settings);
+  SaveConfiguration(UserSettingsDirectory, Settings.FDocument);
 end;
 
 procedure GetAssocAppByExt(const FileName:string; var ExeName, FriendlyAppName: string);

@@ -36,6 +36,8 @@ type
   TDllRegistration = function: HResult; stdcall;
   TDllGetClassObject = function(const ClassId, IID: TGUID; out Obj): HResult; stdcall;
 
+procedure TraceTest(const AMessage: string);
+procedure RunWithIsolatedSettings(const ATests: TProc);
 function TestDllPath: string;
 function LoadTestDll: HMODULE;
 function ReadRegistryString(Root: HKEY; const Key: string; const Name: string = ''; RegistryView: REGSAM = 0): string;
@@ -52,6 +54,47 @@ uses
   System.Generics.Collections, Vcl.Graphics,
   Winapi.Messages, Winapi.ActiveX, DUnitX.TestFramework,
   DelphiDevShellTools.Misc;
+
+procedure TraceTest(const AMessage: string);
+begin
+  if GetEnvironmentVariable('DDS_TEST_VERBOSE') = '1' then
+  begin
+    Writeln(AMessage);
+    Flush(Output);
+  end;
+end;
+
+procedure RunWithIsolatedSettings(const ATests: TProc);
+begin
+  var LRoot := TPath.Combine(TPath.GetTempPath, 'DDS-Suite-' + TGUID.NewGuid.ToString);
+  ForceDirectories(LRoot);
+  try
+    var LFixture := TPath.GetFullPath(ExtractFilePath(ParamStr(0)) +
+      '..\..\fixtures\CustomTools');
+    var LLegacy := LRoot + '\ProgramData\DelphiDevShellTools';
+    ForceDirectories(LLegacy);
+    for var LName in ['Tools.db', 'DelphiVersions.db', 'Settings.ini', 'macros.xml'] do
+      TFile.Copy(TPath.Combine(LFixture, LName), TPath.Combine(LLegacy, LName));
+    var LLocalAppData := GetEnvironmentVariable('LOCALAPPDATA');
+    if not SetEnvironmentVariable('LOCALAPPDATA', PChar(LRoot + '\LocalAppData')) then
+      RaiseLastOSError;
+    try
+      var LProgramData := GetEnvironmentVariable('ProgramData');
+      if not SetEnvironmentVariable('ProgramData', PChar(LRoot + '\ProgramData')) then
+        RaiseLastOSError;
+      try
+        ATests();
+      finally
+        SetEnvironmentVariable('ProgramData', PChar(LProgramData));
+      end;
+    finally
+      SetEnvironmentVariable('LOCALAPPDATA', PChar(LLocalAppData));
+    end;
+  finally
+    TDirectory.Delete(LRoot, True);
+  end;
+end;
+
 
 function TestDllPath: string;
 begin
@@ -214,6 +257,7 @@ var
         LMeasure.CtlType := ODT_MENU;
         LMeasure.itemID := LInfo.wID;
         LMeasure.itemData := LInfo.dwItemData;
+        TraceTest('Shell test: measure panel');
         CheckHR(LMenu3.HandleMenuMsg2(WM_MEASUREITEM, 0,
           LPARAM(@LMeasure), LOmittedResult^), 'Measure panel');
         Assert.IsTrue((LMeasure.itemWidth > 0) and
@@ -227,6 +271,7 @@ var
           LDraw.itemData := LInfo.dwItemData;
           LDraw.hDC := LBitmap.Canvas.Handle;
           LDraw.rcItem := Rect(0, 0, LBitmap.Width, LBitmap.Height);
+          TraceTest('Shell test: draw panel');
           CheckHR(LMenu3.HandleMenuMsg2(WM_DRAWITEM, 0,
             LPARAM(@LDraw), LOmittedResult^), 'Draw panel');
         finally
@@ -272,18 +317,22 @@ begin
       CheckHR(LItem.BindToHandler(nil, BHID_DataObject, IDataObject, LData),
         'Create file data object');
       Assert.IsTrue(Supports(AMenu, IShellExtInit, LInit));
+      TraceTest('Shell test: initialize selection');
       CheckHR(LInit.Initialize(nil, LData, 0),
         'Initialize Pascal file selection');
       var LPopup := CreatePopupMenu;
       Assert.IsTrue(LPopup <> 0);
       try
+        TraceTest('Shell test: query menu');
         var LResultCode := AMenu.QueryContextMenu(LPopup, 0, cFirstCommand,
           cLastCommand, CMF_NORMAL);
         CheckHR(LResultCode, 'QueryContextMenu');
         LReservedCount := Cardinal(LResultCode) and $FFFF;
         Assert.IsTrue(GetMenuItemCount(LPopup) > 0,
           'Pascal selection must create a menu');
+        TraceTest('Shell test: inspect menu');
         CheckMenuIds(LPopup, False);
+        TraceTest('Shell test: menu inspected');
       finally
         DestroyMenu(LPopup);
       end;

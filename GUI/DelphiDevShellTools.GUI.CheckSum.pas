@@ -24,27 +24,37 @@ unit DelphiDevShellTools.GUI.CheckSum;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, System.Types, Vcl.Graphics,
+  Vcl.Controls, Vcl.Dialogs, Vcl.Forms, Vcl.StdCtrls,
+  Vcl.ExtCtrls,
+  Vcl.TitleBarCtrls,
+  DelphiDevShellTools.UI, DelphiDevShellTools.GUI.PaletteDialog;
 
 type
-  TFrmCheckSum = class(TForm)
+  TFrmCheckSum = class(TPaletteDialog)
     Label1: TLabel;
     Label2: TLabel;
     EditFileName: TEdit;
-    Button1: TButton;
+    Button1: TSimpleUIButton;
     EditCheckSum: TMemo;
-    RbUpCase: TRadioButton;
-    RbLowCase: TRadioButton;
+    RbUpCase: TSimpleUIButton;
+    RbLowCase: TSimpleUIButton;
+    TitleBarPanel: TTitleBarPanel;
+    ShapeFileNameInput: TShape;
+    ShapeChecksumInput: TShape;
     procedure FormShow(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure RbUpCaseClick(Sender: TObject);
     procedure RbLowCaseClick(Sender: TObject);
+    procedure InputFocusChanged(Sender: TObject);
   private
     FFileName: string;
     FCheckSumAlgo: string;
-    { Private declarations }
+    FUpperCase: Boolean;
+    procedure ApplyPalette;
+    procedure SelectChecksumCase(AUpperCase: Boolean);
+    procedure UpdateCaseButtons;
   public
     { Public declarations }
     property FileName: string read FFileName write FFileName;
@@ -60,10 +70,15 @@ implementation
 {$R *.dfm}
 
 uses
+  Vcl.Themes,
   IdHashCRC,
   IdSSLOpenSSL,
   IdHashSHA,
   IdHashMessageDigest;
+
+type
+  TControlAccess = class(TControl);
+  TWinControlAccess = class(TWinControl);
 
 function SHA1FromFile(const FileName: string): string;
 var
@@ -198,13 +213,17 @@ end;
 
 procedure TFrmCheckSum.FormCreate(Sender: TObject);
 begin
-  LoadOpenSSLLibrary;
+  FUpperCase := True;
+  ApplyPalette;
+  UpdateCaseButtons;
 end;
 
 procedure TFrmCheckSum.FormShow(Sender: TObject);
 begin
-   Caption:=CheckSumAlgo;
+   Caption := CheckSumAlgo + ' checksum';
+   Label1.Caption := CheckSumAlgo + ' digest';
    EditFileName.Text:=FileName;
+   LoadOpenSSLLibrary;
 
    if CheckSumAlgo='CRC32' then
     EditCheckSum.Text:=CRC32FromFile(FileName)
@@ -226,16 +245,107 @@ begin
    else
    if CheckSumAlgo='SHA-512' then
     EditCheckSum.Text:=SHA512FromFile(FileName);
+   SelectChecksumCase(FUpperCase);
+   InputFocusChanged(EditFileName);
 end;
 
 procedure TFrmCheckSum.RbLowCaseClick(Sender: TObject);
 begin
-  EditCheckSum.Text:=LowerCase(EditCheckSum.Text);
+  SelectChecksumCase(False);
 end;
 
 procedure TFrmCheckSum.RbUpCaseClick(Sender: TObject);
 begin
-  EditCheckSum.Text:=UpperCase(EditCheckSum.Text);
+  SelectChecksumCase(True);
+end;
+
+procedure TFrmCheckSum.SelectChecksumCase(AUpperCase: Boolean);
+begin
+  FUpperCase := AUpperCase;
+  UpdateCaseButtons;
+  if FUpperCase then
+    EditCheckSum.Text := UpperCase(EditCheckSum.Text)
+  else
+    EditCheckSum.Text := LowerCase(EditCheckSum.Text);
+end;
+
+procedure TFrmCheckSum.UpdateCaseButtons;
+begin
+  var LTheme := TDevShellTheme.ActiveTheme;
+  var LPalette := DevShellButtonPalette(LTheme);
+  var LSelectedPalette := LPalette;
+  LSelectedPalette.Background := BlendColor(LTheme.AccentColor,
+    LTheme.BackgroundColor, 0.78);
+  LSelectedPalette.HotBackground := BlendColor(LTheme.AccentColor,
+    LTheme.BackgroundColor, 0.70);
+  LSelectedPalette.Border := LTheme.AccentColor;
+  LSelectedPalette.HotBorder := LTheme.AccentColor;
+  LSelectedPalette.PressedBorder := LTheme.AccentColor;
+  if FUpperCase then
+  begin
+    RbUpCase.ApplyPalette(LSelectedPalette);
+    RbLowCase.ApplyPalette(LPalette);
+  end
+  else
+  begin
+    RbUpCase.ApplyPalette(LPalette);
+    RbLowCase.ApplyPalette(LSelectedPalette);
+  end;
+  RbUpCase.Caption := 'Upper case';
+  RbLowCase.Caption := 'Lower case';
+end;
+
+procedure TFrmCheckSum.ApplyPalette;
+begin
+  var LTheme := TDevShellTheme.ActiveTheme;
+  Color := LTheme.BackgroundColor;
+  Font.Name := TDevShellTheme.cFontName;
+  Font.Size := TDevShellTheme.cFontSize;
+  Font.Color := LTheme.TextColor;
+  for var LLabel in TArray<TLabel>.Create(Label1, Label2) do
+  begin
+    LLabel.Transparent := True;
+    LLabel.Font.Assign(Font);
+    LLabel.Font.Color := LTheme.TextColor;
+  end;
+  for var LInput in TArray<TControl>.Create(EditFileName, EditCheckSum) do
+  begin
+    LInput.StyleElements := [];
+    TControlAccess(LInput).Color := BlendColor(LTheme.BackgroundColor,
+      LTheme.TextColor, 0.08);
+    TControlAccess(LInput).Font.Assign(Font);
+    TControlAccess(LInput).Font.Color := LTheme.TextColor;
+  end;
+  EditFileName.BorderStyle := bsNone;
+  EditCheckSum.BorderStyle := bsNone;
+  for var LShape in TArray<TShape>.Create(ShapeFileNameInput,
+    ShapeChecksumInput) do
+  begin
+    LShape.StyleElements := [];
+    LShape.Shape := stRoundRect;
+    LShape.Pen.Width := 1;
+  end;
+  ShapeFileNameInput.Brush.Color := EditFileName.Color;
+  ShapeChecksumInput.Brush.Color := EditCheckSum.Color;
+  RbUpCase.Font.Assign(Font);
+  RbLowCase.Font.Assign(Font);
+  ApplyDevShellThemeToButton(Button1, LTheme);
+  Button1.Font.Assign(Font);
+end;
+
+procedure TFrmCheckSum.InputFocusChanged(Sender: TObject);
+begin
+  var LTheme := TDevShellTheme.ActiveTheme;
+  if EditFileName.Focused then
+    ShapeFileNameInput.Pen.Color := LTheme.AccentColor
+  else
+    ShapeFileNameInput.Pen.Color := BlendColor(LTheme.TextColor,
+      LTheme.BackgroundColor, 0.72);
+  if EditCheckSum.Focused then
+    ShapeChecksumInput.Pen.Color := LTheme.AccentColor
+  else
+    ShapeChecksumInput.Pen.Color := BlendColor(LTheme.TextColor,
+      LTheme.BackgroundColor, 0.72);
 end;
 
 end.

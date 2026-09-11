@@ -60,10 +60,10 @@ type
     [Test] procedure GuiEmbedsDpiManifest;
     [Test] procedure ResourceMappingsAndGuiIconMetadataAreStable;
     [Test] procedure HighResolutionLogoFramesAreEmbedded;
-    [TestCase('96 DPI', '96,16')]
-    [TestCase('120 DPI', '120,20')]
-    [TestCase('144 DPI', '144,24')]
-    [TestCase('192 DPI', '192,32')]
+    [TestCase('96 DPI', '96,20')]
+    [TestCase('120 DPI', '120,25')]
+    [TestCase('144 DPI', '144,30')]
+    [TestCase('192 DPI', '192,40')]
     procedure MenuImageDpiContract(Dpi, ExpectedPixels: Integer);
     [Test] procedure ImageCacheIdentityAndIcoSelectionFollowDpi;
     [Test] procedure BulletIconNamesAndColorsAreStable;
@@ -84,6 +84,10 @@ type
     procedure PanelPaintPreservesHostDCAndBounds(Dpi: Integer);
     [Test] procedure DllCreatesShellInterfacesAndRejectsEmptySelection;
     [Test] procedure DllFactoryInitializesMenuState;
+    [TestCase('80 characters', '80')]
+    [TestCase('160 characters', '160')]
+    [TestCase('512 characters', '512')]
+    procedure MenuSeparatorsHandleLongCaptions(ACaptionLength: Integer);
   end;
 
 implementation
@@ -93,7 +97,7 @@ uses
   Winapi.Windows, Winapi.Messages, Winapi.ActiveX,
   Winapi.ShlObj, Vcl.Graphics, System.Types, DelphiDevShellTools.ProjectInfoPanel,
   DelphiDevShellTools.Tasks, DelphiDevShellTools.DelphiVersions, DelphiDevShellTools.Misc,
-  DelphiDevShellTools.UI, DelphiDevShellTools.Icons,
+  DelphiDevShellTools.UI, DelphiDevShellTools.Icons, DelphiDevShellTools.ShellMenu,
   ShellTools.TestSupport;
 
 function RepositoryFile(const RelativeName: string): string;
@@ -376,6 +380,39 @@ begin
   end;
 end;
 
+procedure TBasicTests.MenuSeparatorsHandleLongCaptions(ACaptionLength: Integer);
+var
+  LInfo: TMenuItemInfo;
+begin
+  var LMenu := TShellMenu.Create;
+  try
+    var LPopup := CreatePopupMenu;
+    Assert.IsTrue(LPopup <> 0);
+    try
+      var LIndex := 0;
+      LMenu.AddMenuSeparatorEx(LPopup, LIndex);
+      Assert.AreEqual(0, LIndex, 'An empty menu must not start with a separator');
+      var LCaption := StringOfChar('X', ACaptionLength);
+      Assert.IsTrue(AppendMenu(LPopup, MF_STRING, 100, PChar(LCaption)));
+      Inc(LIndex);
+      LMenu.AddMenuSeparatorEx(LPopup, LIndex);
+      Assert.AreEqual(2, LIndex, 'Long captions must not corrupt separator insertion');
+      Assert.AreEqual(2, GetMenuItemCount(LPopup));
+      ZeroMemory(@LInfo, SizeOf(LInfo));
+      LInfo.cbSize := SizeOf(LInfo);
+      LInfo.fMask := MIIM_FTYPE;
+      Assert.IsTrue(GetMenuItemInfo(LPopup, 1, True, LInfo));
+      Assert.IsTrue((LInfo.fType and MFT_SEPARATOR) <> 0);
+      LMenu.AddMenuSeparatorEx(LPopup, LIndex);
+      Assert.AreEqual(2, LIndex, 'Adjacent separators must be suppressed');
+    finally
+      DestroyMenu(LPopup);
+    end;
+  finally
+    LMenu.Free;
+  end;
+end;
+
 procedure TBasicTests.DllFactoryInitializesMenuState;
 var
   Module: HMODULE;
@@ -392,8 +429,11 @@ begin
     for ProjectFile in [False, True] do
     begin
       // Exercise factory initialization and per-instance state without registration.
+      TraceTest('Shell test: create menu instance');
       CheckHR(Factory.CreateInstance(nil, IContextMenu, Menu), 'Create file menu');
+      TraceTest('Shell test: exercise menu');
       CheckFileContextMenu(Menu, ProjectFile);
+      TraceTest('Shell test: release menu');
       Menu := nil;
     end;
   finally
@@ -839,7 +879,7 @@ begin
     Panel := TProjectInfoPanel.Create(WriteProject('999.0'), Dpi, Module);
     Standard := TProjectInfoPanel.Create(WriteProject('999.0'), 96, Module);
     Padding := MulDiv(10, Dpi, 96);
-    IconSize := MulDiv(16, Dpi, 96);
+    IconSize := MulDiv(MenuImageLogicalSize, Dpi, 96);
     IconCount := 0;
     for Row in Panel.Rows do
       if Row.IconKey <> '' then

@@ -47,6 +47,7 @@ uses
   DelphiDevShellTools.Phosphor.Font in '..\units\DelphiDevShellTools.Phosphor.Font.pas',
   DelphiDevShellTools.Phosphor.Names in '..\units\DelphiDevShellTools.Phosphor.Names.pas',
   DelphiDevShellTools.Icons in '..\units\DelphiDevShellTools.Icons.pas',
+  DelphiDevShellTools.GUI.ExtensionDialog in 'DelphiDevShellTools.GUI.ExtensionDialog.pas',
   DelphiDevShellTools.GUI.CheckSum in 'DelphiDevShellTools.GUI.CheckSum.pas' {FrmCheckSum};
 
 {$R 'GUIResources.res' 'GUIResources.rc'}
@@ -75,18 +76,74 @@ begin
   end;
 end;
 
+procedure CaptureDialog(AForm: TForm; const AFileName: string);
+begin
+  AForm.Show;
+  ShowWindow(AForm.Handle, SW_SHOWNORMAL);
+  SetForegroundWindow(AForm.Handle);
+  AForm.Update;
+  Application.ProcessMessages;
+  if not CaptureWindowScreenshot(AForm.Handle, AFileName) then
+    raise Exception.Create('Unable to capture dialog: ' + AFileName);
+  AForm.Hide;
+end;
+
+procedure ReviewExtensionDialog(const ACaptureFileName: string);
+begin
+  var LDialog := TFrmExtensionDialog.Create(nil);
+  try
+    LDialog.ExtensionEdit.Text := '.pas';
+    if ACaptureFileName = '' then
+      LDialog.ShowModal
+    else
+      CaptureDialog(LDialog, ACaptureFileName);
+  finally
+    LDialog.Free;
+  end;
+end;
+
+procedure ReviewChecksumDialog(const ACaptureFileName, AAlgorithm,
+  AFileName: string);
+begin
+  var LDialog := TFrmCheckSum.Create(nil);
+  try
+    LDialog.CheckSumAlgo := AAlgorithm;
+    LDialog.FileName := AFileName;
+    if ACaptureFileName = '' then
+      LDialog.ShowModal
+    else
+      CaptureDialog(LDialog, ACaptureFileName);
+  finally
+    LDialog.Free;
+  end;
+end;
+
 
 begin
   if (ParamCount>0) and MatchText(ParamStr(1),['-settings','-about']) then
   OnlyOne;
 
   Application.Initialize;
-  if (ParamCount > 0) and SameText('-settings', ParamStr(1)) then
-    ActivateSettingsVclStyle;
   Application.MainFormOnTaskbar := True;
   if (ParamCount = 2) and SameText(ParamStr(1), '--execute') then
   begin
     ExitCode := RunCommandRequest(ParamStr(2));
+    Exit;
+  end;
+  ActivateSettingsVclStyle;
+  if (ParamCount = 1) and SameText(ParamStr(1), '--extension-dialog') then
+  begin
+    ReviewExtensionDialog('');
+    Exit;
+  end;
+  if (ParamCount = 2) and SameText(ParamStr(1), '--capture-extension') then
+  begin
+    ReviewExtensionDialog(ParamStr(2));
+    Exit;
+  end;
+  if (ParamCount = 4) and SameText(ParamStr(1), '--capture-checksum') then
+  begin
+    ReviewChecksumDialog(ParamStr(2), ParamStr(3), ParamStr(4));
     Exit;
   end;
   //TStyleManager.TrySetStyle('Jet');

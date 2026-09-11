@@ -25,6 +25,9 @@ interface
 
 uses System.JSON, Datasnap.DBClient, DelphiDevShellTools.DelphiVersions;
 
+const
+  cDisabledCommandReview = 'Disabled by user.';
+
 function UserSettingsDirectory: string;
 function LegacySettingsDirectory: string;
 function LoadConfiguration(const Directory, LegacyDirectory: string): TJSONObject;
@@ -405,7 +408,9 @@ begin
       PutJSON(Command, 'runAs', TJSONBool.Create(Data.FieldByName('RunAs').AsBoolean));
       VersionID := Data.FieldByName('VersionId').AsString;
       Name := Data.FieldByName('Review').AsString;
-      if (VersionID = '*') or TryDelphiVersionID(VersionID, Version) then Name := ''
+      if SameText(Name, cDisabledCommandReview) then
+        Name := cDisabledCommandReview
+      else if (VersionID = '*') or TryDelphiVersionID(VersionID, Version) then Name := ''
       else if Name = '' then Name := 'Choose a minimum Delphi version before using this command.';
       PutJSON(Command, 'versionId', TJSONString.Create(VersionID));
       PutJSON(Command, 'review', TJSONString.Create(Name));

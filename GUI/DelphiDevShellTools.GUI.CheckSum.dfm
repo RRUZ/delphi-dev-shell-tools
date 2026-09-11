@@ -2,16 +2,19 @@ object FrmCheckSum: TFrmCheckSum
   Left = 0
   Top = 0
   ActiveControl = Button1
-  BorderIcons = [biSystemMenu]
-  BorderStyle = bsSingle
-  Caption = 'CheckSum'
-  ClientHeight = 207
-  ClientWidth = 400
+  BorderStyle = bsNone
+  Caption = 'Checksum'
+  ClientHeight = 298
+  ClientWidth = 560
   Color = clBtnFace
+  CustomTitleBar.Control = TitleBarPanel
+  CustomTitleBar.Enabled = True
+  CustomTitleBar.Height = 34
+  CustomTitleBar.SystemHeight = False
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -11
-  Font.Name = 'Tahoma'
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
   Font.Style = []
   OldCreateOrder = False
   Position = poScreenCenter
@@ -20,61 +23,90 @@ object FrmCheckSum: TFrmCheckSum
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
-    Left = 8
-    Top = 53
-    Width = 27
-    Height = 13
-    Caption = 'HASH'
+    Left = 20
+    Top = 146
+    Width = 34
+    Height = 15
+    Caption = 'Digest'
   end
   object Label2: TLabel
-    Left = 8
-    Top = 7
-    Width = 43
-    Height = 13
-    Caption = 'FileName'
+    Left = 20
+    Top = 52
+    Width = 52
+    Height = 15
+    Caption = 'File name'
+  end
+  object ShapeFileNameInput: TShape
+    Left = 20
+    Top = 76
+    Width = 520
+    Height = 28
+    Shape = stRoundRect
   end
   object EditFileName: TEdit
-    Left = 8
-    Top = 26
-    Width = 384
-    Height = 21
-    Enabled = False
+    Left = 22
+    Top = 81
+    Width = 516
+    Height = 18
+    AutoSize = False
+    BorderStyle = bsNone
+    ReadOnly = True
     TabOrder = 0
+    OnEnter = InputFocusChanged
+    OnExit = InputFocusChanged
   end
-  object Button1: TButton
-    Left = 8
-    Top = 168
-    Width = 75
-    Height = 25
+  object Button1: TSimpleUIButton
+    Left = 432
+    Top = 248
+    Width = 108
+    Height = 30
     Caption = 'Close'
     TabOrder = 4
     OnClick = Button1Click
   end
-  object EditCheckSum: TMemo
-    Left = 8
-    Top = 96
-    Width = 384
-    Height = 57
-    TabOrder = 3
+  object ShapeChecksumInput: TShape
+    Left = 20
+    Top = 170
+    Width = 520
+    Height = 60
+    Shape = stRoundRect
   end
-  object RbUpCase: TRadioButton
-    Left = 8
-    Top = 72
-    Width = 89
-    Height = 17
-    Caption = 'Upper Case'
-    Checked = True
+  object EditCheckSum: TMemo
+    Left = 22
+    Top = 172
+    Width = 516
+    Height = 56
+    BorderStyle = bsNone
+    ReadOnly = True
+    ScrollBars = ssHorizontal
+    TabOrder = 3
+    WordWrap = False
+    OnEnter = InputFocusChanged
+    OnExit = InputFocusChanged
+  end
+  object RbUpCase: TSimpleUIButton
+    Left = 20
+    Top = 112
+    Width = 106
+    Height = 28
+    Caption = 'Upper case'
     TabOrder = 1
-    TabStop = True
     OnClick = RbUpCaseClick
   end
-  object RbLowCase: TRadioButton
-    Left = 112
-    Top = 73
-    Width = 81
-    Height = 17
-    Caption = 'Lower Case'
+  object RbLowCase: TSimpleUIButton
+    Left = 136
+    Top = 112
+    Width = 106
+    Height = 28
+    Caption = 'Lower case'
     TabOrder = 2
     OnClick = RbLowCaseClick
+  end
+  object TitleBarPanel: TTitleBarPanel
+    Left = 0
+    Top = 0
+    Width = 560
+    Height = 34
+    CustomButtons = <>
   end
 end
